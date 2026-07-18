@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAPA Goods Shed - Rajkot Division (W.R.)</title>
+<style>
+    :root{
+        --navy-900:#03192e;
+        --navy-800:#062a4a;
+        --navy-700:#0a3a63;
+        --cyan-300:#7fe9fb;
+        --cyan-400:#22d3ee;
+        --cyan-500:#06b6d4;
+        --bg:#eef4f8;
+        --card:#ffffff;
+        --text:#132433;
+        --muted:#54687a;
+        --border:#d7e3ec;
+    }
+
+    html, body { margin: 0; padding: 0; height: 100%; }
+    body {
+        display: flex;
+        flex-direction: column;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+    }
+
+    /* Header */
+    .top-header {
+        background: linear-gradient(100deg, var(--navy-900) 0%, var(--navy-700) 100%);
+        color: #fff;
+        padding: 14px 20px;
+        text-align: center;
+        box-shadow: 0 2px 10px rgba(3, 25, 46, 0.35);
+    }
+    .title-line {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        white-space: nowrap;
+    }
+    .title-hi, .title-en {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .title-hi { color: var(--cyan-300); }
+    .title-en { color: #ffffff; }
+    .title-sep { color: var(--cyan-500); font-weight: 400; opacity: 0.8; }
+
+    /* Cyan divider */
+    .accent-divider {
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--cyan-400), transparent);
+        flex-shrink: 0;
+    }
+
+    /* Navbar */
+    .navbar {
+        display: flex;
+        flex-wrap: wrap;
+        background: linear-gradient(90deg, var(--navy-900), var(--navy-800));
+        padding: 6px 8px;
+        list-style-type: none;
+        margin: 0;
+        justify-content: center;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 50;
+    }
+    .navbar li { position: relative; }
+    .navbar li a {
+        color: #dcf2f9;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        padding: 11px 14px;
+        display: block;
+        cursor: pointer;
+        white-space: nowrap;
+        margin: 4px;
+        border-radius: 9px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(127,233,251,0.16);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, color 0.25s ease;
+    }
+    .navbar li a:hover,
+    .navbar li a:focus-visible {
+        color: #ffffff;
+        background: rgba(34, 211, 238, 0.18);
+        border-color: rgba(34, 211, 238, 0.55);
+        box-shadow: 0 0 16px rgba(34, 211, 238, 0.35);
+        outline: none;
+    }
+
+    /* Dropdown */
+    .dropdown {
+        display: none;
+        position: absolute;
+        background: rgba(6, 26, 46, 0.92);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        min-width: 195px;
+        box-shadow: 0 14px 28px rgba(0,0,0,0.35);
+        z-index: 100;
+        border-radius: 10px;
+        overflow: hidden;
+        list-style: none;
+        padding: 6px;
+        border: 1px solid rgba(34, 211, 238, 0.25);
+    }
+    .navbar li:hover .dropdown,
+    .navbar li:focus-within .dropdown { display: block; }
+    .dropdown li a {
+        color: #dcf2f9 !important;
+        padding: 10px 14px !important;
+        font-size: 13px;
+        margin: 2px 0;
+        background: transparent;
+        border: 1px solid transparent;
+    }
+    .dropdown li a:hover,
+    .dropdown li a:focus-visible {
+        background: rgba(34, 211, 238, 0.16) !important;
+        border-color: rgba(34, 211, 238, 0.4) !important;
+        color: #ffffff !important;
+        box-shadow: none;
+    }
+
+    /* Content Area */
+    .content-area { flex: 1; width: 100%; padding: 14px; box-sizing: border-box; background: var(--bg); }
+    .content-frame-wrap {
+        width: 100%;
+        height: 100%;
+        background: var(--card);
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(3,25,46,0.15);
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+    iframe { width: 100%; height: 100%; border: none; display: block; }
+
+    /* Footer */
+    .footer {
+        background: var(--navy-900);
+        color: #bfe6f2;
+        text-align: center;
+        padding: 12px;
+        font-size: 13px;
+        border-top: 3px solid var(--cyan-400);
+        flex-shrink: 0;
+        letter-spacing: 0.2px;
+    }
+    .footer strong { color: #ffffff; }
+    .footer a { color: var(--cyan-300); text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+    <div class="top-header">
+        <div class="title-line">
+            <span class="title-hi">हापा गुड्स शेड - राजकोट मंडल (प.रे.)</span>
+            <span class="title-sep">|</span>
+            <span class="title-en">HAPA GOODS SHED - RAJKOT DIVISION (W.R.)</span>
+        </div>
+    </div>
+    <div class="accent-divider"></div>
+
+    <ul class="navbar">
+        <li><a href="javascript:void(0)" id="home-link">🏠 Home</a></li>
+        <li><a href="javascript:void(0)" class="coming-soon" data-label="Admin">👨‍💼 Admin</a></li>
+
+        <li>
+            <a href="#">🚂 Inward Rake ▼</a>
+            <ul class="dropdown">
+                <li><a href="javascript:void(0)" class="coming-soon" data-label="Inward Tally">Inward Tally</a></li>
+                <li><a href="javascript:void(0)" class="coming-soon" data-label="W.T.R.">W.T.R.</a></li>
+                <li><a href="javascript:void(0)" class="coming-soon" data-label="Delivery Book">Delivery Book</a></li>
+                <li><a href="javascript:void(0)" class="coming-soon" data-label="Placement Memo">Placement Memo</a></li>
+                <li><a href="javascript:void(0)" class="coming-soon" data-label="Release Memo">Release Memo</a></li>
+                <li><a href="javascript:void(0)" class="coming-soon" data-label="Demmurage Bill">Demmurage Bill</a></li>
+                <li><a href="javascript:void(0)" class="coming-soon" data-label="Shuntring Memo">Shuntring Memo</a></li>
+            </ul>
+        </li>
+
+        <li><a href="javascript:void(0)" class="coming-soon" data-label="Outward Rake">🚛 Outward Rake</a></li>
+        <li><a href="javascript:void(0)" class="coming-soon" data-label="Weighment">⚖️ Weighment</a></li>
+
+        <li>
+            <a href="#">💰 Outstanding ▼</a>
+            <ul class="dropdown">
+                <li><a href="https://gaurangthakker.github.io/outstanding/" target="content-frame">Accrual</a></li>
+                <li><a href="https://gaurangthakker.github.io/outstanding/payment.html" target="content-frame">Payment</a></li>
+                <li><a href="https://hapacgs.github.io/outstanding/" target="content-frame">Dashboard</a></li>
+            </ul>
+        </li>
+
+        <li><a href="javascript:void(0)" class="coming-soon" data-label="Statistics">📊 Statistics</a></li>
+        <li><a href="https://hapacgs.github.io/ap/" target="content-frame">📄 A.P.</a></li>
+        <li><a href="javascript:void(0)" class="coming-soon" data-label="Information">📚 Information</a></li>
+        <li><a href="javascript:void(0)" class="coming-soon" data-label="Gallery">🖼️ Gallery</a></li>
+        <li><a href="javascript:void(0)" class="coming-soon" data-label="Downloads">📥 Downloads</a></li>
+        <li><a href="javascript:void(0)" class="coming-soon" data-label="Contact">📞 Contact</a></li>
+    </ul>
+
+    <div class="content-area">
+        <div class="content-frame-wrap">
+            <iframe name="content-frame" id="content-frame" src="about:blank"></iframe>
+        </div>
+    </div>
+
+    <div class="footer">
+        <strong>Chief Goods Supervisor</strong> &nbsp;|&nbsp; Mobile : 97240 94976 &nbsp;|&nbsp; E-mail : <a href="mailto:hapacgs@gmail.com">hapacgs@gmail.com</a>
+    </div>
+
+    <script>
+        var BG_IMAGE_URL = "https://www.fois.indianrail.gov.in/foisweb/resources/images/bge.jpg";
+
+        function getFrame() {
+            return document.getElementById('content-frame');
+        }
+
+        function showDefaultHome() {
+            var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
+                '<style>' +
+                'html,body{height:100%;margin:0;display:flex;align-items:center;justify-content:center;' +
+                'background:#03192e;}' +
+                'img{max-width:90%;max-height:90%;object-fit:contain;}' +
+                '</style></head><body>' +
+                '<img src="' + BG_IMAGE_URL + '" alt="HAPA Goods Shed">' +
+                '</body></html>';
+            getFrame().setAttribute('srcdoc', html);
+        }
+
+        function showComingSoon(label) {
+            var html = '<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8">' +
+                '<style>' +
+                'html,body{height:100%;margin:0;display:flex;align-items:center;justify-content:center;' +
+                'font-family:"Segoe UI",Arial,sans-serif;background:#03192e;}' +
+                '.wrap{text-align:center;color:#dcf2f9;}' +
+                '.icon{font-size:44px;margin-bottom:14px;}' +
+                '.title{font-size:20px;font-weight:700;color:#ffffff;}' +
+                '.sub{font-size:14px;color:#7fe9fb;margin-top:8px;}' +
+                '.bar{width:70px;height:4px;background:#22d3ee;margin:16px auto 0;border-radius:2px;}' +
+                '</style></head><body>' +
+                '<div class="wrap">' +
+                '<div class="icon">🚧</div>' +
+                '<div class="title">' + label + ' &mdash; Under Progress</div>' +
+                '<div class="sub">यह सेवा जल्द उपलब्ध होगी &middot; Coming Soon</div>' +
+                '<div class="bar"></div>' +
+                '</div></body></html>';
+            getFrame().setAttribute('srcdoc', html);
+        }
+
+        document.getElementById('home-link').addEventListener('click', function (e) {
+            e.preventDefault();
+            showDefaultHome();
+        });
+
+        document.querySelectorAll('.coming-soon').forEach(function (link) {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                showComingSoon(link.getAttribute('data-label') || '');
+            });
+        });
+
+        // Show the default image on first load instead of a blank page
+        showDefaultHome();
+    </script>
+
+</body>
+</html>
