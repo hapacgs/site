@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Placement Memo - Goods Shed</title>
+<style>
+:root {
+  --navy-deep: #050b18;
+  --navy: #0a1630;
+  --navy-mid: #0f2148;
+  --cyan: #00e5ff;
+  --cyan-soft: #7ff5ff;
+  --glass: rgba(255,255,255,0.05);
+  --glass-border: rgba(0,229,255,0.25);
+  --text: #eaf6ff;
+  --text-dim: #8fa9c2;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: var(--text);
+  padding: 28px 10px;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(0,229,255,0.12), transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(0,120,255,0.15), transparent 45%),
+    linear-gradient(160deg, var(--navy-deep), var(--navy) 55%, var(--navy-mid));
+  background-attachment: fixed;
+}
+
+#app {
+  max-width: 640px;
+  margin: auto;
+  background: var(--glass);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  padding: 22px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 0 40px rgba(0,229,255,0.06);
+}
+
+h1 {
+  text-align: center;
+  color: var(--cyan-soft);
+  letter-spacing: 2px;
+  font-weight: 700;
+  font-size: 17px;
+  margin: 0 0 4px 0;
+  text-shadow: 0 0 18px rgba(0,229,255,0.5);
+}
+.sub {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+  letter-spacing: 0.3px;
+}
+
+.card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 12px 12px;
+  margin-bottom: 14px;
+}
+
+.station-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.station-row label {
+  color: var(--cyan-soft);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1.2px;
+}
+.station-row select, .station-row input[type="date"] {
+  padding: 8px 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(10,22,48,0.95);
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 200px;
+}
+.station-row select:focus, .station-row input[type="date"]:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0,229,255,0.35);
+}
+.station-row input[type="date"] { color-scheme: dark; }
+
+/* Native <input type="date"> ka display format (MM/DD/YYYY vs DD/MM/YYYY) mobile
+   ke device locale par depend karta hai, HTML/CSS se seedha control nahi hota.
+   Isliye humne asli input ke andar ka text transparent kar diya hain aur upar
+   se apna khud ka formatted "DD-MM-YYYY" text dikha rahe hain (JS se update hota
+   hain) — taaki format hamesha same rahe, chahe phone ki language/region kuch bhi ho. */
+.date-field-wrap { position: relative; display: inline-block; }
+.date-field-wrap input[type="date"] {
+  width: 100%;
+  color: transparent;
+}
+.date-field-wrap input[type="date"]::-webkit-datetime-edit,
+.date-field-wrap input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+.date-field-wrap input[type="date"]::-webkit-datetime-edit-text,
+.date-field-wrap input[type="date"]::-webkit-datetime-edit-month-field,
+.date-field-wrap input[type="date"]::-webkit-datetime-edit-day-field,
+.date-field-wrap input[type="date"]::-webkit-datetime-edit-year-field {
+  color: transparent;
+}
+.date-display {
+  position: absolute;
+  left: 0; top: 0; right: 26px; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+.route-line {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--text-dim);
+  margin: -6px 0 14px 0;
+}
+
+.msg { font-size: 12.5px; padding: 8px 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid; }
+.msg.error { background: rgba(255,60,60,0.1); color: #ff8f8f; border-color: rgba(255,60,60,0.35); }
+.msg.info { background: rgba(0,229,255,0.08); color: var(--cyan-soft); border-color: var(--glass-border); }
+
+.table-wrap {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  overflow-x: auto;
+  margin-bottom: 14px;
+}
+/* table-layout: auto (nahi fixed) — taaki har column sirf apni content jitni hi
+   jagah le, aur beech me bekar ka khaali gap na bane */
+table { width: 100%; margin: 0; border-collapse: collapse; table-layout: auto; font-size: 10px; }
+thead th {
+  background: rgba(0,229,255,0.1);
+  color: var(--cyan-soft);
+  text-align: center;
+  padding: 5px 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--glass-border);
+}
+tbody td {
+  padding: 3px 4px;
+  text-align: center;
+  border-bottom: 1px solid rgba(0,229,255,0.1);
+  color: var(--text);
+  white-space: nowrap;
+}
+tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: background 0.2s ease; }
+
+.pl-time-input, .line-select {
+  padding: 3px 2px;
+  border: 1px solid var(--glass-border);
+  border-radius: 5px;
+  font-size: 9.5px;
+  text-align: center;
+  color: var(--text);
+  background: rgba(10,22,48,0.95);
+}
+/* TIME box sirf 5 character (HH:MM) jitni hi chahiye, LINE box sirf "LOOSE-3"
+   (sabse lambe option) jitni hi — dono ab fixed compact size me hain, poori
+   column ko stretch nahi karte */
+.pl-time-input { width: 42px; }
+.line-select { width: 66px; padding: 3px 1px; }
+.pl-time-input:focus, .line-select:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px rgba(0,229,255,0.35);
+}
+
+.pltime-cell { display: flex; align-items: center; justify-content: center; gap: 2px; }
+.filldown-btn {
+  flex: 0 0 auto;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  line-height: 1;
+  font-size: 8px;
+  border: 1px solid rgba(0,229,255,0.35);
+  background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(0,120,255,0.12));
+  color: var(--cyan-soft);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.filldown-btn:active { background: linear-gradient(135deg, rgba(0,229,255,0.4), rgba(0,120,255,0.25)); }
+
+.col-sr   { color: var(--text-dim); font-weight: 700; }
+.col-rly  { font-family: 'Consolas', monospace; }
+.col-type { font-family: 'Consolas', monospace; letter-spacing: -0.2px; }
+.col-no   { font-family: 'Consolas', monospace; letter-spacing: -0.2px; }
+
+.submit-bar { display: flex; justify-content: center; margin-top: 4px; }
+.submit-btn {
+  padding: 11px 30px;
+  background: linear-gradient(135deg, var(--cyan), #0090c8);
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  color: #001824;
+  letter-spacing: 0.6px;
+  box-shadow: 0 0 20px rgba(0,229,255,0.4);
+}
+.submit-btn:hover { box-shadow: 0 0 28px rgba(0,229,255,0.6); }
+.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+/* ---------- PRINT AREA (hidden on screen, shown only for printing) ---------- */
+#printArea { display: none; }
+
+@media print {
+    html, body { height: auto !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+    #app { display: none !important; }
+    #printArea {
+        display: flex !important;
+        width: 100%;
+        gap: 6mm;
+    }
+    @page { size: A4 landscape; margin: 6mm; }
+
+    /* Print me background print ho (header highlight) aur text hamesha pure
+       black rahe — kisi bhi browser/OS "dark print" mode se bhi na badle */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+
+    .copy-block {
+        flex: 1;
+        border: 1px solid #000;
+        padding: 3mm;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+        color: #000 !important;
+    }
+    .copy-header { text-align: center; font-weight: bold; margin-bottom: 3px; color: #000 !important; }
+    .copy-meta { display: flex; justify-content: space-between; margin-bottom: 4px; color: #000 !important; }
+    .copy-subcols { display: flex; gap: 2mm; }
+    .copy-subcols > div { flex: 1; min-width: 0; }
+    .copy-table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #000 !important; }
+    .copy-table th, .copy-table td { border: 1px solid #000; text-align: center; overflow: hidden; white-space: nowrap; color: #000 !important; }
+    /* Header ka font size data row jitna hi — sirf bold + halka grey highlight se alag dikhta hain */
+    .copy-table th { font-weight: 800; background: #d9d9d9 !important; }
+    .copy-footer { display: flex; justify-content: space-between; margin-top: 4px; color: #000 !important; }
+    .copy-label { text-align: center; font-weight: bold; margin-top: 5px; color: #000 !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+    <h1>PLACEMENT MEMO</h1>
+
+    <div class="station-row">
+        <label for="rakeSelect">SELECT RAKE ID :</label>
+        <select id="rakeSelect">
+            <option value="">-- Loading... --</option>
+        </select>
+    </div>
+
+    <div class="station-row">
+        <label for="placementDate">PLACEMENT DATE :</label>
+        <div class="date-field-wrap">
+            <input type="date" id="placementDate">
+            <span class="date-display" id="placementDateDisplay">DD-MM-YYYY</span>
+        </div>
+    </div>
+
+    <div class="route-line" id="routeLine" style="display:none;"></div>
+
+    <div id="msgBox"></div>
+
+    <div class="table-wrap" id="tableWrap" style="display:none;">
+        <table>
+            <thead>
+                <tr>
+                    <th class="col-sr">Sr.</th>
+                    <th class="col-rly">RLY</th>
+                    <th class="col-type">TYPE</th>
+                    <th class="col-no">NO.</th>
+                    <th class="col-pltime">TIME</th>
+                    <th class="col-line">LINE</th>
+                </tr>
+            </thead>
+            <tbody id="wagonTableBody"></tbody>
+        </table>
+    </div>
+
+    <div class="submit-bar" id="submitBar" style="display:none;">
+        <button class="submit-btn" id="submitBtn">Generate PDF</button>
+    </div>
+</div>
+
+    <!-- Print-only content, built at submit time -->
+    <div id="printArea"></div>
+
+<script>
+    var API_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
+    var SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
+    var SHEET_NAME = "IW_Data";
+    var MAX_WAGONS = 59;
+
+    var LINE_OPTIONS = ["", "I/W", "O/W", "LOOSE-3"];
+    var currentRakeData = null;
+    var currentWagons = [];
+
+    // Native date input ka asli text transparent kar rakha hain (CSS), yahan se
+    // hamesha DD-MM-YYYY format me apna display update karte hain — mobile ke
+    // locale/region setting se format kabhi nahi badalta.
+    function updateDateDisplay() {
+        var val = document.getElementById('placementDate').value; // yyyy-mm-dd
+        var disp = document.getElementById('placementDateDisplay');
+        if (!val) { disp.textContent = 'DD-MM-YYYY'; return; }
+        var parts = val.split('-'); // [yyyy, mm, dd]
+        disp.textContent = parts[2] + '-' + parts[1] + '-' + parts[0];
+    }
+    document.getElementById('placementDate').addEventListener('input', updateDateDisplay);
+    document.getElementById('placementDate').addEventListener('change', updateDateDisplay);
+    updateDateDisplay();
+
+    function showMsg(text, type) {
+        var box = document.getElementById('msgBox');
+        box.innerHTML = '<div class="msg ' + (type || 'info') + '">' + text + '</div>';
+    }
+    function clearMsg() { document.getElementById('msgBox').innerHTML = ''; }
+
+    // ---------------- Load Rake ID dropdown (status = Arrived) ----------------
+    function loadPendingRakes() {
+        var url = API_URL + "?action=pending&sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME);
+        fetch(url)
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                var sel = document.getElementById('rakeSelect');
+                if (res.status !== "success") {
+                    sel.innerHTML = '<option value="">-- Error loading --</option>';
+                    showMsg('Rake list load karne me error: ' + (res.message || ''), 'error');
+                    return;
+                }
+                if (!res.rakeIds || res.rakeIds.length === 0) {
+                    sel.innerHTML = '<option value="">-- Koi Arrived rake nahi --</option>';
+                    return;
+                }
+                var html = '<option value="">-- Select Rake ID --</option>';
+                res.rakeIds.forEach(function (id) {
+                    html += '<option value="' + id + '">' + id + '</option>';
+                });
+                sel.innerHTML = html;
+            })
+            .catch(function (err) {
+                showMsg('Network error: ' + err.message, 'error');
+            });
+    }
+
+    // ---------------- Load rake details on selection ----------------
+    function loadRakeDetails(rakeId) {
+        document.getElementById('routeLine').style.display = 'none';
+        document.getElementById('tableWrap').style.display = 'none';
+        document.getElementById('submitBar').style.display = 'none';
+        clearMsg();
+        if (!rakeId) return;
+
+        var url = API_URL + "?action=getRow&sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME) + "&rakeId=" + encodeURIComponent(rakeId);
+        fetch(url)
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (res.status !== "success" || !res.found) {
+                    showMsg('Is Rake ID ka data nahi mila.', 'error');
+                    return;
+                }
+                currentRakeData = res.data;
+
+                // FROM aur TO dono hi Google Sheet (IW_Data, column D aur E) se aa rahe hain -
+                // TO station kabhi hardcode nahi karna, jo bhi sheet me ho wahi dikhega.
+                // Chota, ek-line route text: "<FROM> TO <TO>"
+                var routeEl = document.getElementById('routeLine');
+                routeEl.textContent = (currentRakeData.from || '-') + '  TO  ' + (currentRakeData.to || '-');
+                routeEl.style.display = 'block';
+
+                var wagons = currentRakeData.wagonSummary;
+                if (!wagons || wagons.length === 0) {
+                    showMsg('Is rake ke liye wagon summary (M column) data nahi mila. Apps Script me "wagonSummary" field add hua hain ya nahi check kar lijiye.', 'error');
+                    return;
+                }
+                if (wagons.length > MAX_WAGONS) {
+                    showMsg('Wagon count (' + wagons.length + ') MAX_WAGONS (' + MAX_WAGONS + ') se zyada hain.', 'error');
+                }
+                currentWagons = wagons;
+                renderTable(wagons);
+                document.getElementById('tableWrap').style.display = 'block';
+                document.getElementById('submitBar').style.display = 'flex';
+            })
+            .catch(function (err) {
+                showMsg('Network error: ' + err.message, 'error');
+            });
+    }
+
+    function buildLineSelectHTML(rowIndex) {
+        var html = '<select class="line-select" data-row="' + rowIndex + '">';
+        for (var i = 0; i < LINE_OPTIONS.length; i++) {
+            var val = LINE_OPTIONS[i];
+            html += '<option value="' + val + '">' + (val === "" ? "--" : val) + '</option>';
+        }
+        html += '</select>';
+        return html;
+    }
+
+    function renderTable(data) {
+        var tbody = document.getElementById('wagonTableBody');
+        var rowsHtml = '';
+        for (var i = 0; i < data.length; i++) {
+            var w = data[i];
+            rowsHtml += '<tr data-row="' + i + '">' +
+                '<td class="col-sr">' + (i + 1) + '</td>' +
+                '<td class="col-rly">' + (w.RLY || '') + '</td>' +
+                '<td class="col-type">' + (w.TYPE || '') + '</td>' +
+                '<td class="col-no">' + (w.NO || '') + '</td>' +
+                '<td class="col-pltime">' +
+                    '<div class="pltime-cell">' +
+                        '<input type="text" class="pl-time-input" data-row="' + i + '" placeholder="HH:MM" maxlength="5" value="">' +
+                        '<button type="button" class="filldown-btn" data-row="' + i + '" title="Neeche ke sabhi rows me yahi bhar do">&#8681;</button>' +
+                    '</div>' +
+                '</td>' +
+                '<td class="col-line">' + buildLineSelectHTML(i) + '</td>' +
+                '</tr>';
+        }
+        tbody.innerHTML = rowsHtml;
+        attachFillDownHandlers();
+        attachTimeFormatting();
+    }
+
+    // Placement Time ko hamesha HH:MM format me rakhta hain (digits only, colon auto-insert)
+    function formatTimeValue(raw) {
+        var digits = raw.replace(/[^0-9]/g, '').slice(0, 4);
+        if (digits.length <= 2) return digits;
+        return digits.slice(0, 2) + ':' + digits.slice(2);
+    }
+
+    function attachTimeFormatting() {
+        var inputs = document.querySelectorAll('.pl-time-input');
+        inputs.forEach(function (inp) {
+            inp.addEventListener('input', function () {
+                inp.value = formatTimeValue(inp.value);
+            });
+        });
+    }
+
+    // Current row ka PL. TIME aur LINE, usi row se neeche ke sabhi rows me copy kar deta hain.
+    // (F7 key mobile par kaam nahi karti, isliye har row me ek chhota "fill-down" button
+    // diya hain jo tap karne par yahi kaam karta hain.)
+    function fillDownFrom(rowIndex) {
+        var tbody = document.getElementById('wagonTableBody');
+        var currentRowEl = tbody.querySelector('tr[data-row="' + rowIndex + '"]');
+        if (!currentRowEl) return;
+        var plTimeVal = currentRowEl.querySelector('.pl-time-input').value;
+        var lineVal = currentRowEl.querySelector('.line-select').value;
+
+        var allRows = tbody.querySelectorAll('tr');
+        allRows.forEach(function (rowEl) {
+            var idx = parseInt(rowEl.getAttribute('data-row'), 10);
+            if (idx >= rowIndex) {
+                rowEl.querySelector('.pl-time-input').value = plTimeVal;
+                rowEl.querySelector('.line-select').value = lineVal;
+                rowEl.classList.add('just-filled');
+                setTimeout(function (r) { return function () { r.classList.remove('just-filled'); }; }(rowEl), 600);
+            }
+        });
+    }
+
+    function attachFillDownHandlers() {
+        var tbody = document.getElementById('wagonTableBody');
+
+        // Tap/click se fill-down (mobile ke liye) — button.filldown-btn
+        tbody.addEventListener('click', function (e) {
+            var btn = e.target.closest ? e.target.closest('.filldown-btn') : null;
+            if (!btn) return;
+            var rowIndex = parseInt(btn.getAttribute('data-row'), 10);
+            if (isNaN(rowIndex)) return;
+            fillDownFrom(rowIndex);
+        });
+
+        // Physical keyboard (desktop) ke liye F7 bhi kaam karta rehta hain
+        tbody.addEventListener('keydown', function (e) {
+            if (e.key !== 'F7') return;
+            e.preventDefault();
+            var rowIndex = parseInt(e.target.getAttribute('data-row'), 10);
+            if (isNaN(rowIndex)) return;
+            fillDownFrom(rowIndex);
+        });
+    }
+
+    // ---------------- Build print copy + trigger print ----------------
+    function formatDateForPrint(isoDate) {
+        if (!isoDate) return '';
+        var parts = isoDate.split('-'); // yyyy-mm-dd
+        if (parts.length !== 3) return isoDate;
+        return parts[2] + '-' + parts[1] + '-' + parts[0];
+    }
+
+    // Har sub-column me max itni hi rows dikhayenge (sample PDF ki tarah 1-30, 31-59 baju-baju me).
+    var ROWS_PER_SUBCOL = 30;
+
+    // Ek hi fixed compact scale — kyunki ab har sub-column me max 30 hi rows hoti hain
+    // (chahe wagon count 5 ho ya 59), font kabhi bahot chhota nahi karna padta.
+    // headFont data font (font) ke SAME rakha hain — header ko sirf bold + halka grey
+    // highlight (.copy-table th CSS) se alag dikhaya jaata hain, size bada karke nahi.
+    function computeScale() {
+        return { font: 8.3, pad: "1.4px 3px", headFont: 8.3, metaFont: 9, labelFont: 10.5, footFont: 9 };
+    }
+
+    // Poore wagon number ki jagah sirf last 6 digit/char dikhata hain (jagah bachane ke liye)
+    function last6(no) {
+        no = (no || '').toString().trim();
+        return no.length > 6 ? no.slice(-6) : no;
+    }
+
+    function buildCopyHTML(copyLabel, scale) {
+        var tbody = document.getElementById('wagonTableBody');
+        var rows = tbody.querySelectorAll('tr');
+        var dateVal = formatDateForPrint(document.getElementById('placementDate').value);
+
+        var rowsData = [];
+        rows.forEach(function (rowEl) {
+            rowsData.push({
+                sr: rowEl.querySelector('.col-sr').textContent,
+                rly: rowEl.querySelector('.col-rly').textContent,
+                type: rowEl.querySelector('.col-type').textContent,
+                no: last6(rowEl.querySelector('.col-no').textContent),
+                plTime: rowEl.querySelector('.pl-time-input').value,
+                line: rowEl.querySelector('.line-select').value
+            });
+        });
+
+        // rowsData ko 30-30 ke chunks me todo, taaki har chunk apne sub-column me jaaye
+        var chunks = [];
+        for (var i = 0; i < rowsData.length; i += ROWS_PER_SUBCOL) {
+            chunks.push(rowsData.slice(i, i + ROWS_PER_SUBCOL));
+        }
+        if (chunks.length === 0) chunks.push([]);
+
+        var subcolsHtml = '';
+        chunks.forEach(function (chunk) {
+            var rowsHtml = '';
+            chunk.forEach(function (r) {
+                rowsHtml += '<tr>' +
+                    '<td style="padding:' + scale.pad + ';">' + r.sr + '</td>' +
+                    '<td style="padding:' + scale.pad + ';">' + r.rly + '</td>' +
+                    '<td style="padding:' + scale.pad + ';">' + r.type + '</td>' +
+                    '<td style="padding:' + scale.pad + ';">' + r.no + '</td>' +
+                    '<td style="padding:' + scale.pad + ';">' + r.line + '</td>' +
+                    '<td style="padding:' + scale.pad + ';">' + r.plTime + '</td>' +
+                    '</tr>';
+            });
+            subcolsHtml += '<div>' +
+                '<table class="copy-table" style="font-size:' + scale.font + 'px;">' +
+                    '<thead><tr style="font-size:' + scale.headFont + 'px;">' +
+                        '<th style="padding:' + scale.pad + '; width:10%;">NO.</th><th style="padding:' + scale.pad + '; width:14%;">RLY</th>' +
+                        '<th style="padding:' + scale.pad + '; width:20%;">TYPE</th><th style="padding:' + scale.pad + '; width:20%;">WGN.</th>' +
+                        '<th style="padding:' + scale.pad + '; width:20%;">LINE</th><th style="padding:' + scale.pad + '; width:16%;">TIME</th>' +
+                    '</tr></thead>' +
+                    '<tbody>' + rowsHtml + '</tbody>' +
+                '</table>' +
+                '</div>';
+        });
+
+        var commodity = currentRakeData ? (currentRakeData.commodity || '') : '';
+        var party = currentRakeData ? (currentRakeData.consignee || '') : '';
+        // TO STATION bhi hamesha sheet ke data (column E) se hi le rahe hain, kabhi hardcode nahi.
+        var toStation = currentRakeData ? (currentRakeData.to || '') : '';
+
+        return '<div class="copy-block">' +
+            '<div class="copy-header" style="font-size:' + (scale.labelFont) + 'px;">PLACEMENT MEMO</div>' +
+            '<div class="copy-meta" style="font-size:' + scale.metaFont + 'px;">' +
+                '<span>FROM STATION : ' + (currentRakeData ? currentRakeData.from : '') + '</span>' +
+                '<span>TO STATION : ' + toStation + '</span>' +
+                '<span>PLACEMENT DT. : ' + dateVal + '</span>' +
+            '</div>' +
+            '<div class="copy-subcols">' + subcolsHtml + '</div>' +
+            '<div class="copy-footer" style="font-size:' + scale.footFont + 'px;">' +
+                '<span>NAME OF PARTY : ' + party + '</span>' +
+                '<span>COMMODITY : ' + commodity + '</span>' +
+            '</div>' +
+            '<div class="copy-label" style="font-size:' + scale.labelFont + 'px;">' + copyLabel + ' - COPY</div>' +
+            '</div>';
+    }
+
+    // "Save as PDF" karte waqt browser print-dialog default filename document.title
+    // se leta hain, isliye print se pehle title ko required naam me badal dete hain.
+    function buildPdfFileName() {
+        var inv = (currentRakeData && currentRakeData.invoiceNo) ? currentRakeData.invoiceNo : '';
+        var from = (currentRakeData && currentRakeData.from) ? currentRakeData.from : '';
+        var to = (currentRakeData && currentRakeData.to) ? currentRakeData.to : '';
+        var dateVal = formatDateForPrint(document.getElementById('placementDate').value);
+        return '01 INV ' + inv + ' ' + from + ' - ' + to + ' ' + dateVal + ' - PLACEMENT MEMO';
+    }
+
+    function generatePDF() {
+        clearMsg();
+        if (!currentRakeData) { showMsg('Pehle Rake ID select kijiye.', 'error'); return; }
+        if (!document.getElementById('placementDate').value) { showMsg('Placement Date bhariye.', 'error'); return; }
+
+        var rows = document.querySelectorAll('#wagonTableBody tr');
+        var incomplete = false;
+        rows.forEach(function (rowEl) {
+            var plTime = rowEl.querySelector('.pl-time-input').value.trim();
+            var line = rowEl.querySelector('.line-select').value;
+            if (!plTime || !line) incomplete = true;
+        });
+        if (incomplete) {
+            showMsg('Kuch rows me PL. Time ya Line No. khali hain. Fir bhi PDF banayenge, khali cells print me blank rahenge.', 'info');
+        }
+
+        var scale = computeScale();
+        var printArea = document.getElementById('printArea');
+        printArea.innerHTML = buildCopyHTML('CYM', scale) + buildCopyHTML('CGS', scale);
+
+        var originalTitle = document.title;
+        document.title = buildPdfFileName();
+        var restoreTitle = function () {
+            document.title = originalTitle;
+            window.removeEventListener('afterprint', restoreTitle);
+        };
+        window.addEventListener('afterprint', restoreTitle);
+
+        window.print();
+    }
+
+    document.getElementById('rakeSelect').addEventListener('change', function (e) {
+        loadRakeDetails(e.target.value);
+    });
+    document.getElementById('submitBtn').addEventListener('click', generatePDF);
+
+    loadPendingRakes();
+</script>
+
+</body>
+</html>
