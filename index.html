@@ -17,9 +17,10 @@
         --text:#132433;
         --muted:#54687a;
         --border:#d7e3ec;
+        --handle-h: 34px;
     }
 
-    html, body { margin: 0; padding: 0; height: 100%; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
     body {
         display: flex;
         flex-direction: column;
@@ -27,6 +28,62 @@
         background: var(--bg);
         color: var(--text);
     }
+
+    /* Slim handle - always visible, tap/click to reveal the header+menu */
+    .menu-handle {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 300;
+        height: var(--handle-h);
+        box-sizing: border-box;
+        background: linear-gradient(100deg, var(--navy-900) 0%, var(--navy-700) 100%);
+        color: var(--cyan-300);
+        border: 1px solid rgba(34,211,238,0.4);
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        padding: 0 18px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        user-select: none;
+        transition: background 0.2s ease;
+    }
+    .menu-handle:active { background: var(--navy-700); }
+    .menu-handle .arrow { transition: transform 0.3s ease; font-size: 10px; }
+    body.menu-open .menu-handle .arrow { transform: rotate(180deg); }
+
+    /* Top bar wraps header + navbar; hidden above viewport by default,
+       slides down as an overlay only when opened. Sits BELOW the handle
+       (top: var(--handle-h)) so the handle never covers the title text. */
+    .top-bar {
+        position: fixed;
+        top: var(--handle-h);
+        left: 0;
+        right: 0;
+        z-index: 240;
+        transform: translateY(-120%);
+        transition: transform 0.28s ease;
+    }
+    body.menu-open .top-bar { transform: translateY(0); box-shadow: 0 8px 20px rgba(0,0,0,0.35); }
+
+    /* Dim overlay behind the open menu so a tap outside closes it */
+    .menu-scrim {
+        position: fixed;
+        inset: 0;
+        background: rgba(3,25,46,0.35);
+        z-index: 220;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.28s ease;
+    }
+    body.menu-open .menu-scrim { opacity: 1; pointer-events: auto; }
 
     /* Header */
     .top-header {
@@ -117,7 +174,8 @@
         border: 1px solid rgba(34, 211, 238, 0.25);
     }
     .navbar li:hover .dropdown,
-    .navbar li:focus-within .dropdown { display: block; }
+    .navbar li:focus-within .dropdown,
+    .navbar li.dropdown-open .dropdown { display: block; }
     .dropdown li a {
         color: #dcf2f9 !important;
         padding: 10px 14px !important;
@@ -134,8 +192,16 @@
         box-shadow: none;
     }
 
-    /* Content Area */
-    .content-area { flex: 1; width: 100%; padding: 14px; box-sizing: border-box; background: var(--bg); }
+    /* Content Area - fills the full viewport; top-bar floats above it */
+    .content-area {
+        flex: 1;
+        width: 100%;
+        padding: 8px;
+        padding-top: 30px; /* just enough to clear the slim handle */
+        box-sizing: border-box;
+        background: var(--bg);
+        min-height: 0;
+    }
     .content-frame-wrap {
         width: 100%;
         height: 100%;
@@ -147,7 +213,8 @@
     }
     iframe { width: 100%; height: 100%; border: none; display: block; }
 
-    /* Footer */
+    /* Footer - collapses to a thin strip so iframe gets max space;
+       tap to expand and see full contact info */
     .footer {
         background: var(--navy-900);
         color: #bfe6f2;
@@ -157,7 +224,17 @@
         border-top: 3px solid var(--cyan-400);
         flex-shrink: 0;
         letter-spacing: 0.2px;
+        max-height: 500px;
+        overflow: hidden;
+        transition: max-height 0.28s ease, padding 0.28s ease;
+        cursor: pointer;
     }
+    .footer.collapsed {
+        max-height: 14px;
+        padding: 3px 12px;
+    }
+    .footer.collapsed .footer-text { opacity: 0; }
+    .footer-text { transition: opacity 0.2s ease; white-space: nowrap; }
     .footer strong { color: #ffffff; }
     .footer a { color: var(--cyan-300); text-decoration: none; }
     .footer a:hover { text-decoration: underline; }
@@ -165,6 +242,10 @@
 </head>
 <body>
 
+    <div class="menu-handle" id="menu-handle">☰ Menu <span class="arrow">▾</span></div>
+    <div class="menu-scrim" id="menu-scrim"></div>
+
+    <div class="top-bar" id="top-bar">
     <div class="top-header">
         <div class="title-line">
             <span class="title-hi">हापा गुड्स शेड - राजकोट मंडल (प.रे.)</span>
@@ -210,6 +291,7 @@
         <li><a href="javascript:void(0)" class="coming-soon" data-label="Downloads">📥 Downloads</a></li>
         <li><a href="javascript:void(0)" class="coming-soon" data-label="Contact">📞 Contact</a></li>
     </ul>
+    </div>
 
     <div class="content-area">
         <div class="content-frame-wrap">
@@ -217,8 +299,8 @@
         </div>
     </div>
 
-    <div class="footer">
-        <strong>Chief Goods Supervisor</strong> &nbsp;|&nbsp; Mobile : 97240 94976 &nbsp;|&nbsp; E-mail : <a href="mailto:hapacgs@gmail.com">hapacgs@gmail.com</a>
+    <div class="footer collapsed" id="footer">
+        <span class="footer-text"><strong>Chief Goods Supervisor</strong> &nbsp;|&nbsp; Mobile : 97240 94976 &nbsp;|&nbsp; E-mail : <a href="mailto:hapacgs@gmail.com" onclick="event.stopPropagation()">hapacgs@gmail.com</a></span>
     </div>
 
     <script>
@@ -274,6 +356,80 @@
 
         // Show the default image on first load instead of a blank page
         showDefaultHome();
+
+        // ---- Collapsible top-bar (header + navbar) ----
+        var menuHandle = document.getElementById('menu-handle');
+        var menuScrim  = document.getElementById('menu-scrim');
+        var topBar     = document.getElementById('top-bar');
+
+        function openMenu() { document.body.classList.add('menu-open'); }
+        function closeMenu() {
+            document.body.classList.remove('menu-open');
+            document.querySelectorAll('.navbar > li.dropdown-open').forEach(function (openLi) {
+                openLi.classList.remove('dropdown-open');
+            });
+        }
+        function toggleMenu() { document.body.classList.toggle('menu-open'); }
+
+        menuHandle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            toggleMenu();
+        });
+        menuScrim.addEventListener('click', closeMenu);
+
+        // Dropdown parent links (Inward Rake ▼ / Outstanding ▼) should just
+        // open/close their own submenu on tap - not close the whole top-bar.
+        document.querySelectorAll('.navbar > li').forEach(function (li) {
+            var toggleLink = li.querySelector(':scope > a');
+            var submenu = li.querySelector(':scope > .dropdown');
+            if (submenu && toggleLink) {
+                toggleLink.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var wasOpen = li.classList.contains('dropdown-open');
+                    document.querySelectorAll('.navbar > li.dropdown-open').forEach(function (openLi) {
+                        openLi.classList.remove('dropdown-open');
+                    });
+                    if (!wasOpen) li.classList.add('dropdown-open');
+                });
+            }
+        });
+
+        // After picking an actual content link (real page or coming-soon /
+        // home), auto-close the whole top-bar so the iframe gets full screen.
+        // Dropdown "parent" toggles (Inward Rake ▼, Outstanding ▼) are
+        // excluded - handled separately above.
+        document.querySelectorAll('.navbar a').forEach(function (link) {
+            var isDropdownToggle = link.parentElement.querySelector(':scope > .dropdown') !== null;
+            if (isDropdownToggle) return;
+            link.addEventListener('click', function () {
+                // let the click/srcdoc swap happen first, then collapse
+                setTimeout(closeMenu, 150);
+            });
+        });
+
+        // Desktop / mouse users: hovering near the very top edge reveals
+        // the menu automatically; moving away hides it again (unless it
+        // was pinned open by clicking the handle).
+        var pointerHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (pointerHover) {
+            var hideTimer = null;
+            document.addEventListener('mousemove', function (e) {
+                if (e.clientY <= 6) {
+                    clearTimeout(hideTimer);
+                    openMenu();
+                } else if (e.clientY > 90 && !topBar.contains(e.target) && e.target !== menuHandle) {
+                    clearTimeout(hideTimer);
+                    hideTimer = setTimeout(closeMenu, 500);
+                }
+            });
+        }
+
+        // ---- Collapsible footer: tap to expand/collapse ----
+        var footer = document.getElementById('footer');
+        footer.addEventListener('click', function () {
+            footer.classList.toggle('collapsed');
+        });
     </script>
 
 </body>
