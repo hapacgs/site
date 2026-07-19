@@ -15,17 +15,24 @@ function doGet(e) {
           if (ids[i][0] == rakeId) {
             var rowVals = sheet.getRange(i + 2, 1, 1, 30).getValues()[0]; // A to AD
             var data = {
-              rakeType: rowVals[1],                                 // B - RAKE TYPE (FREE HRS fallback calc ke liye)
-              wagonType: rowVals[2],                                // C - WAGON TYPE
+              rakeType: rowVals[1],                                 // B
+              wagonType: rowVals[2],                                // C
               from: rowVals[3],                                     // D
               to: rowVals[4],                                       // E
               wagons: rowVals[5],                                   // F
-              invoiceNo: rowVals[6],                                // G - INVOICE NO.
-              invoiceDate: formatCell(rowVals[7], "dd/MM/yyyy"),    // H - INVOICE DATE
-              actualWt: rowVals[8],                                 // I - ACTUAL WT (TONNE)
-              consigner: rowVals[9],                                // J - CONSIGNER
-              consignee: rowVals[10],                               // K - CONSIGNEE
+              invoiceNo: rowVals[6],                                // G
+              invoiceDate: formatCell(rowVals[7], "dd/MM/yyyy"),    // H
+              actualWt: rowVals[8],                                 // I
+              consigner: rowVals[9],                                // J
+              consignee: rowVals[10],                               // K
               commodity: rowVals[11],                               // L
+              wagonSummary: (function () {                         // M - WAGON SUMMARY JSON
+                try {
+                  return rowVals[12] ? JSON.parse(rowVals[12]) : [];
+                } catch (e2) {
+                  return [];
+                }
+              })(),
               rrNumber: rowVals[13],                                // N
               rrDate: formatCell(rowVals[14], "dd/MM/yyyy"),        // O
               chargeWeight: rowVals[15],                            // P
@@ -36,14 +43,14 @@ function doGet(e) {
               placementTime: formatCell(rowVals[20], "HH:mm"),      // U
               releaseDate: formatCell(rowVals[21], "dd/MM/yyyy"),   // V
               releaseTime: formatCell(rowVals[22], "HH:mm"),        // W
-              totalDet: formatCell(rowVals[23], "H:mm"),            // X - TOTAL DET.
-              freeHrs: rowVals[24],                                 // Y - FREE HRS.
-              nightInc: formatCell(rowVals[25], "H:mm"),            // Z - NIGHT INC.
-              netDet: formatCell(rowVals[26], "H:mm"),              // AA - NET DET.
-              demmHrs: rowVals[27],                                 // AB - DEMM. HRS.
-              demmAmt: rowVals[28],                                 // AC - DEMM. AMT.
-              status: rowVals[29],                                  // AD - STATUS
-              suggestedClass: getClassForCommodity(ss, rowVals[11]) // CMDT_MASTER lookup (commodity code -> class), Delivery Book ke liye
+              totalDet: formatCell(rowVals[23], "H:mm"),            // X
+              freeHrs: rowVals[24],                                 // Y
+              nightInc: formatCell(rowVals[25], "H:mm"),            // Z
+              netDet: formatCell(rowVals[26], "H:mm"),              // AA
+              demmHrs: rowVals[27],                                 // AB
+              demmAmt: rowVals[28],                                 // AC
+              status: rowVals[29],                                  // AD
+              suggestedClass: getClassForCommodity(ss, rowVals[11])
             };
             return ContentService.createTextOutput(JSON.stringify({status:"success", found:true, data:data}))
               .setMimeType(ContentService.MimeType.JSON);
@@ -54,49 +61,43 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // WTR dropdown: sirf "Arrived" status wali Rake IDs (Inward Tally submit hone ke baad, WTR fill hone se pehle)
+    // Placement Memo ka "SELECT RAKE ID" dropdown yahi action use karta hain.
+    // Status "DELIVERED" match karte hain (pehle yahan "Arrived" tha, jo galat
+    // rakes dikha raha tha).
     if (action === "pending") {
       var lastRow3 = sheet.getLastRow();
       var idsList2 = [];
       if (lastRow3 >= 2) {
         var rows = sheet.getRange(2, 1, lastRow3 - 1, 30).getValues();
         for (var j = rows.length - 1; j >= 0; j--) {
-          var st = rows[j][29]; // AD - STATUS
-          if (st === "Arrived") {
-            idsList2.push(rows[j][0]);
-          }
+          var st = rows[j][29];
+          if (st === "DELIVERED") { idsList2.push(rows[j][0]); }
         }
       }
       return ContentService.createTextOutput(JSON.stringify({status:"success", rakeIds: idsList2}))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Delivery Book dropdown: sirf "Released" status wali Rake IDs (WTR submit hone ke baad)
     if (action === "done") {
       var lastRow4 = sheet.getLastRow();
       var idsList3 = [];
       if (lastRow4 >= 2) {
         var rows2 = sheet.getRange(2, 1, lastRow4 - 1, 30).getValues();
         for (var k = rows2.length - 1; k >= 0; k--) {
-          var st2 = rows2[k][29]; // AD - STATUS
-          if (st2 === "Released") {
-            idsList3.push(rows2[k][0]);
-          }
+          var st2 = rows2[k][29];
+          if (st2 === "RELEASED") { idsList3.push(rows2[k][0]); }
         }
       }
       return ContentService.createTextOutput(JSON.stringify({status:"success", rakeIds: idsList3}))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Delivery Book: DELIVERY NO. auto-calc — CMDT/Local ya Foreign type ke hisaab se
-    // AE (LOCAL/FOREIGN) column me se match dhoondh kar AF (DELIVERY NO.) ka max value nikaalo,
-    // aur agla number (+1) return karo. Koi match na mile to 1 se shuru karo.
     if (action === "lastDeliveryNo") {
-      var type = (e.parameter.type || "").toString().trim().toUpperCase(); // LOCAL / FOREIGN
+      var type = (e.parameter.type || "").toString().trim().toUpperCase();
       var lastRow5 = sheet.getLastRow();
       var maxNo = 0;
       if (lastRow5 >= 2) {
-        var rows3 = sheet.getRange(2, 31, lastRow5 - 1, 2).getValues(); // AE (LOCAL/FOREIGN), AF (DELIVERY NO.)
+        var rows3 = sheet.getRange(2, 31, lastRow5 - 1, 2).getValues();
         for (var m = 0; m < rows3.length; m++) {
           var lf = (rows3[m][0] || "").toString().trim().toUpperCase();
           if (lf === type) {
@@ -109,7 +110,6 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // Delivery Book: abhi ka SHUNTING AMOUNT rate (per hr) — Script Properties me store hota hain
     if (action === "getShuntingRate") {
       var rateProp1 = PropertiesService.getScriptProperties().getProperty("SHUNTING_RATE_PER_HR");
       var rateNum1 = rateProp1 ? parseFloat(rateProp1) : 10620;
@@ -117,7 +117,6 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    // default action: latest 5 rake ids (kept for backward compatibility)
     var lastRow2 = sheet.getLastRow();
     var idsList = [];
     if (lastRow2 >= 2) {
@@ -309,8 +308,8 @@ function doPost(e) {
             sheet.getRange(rowNum, 28).setValue(demmHrsVal);  // AB - DEMM. HRS.
             sheet.getRange(rowNum, 29).setValue(demmAmtVal);  // AC - DEMM. AMT.
 
-            // AD - STATUS: WTR submit ka matlab hain saara data bhar gaya => Released
-            sheet.getRange(rowNum, 30).setValue("Released"); // AD column
+            // AD - STATUS: WTR submit ka matlab hain saara data bhar gaya => RELEASED
+            sheet.getRange(rowNum, 30).setValue("RELEASED"); // AD column
 
             found = true;
             break;
@@ -408,9 +407,9 @@ function doPost(e) {
 
     sheet.appendRow(data2);
 
-    // Naye row ke liye STATUS set karo: Inward Tally submit hote hi => Arrived
+    // Naye row ke liye STATUS set karo: Inward Tally submit hote hi => ARRIVED
     var newRow = sheet.getLastRow();
-    sheet.getRange(newRow, 30).setValue("Arrived"); // AD column
+    sheet.getRange(newRow, 30).setValue("ARRIVED"); // AD column
 
     return ContentService.createTextOutput(JSON.stringify({status:"success"}))
       .setMimeType(ContentService.MimeType.JSON);

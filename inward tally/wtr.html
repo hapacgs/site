@@ -215,10 +215,6 @@ button:disabled {
   box-shadow: 0 0 12px rgba(0,229,255,0.35);
 }
 
-.form-row input[type="date"], .form-row input[type="time"] {
-  color-scheme: dark;
-}
-
 </style>
 </head>
 
@@ -250,7 +246,7 @@ button:disabled {
             </div>
             <div class="form-row">
                 <label>RR DATE <span class="small-note">(DD/MM/YYYY)</span></label>
-                <input type="date" id="rrDate">
+                <input type="text" id="rrDate" inputmode="numeric" placeholder="DD/MM/YYYY">
             </div>
             <div class="form-row">
                 <label>CHARGE WEIGHT <span class="small-note">(IN TONNE)</span></label>
@@ -269,20 +265,20 @@ button:disabled {
                 <input type="number" step="0.01" id="totalFreightInclGst" readonly style="opacity:0.75;">
             </div>
             <div class="form-row">
-                <label>PLACEMENT DATE</label>
-                <input type="date" id="placementDate">
+                <label>PLACEMENT DATE <span class="small-note">(DD/MM/YYYY)</span></label>
+                <input type="text" id="placementDate" inputmode="numeric" placeholder="DD/MM/YYYY">
             </div>
             <div class="form-row">
-                <label>PLACEMENT TIME</label>
-                <input type="time" id="placementTime">
+                <label>PLACEMENT TIME <span class="small-note">(24 HR)</span></label>
+                <input type="text" id="placementTime" inputmode="numeric" placeholder="HH:MM">
             </div>
             <div class="form-row">
-                <label>RELEASE DATE</label>
-                <input type="date" id="releaseDate">
+                <label>RELEASE DATE <span class="small-note">(DD/MM/YYYY)</span></label>
+                <input type="text" id="releaseDate" inputmode="numeric" placeholder="DD/MM/YYYY">
             </div>
             <div class="form-row">
-                <label>RELEASE TIME</label>
-                <input type="time" id="releaseTime">
+                <label>RELEASE TIME <span class="small-note">(24 HR)</span></label>
+                <input type="text" id="releaseTime" inputmode="numeric" placeholder="HH:MM">
             </div>
             <div class="form-row">
                 <label>TOTAL DET. <span class="small-note">(AUTO CALCULATED)</span></label>
@@ -411,13 +407,13 @@ function handleRakeIdSelected() {
 
                 // Pehle se maujood data prefill karo, jo nahi hain wo khali/default rahega
                 document.getElementById("rrNumber").value = res.data.rrNumber || "";
-                document.getElementById("rrDate").value = res.data.rrDate ? formatDateISO(res.data.rrDate) : new Date().toISOString().split("T")[0];
+                document.getElementById("rrDate").value = res.data.rrDate || todayDMY();
                 document.getElementById("chargeWeight").value = res.data.chargeWeight || "";
                 document.getElementById("freightExclGst").value = res.data.freightExclGst || "";
                 document.getElementById("gst").value = res.data.gst || "";
-                document.getElementById("placementDate").value = res.data.placementDate ? formatDateISO(res.data.placementDate) : "";
+                document.getElementById("placementDate").value = res.data.placementDate || "";
                 document.getElementById("placementTime").value = res.data.placementTime || "";
-                document.getElementById("releaseDate").value = res.data.releaseDate ? formatDateISO(res.data.releaseDate) : "";
+                document.getElementById("releaseDate").value = res.data.releaseDate || "";
                 document.getElementById("releaseTime").value = res.data.releaseTime || "";
 
                 // FREE HRS Sheet ke Y column se load karo. Agar wahan khali mila
@@ -469,18 +465,68 @@ function calculateTotalFreight() {
 document.getElementById("freightExclGst").addEventListener("input", calculateTotalFreight);
 document.getElementById("gst").addEventListener("input", calculateTotalFreight);
 
-function formatDateISO(dmy) {
+// DD/MM/YYYY (jo ab hamesha date fields me dikhta/store hota hain) -> YYYY-MM-DD,
+// sirf JS Date object banane ke liye internally use hota hain
+function dmyToISO(dmy) {
     if (!dmy) return "";
-    let p = dmy.split("/"); // DD/MM/YYYY
+    let p = dmy.split("/");
     if (p.length !== 3) return "";
-    return `${p[2]}-${p[1]}-${p[0]}`;
+    let dd = p[0].padStart(2, "0");
+    let mm = p[1].padStart(2, "0");
+    let yyyy = p[2];
+    return `${yyyy}-${mm}-${dd}`;
 }
 
-function formatDateDMY(isoDate) {
-    if (!isoDate) return "";
-    let p = isoDate.split("-"); // YYYY-MM-DD
-    return `${p[2]}/${p[1]}/${p[0]}`;
+// Aaj ki date DD/MM/YYYY format me
+function todayDMY() {
+    let d = new Date();
+    let dd = String(d.getDate()).padStart(2, "0");
+    let mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${dd}/${mm}/${d.getFullYear()}`;
 }
+
+// Text input ko type karte hi DD/MM/YYYY me auto-format karta hain (sirf ank allowed,
+// "/" khud-ba-khud lag jata hain) — isse mobile ya PC, device ki locale ka koi farak
+// nahi padta, hamesha DD/MM/YYYY hi dikhega
+function attachDateMask(id) {
+    let el = document.getElementById(id);
+    el.setAttribute("maxlength", "10");
+    el.addEventListener("input", function () {
+        let digits = this.value.replace(/\D/g, "").substring(0, 8);
+        let out = digits;
+        if (digits.length > 4) out = digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/" + digits.substring(4);
+        else if (digits.length > 2) out = digits.substring(0, 2) + "/" + digits.substring(2);
+        this.value = out;
+    });
+}
+
+// Text input ko type karte hi 24 HR HH:MM me auto-format karta hain (":" khud-ba-khud
+// lag jata hain, ghante 23 se aur minute 59 se zyada nahi jaa sakte) — AM/PM device
+// locale ka yahan koi role nahi, hamesha 24 hr HH:MM hi dikhega
+function attachTimeMask(id) {
+    let el = document.getElementById(id);
+    el.setAttribute("maxlength", "5");
+    el.addEventListener("input", function () {
+        let digits = this.value.replace(/\D/g, "").substring(0, 4);
+        let hh = digits.substring(0, 2);
+        if (hh.length === 2 && parseInt(hh, 10) > 23) hh = "23";
+        let out = hh;
+        if (digits.length > 2) out = hh + ":" + digits.substring(2);
+        this.value = out;
+    });
+    el.addEventListener("blur", function () {
+        let parts = this.value.split(":");
+        if (parts.length === 2 && parts[1] !== "") {
+            let mm = parseInt(parts[1], 10);
+            if (!isNaN(mm) && mm > 59) parts[1] = "59";
+            if (parts[1].length === 1) parts[1] = "0" + parts[1];
+            this.value = parts[0] + ":" + parts[1];
+        }
+    });
+}
+
+["rrDate", "placementDate", "releaseDate"].forEach(attachDateMask);
+["placementTime", "releaseTime"].forEach(attachTimeMask);
 
 function submitUpdateEntry() {
     if (!selectedRakeId) { alert("Pehle ek valid Rake ID select karo!"); return; }
@@ -494,15 +540,15 @@ function submitUpdateEntry() {
 
     let updateData = [
         document.getElementById("rrNumber").value.trim(),
-        formatDateDMY(document.getElementById("rrDate").value),
+        document.getElementById("rrDate").value.trim(),
         document.getElementById("chargeWeight").value,
         document.getElementById("freightExclGst").value,
         document.getElementById("gst").value,
         document.getElementById("totalFreightInclGst").value,
-        formatDateDMY(document.getElementById("placementDate").value),
-        document.getElementById("placementTime").value,
-        formatDateDMY(document.getElementById("releaseDate").value),
-        document.getElementById("releaseTime").value,
+        document.getElementById("placementDate").value.trim(),
+        document.getElementById("placementTime").value.trim(),
+        document.getElementById("releaseDate").value.trim(),
+        document.getElementById("releaseTime").value.trim(),
         totalDet                                                       // X - TOTAL DET. (HH:MM)
     ];
 
@@ -566,8 +612,8 @@ function submitUpdateEntry() {
 // e.g. 45 hrs 10 min => "45:10"
 function computeTotalDet(pDate, pTime, rDate, rTime) {
     if (!pDate || !pTime || !rDate || !rTime) return "";
-    let placement = new Date(`${pDate}T${pTime}:00`);
-    let release = new Date(`${rDate}T${rTime}:00`);
+    let placement = new Date(`${dmyToISO(pDate)}T${pTime}:00`);
+    let release = new Date(`${dmyToISO(rDate)}T${rTime}:00`);
     if (isNaN(placement.getTime()) || isNaN(release.getTime())) return "";
     let diffMs = release - placement;
     if (diffMs < 0) return "";
@@ -599,7 +645,7 @@ function computeNightIncentive(pDate, pTime, freeHrs) {
     let hrs = parseFloat(freeHrs);
     if (isNaN(hrs) || hrs <= 0) return "";
 
-    let placement = new Date(`${pDate}T${pTime}:00`);
+    let placement = new Date(`${dmyToISO(pDate)}T${pTime}:00`);
     if (isNaN(placement.getTime())) return "";
 
     let windowEnd = new Date(placement.getTime() + hrs * 3600000);
