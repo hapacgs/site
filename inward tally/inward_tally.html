@@ -362,6 +362,7 @@ function sendToSheet() {
     .then(res => {
         if (res.status === "duplicate") {
             alert("DUPLICATE ENTRY !!! RAKE ID '" + currentPayload[0] + "' Already Exist in Google Sheet.");
+            location.reload();
         } else if (res.status === "success") {
             alert("DATA SENT SUCCESSFULLY !!!");
             location.reload();
