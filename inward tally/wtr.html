@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAGON TRANSFER REGISTER (WTR)</title>
+
+<style>
+:root {
+  --navy-deep: #050b18;
+  --navy: #0a1630;
+  --navy-mid: #0f2148;
+  --cyan: #00e5ff;
+  --cyan-soft: #7ff5ff;
+  --glass: rgba(255,255,255,0.05);
+  --glass-border: rgba(0,229,255,0.25);
+  --text: #eaf6ff;
+  --text-dim: #8fa9c2;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: var(--text);
+  padding: 28px 16px;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(0,229,255,0.12), transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(0,120,255,0.15), transparent 45%),
+    linear-gradient(160deg, var(--navy-deep), var(--navy) 55%, var(--navy-mid));
+  background-attachment: fixed;
+}
+
+.container {
+  max-width: 560px;
+  margin: auto;
+  background: var(--glass);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  padding: 24px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 0 40px rgba(0,229,255,0.06);
+}
+
+h2 {
+  text-align: center;
+  color: var(--cyan-soft);
+  letter-spacing: 4px;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  text-shadow: 0 0 18px rgba(0,229,255,0.5);
+}
+
+button {
+  padding: 8px 14px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(0,120,255,0.12));
+  border: 1px solid rgba(0,229,255,0.35);
+  color: var(--cyan-soft);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: linear-gradient(135deg, rgba(0,229,255,0.35), rgba(0,120,255,0.22));
+  box-shadow: 0 0 16px rgba(0,229,255,0.35);
+  transform: translateY(-1px);
+}
+
+button:active { transform: translateY(0); }
+
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.station-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.station-row label {
+  color: var(--cyan-soft);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+}
+
+.station-row input,
+.station-row select {
+  width: 90px;
+  text-align: center;
+  padding: 8px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.station-row select {
+  background: rgba(10,22,48,0.95);
+}
+
+.station-row input:focus,
+.station-row select:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0,229,255,0.35);
+}
+
+.submit-btn {
+  padding: 10px 34px;
+  background: linear-gradient(135deg, var(--cyan), #0090c8);
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #001824;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(0,229,255,0.4);
+}
+
+.submit-btn:hover { box-shadow: 0 0 28px rgba(0,229,255,0.6); }
+
+.mini-info-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 4px 0 18px 0;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  overflow: hidden;
+  table-layout: fixed;
+}
+
+.mini-info-table td {
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 12px;
+  border-bottom: 1px solid rgba(0,229,255,0.12);
+  border-right: 1px solid rgba(0,229,255,0.08);
+  word-wrap: break-word;
+}
+
+.mini-info-table td:last-child { border-right: none; }
+
+.mini-info-table tr:first-child td {
+  color: var(--cyan-soft);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: rgba(0,229,255,0.06);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.mini-info-table tr:last-child td { border-bottom: none; }
+
+.form-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.form-row label {
+  color: var(--cyan-soft);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  flex: 1 1 auto;
+}
+
+.form-row .small-note {
+  display: block;
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+}
+
+.form-row input {
+  padding: 8px 6px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 13px;
+  width: 35%;
+  flex: 0 0 35%;
+  text-align: right;
+  min-width: 0;
+}
+
+.form-row input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 12px rgba(0,229,255,0.35);
+}
+
+.form-row input[type="date"], .form-row input[type="time"] {
+  color-scheme: dark;
+}
+
+</style>
+</head>
+
+<body>
+<div class="container">
+    <h2>WAGON TRANSFER REGISTER (WTR)</h2>
+
+    <div id="update-section">
+        <div class="station-row">
+            <label>SELECT RAKE ID HERE :</label>
+            <select id="rakeIdSelect" style="width:220px;">
+                <option value=""></option>
+            </select>
+        </div>
+
+        <table id="rakeInfoTable" class="mini-info-table" style="display:none;">
+            <tr>
+                <td>FROM</td><td>TO</td><td>WGNS.</td><td>COMMODITY</td>
+            </tr>
+            <tr>
+                <td id="infoFrom"></td><td id="infoTo"></td><td id="infoWagons"></td><td id="infoCommodity"></td>
+            </tr>
+        </table>
+
+        <div id="entryForm" style="display:none;">
+            <div class="form-row">
+                <label>RR NUMBER :</label>
+                <input type="text" id="rrNumber">
+            </div>
+            <div class="form-row">
+                <label>RR DATE <span class="small-note">(DD/MM/YYYY)</span></label>
+                <input type="date" id="rrDate">
+            </div>
+            <div class="form-row">
+                <label>CHARGE WEIGHT <span class="small-note">(IN TONNE)</span></label>
+                <input type="text" id="chargeWeight" inputmode="decimal" placeholder="e.g. 3852.2">
+            </div>
+            <div class="form-row">
+                <label>FREIGHT <span class="small-note">(EXCLUDING G.S.T.)</span></label>
+                <input type="number" step="0.01" id="freightExclGst">
+            </div>
+            <div class="form-row">
+                <label>G.S.T.</label>
+                <input type="number" step="0.01" id="gst">
+            </div>
+            <div class="form-row">
+                <label>TOTAL FREIGHT <span class="small-note">(INCLUDING G.S.T.)</span></label>
+                <input type="number" step="0.01" id="totalFreightInclGst" readonly style="opacity:0.75;">
+            </div>
+            <div class="form-row">
+                <label>PLACEMENT DATE</label>
+                <input type="date" id="placementDate">
+            </div>
+            <div class="form-row">
+                <label>PLACEMENT TIME</label>
+                <input type="time" id="placementTime">
+            </div>
+            <div class="form-row">
+                <label>RELEASE DATE</label>
+                <input type="date" id="releaseDate">
+            </div>
+            <div class="form-row">
+                <label>RELEASE TIME</label>
+                <input type="time" id="releaseTime">
+            </div>
+            <div class="form-row">
+                <label>TOTAL DET. <span class="small-note">(AUTO CALCULATED)</span></label>
+                <input type="text" id="totalDetDisplay" readonly style="opacity:0.75;">
+            </div>
+            <div class="form-row">
+                <label>FREE HRS. <span class="small-note">(AUTO CALCULATED)</span></label>
+                <input type="text" id="freeHrsDisplay" readonly style="opacity:0.75;">
+            </div>
+            <div class="form-row">
+                <label>NIGHT INCENTIVE <span class="small-note">(AUTO CALCULATED)</span></label>
+                <input type="text" id="nightIncDisplay" readonly style="opacity:0.75;">
+            </div>
+            <div class="form-row">
+                <label>NET DET. <span class="small-note">(AUTO CALCULATED)</span></label>
+                <input type="text" id="netDetDisplay" readonly style="opacity:0.75;">
+            </div>
+            <div class="form-row">
+                <label>DEMM. HRS. <span class="small-note">(AUTO CALCULATED)</span></label>
+                <input type="text" id="demmHrsDisplay" readonly style="opacity:0.75;">
+            </div>
+            <div class="form-row">
+                <label>DEMM. AMT. <span class="small-note">(AUTO CALCULATED)</span></label>
+                <input type="text" id="demmAmtDisplay" readonly style="opacity:0.75;">
+            </div>
+            <div class="form-row">
+                <label>STATUS</label>
+                <input type="text" id="statusDisplay" readonly style="opacity:0.75;">
+            </div>
+            <div style="text-align:center; margin-top:6px;">
+                <button class="submit-btn" id="updateSubmitBtn" onclick="submitUpdateEntry()">SUBMIT</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
+const SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
+const SHEET_NAME = "IW_Data";
+
+function loadPendingRakeIds() {
+    let selectEl = document.getElementById("rakeIdSelect");
+    let currentValue = selectEl.value; // agar koi ID abhi selected hain (edit ke dauraan), usko refresh ke baad bhi selected rakhna hain
+
+    selectEl.innerHTML = "";
+    let placeholderOpt = document.createElement("option");
+    placeholderOpt.value = "";
+    selectEl.appendChild(placeholderOpt);
+
+    let url = APPS_SCRIPT_URL + "?action=pending&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === "success" && Array.isArray(res.rakeIds)) {
+                res.rakeIds.forEach(id => {
+                    let opt = document.createElement("option");
+                    opt.value = id;
+                    opt.textContent = id;
+                    selectEl.appendChild(opt);
+                });
+                // Currently open Rake ID ko dropdown me dobara select kar do (agar wo ab bhi list me hain)
+                if (currentValue && res.rakeIds.indexOf(currentValue) !== -1) {
+                    selectEl.value = currentValue;
+                }
+            }
+        })
+        .catch(err => {
+            console.error(err);
+        });
+}
+
+let selectedRakeId = "";
+let selectedWagonCount = 0;
+let freeHrsNeedsBackfill = false; // true jab Sheet ke Y column me FREE HRS khali mile aur hum yahin se calculate karke fill karein
+
+// Inward Tally.html jaisa hi FREE HRS fallback logic (sirf tab chalega jab Sheet me Y column khali ho,
+// jaise purani entries jo is feature se pehle ki hain)
+function computeFreeHoursFallback(rakeType, wagonCount) {
+    let type = (rakeType || "").toString().trim().toUpperCase();
+    let n = parseInt(wagonCount) || 0;
+    if (type === "M") return 5;
+    if (n < 21) return 5;
+    if (n > 20 && n < 31) return 7;
+    if (n > 30 && n < 45) return 9;
+    if (n > 45) return 11;
+    return 5;
+}
+
+document.getElementById("rakeIdSelect").addEventListener("change", handleRakeIdSelected);
+
+function handleRakeIdSelected() {
+    let rakeId = document.getElementById("rakeIdSelect").value.trim();
+    if (!rakeId) {
+        document.getElementById("rakeInfoTable").style.display = "none";
+        document.getElementById("entryForm").style.display = "none";
+        document.getElementById("totalDetDisplay").value = "";
+        document.getElementById("freeHrsDisplay").value = "";
+        document.getElementById("nightIncDisplay").value = "";
+        document.getElementById("netDetDisplay").value = "";
+        document.getElementById("demmHrsDisplay").value = "";
+        document.getElementById("demmAmtDisplay").value = "";
+        document.getElementById("statusDisplay").value = "";
+        selectedRakeId = "";
+        selectedWagonCount = 0;
+        return;
+    }
+
+    let url = APPS_SCRIPT_URL + "?action=getRow&rakeId=" + encodeURIComponent(rakeId)
+        + "&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
+
+    fetch(url)
+        .then(r => r.json())
+        .then(res => {
+            console.log("WTR getRow response:", res);
+            if (res.status === "success" && res.found) {
+                selectedRakeId = rakeId;
+                selectedWagonCount = parseInt(res.data.wagons) || 0;
+                document.getElementById("infoFrom").innerText = res.data.from;
+                document.getElementById("infoTo").innerText = res.data.to;
+                document.getElementById("infoWagons").innerText = res.data.wagons;
+                document.getElementById("infoCommodity").innerText = res.data.commodity;
+                document.getElementById("rakeInfoTable").style.display = "table";
+                document.getElementById("entryForm").style.display = "block";
+
+                // Pehle se maujood data prefill karo, jo nahi hain wo khali/default rahega
+                document.getElementById("rrNumber").value = res.data.rrNumber || "";
+                document.getElementById("rrDate").value = res.data.rrDate ? formatDateISO(res.data.rrDate) : new Date().toISOString().split("T")[0];
+                document.getElementById("chargeWeight").value = res.data.chargeWeight || "";
+                document.getElementById("freightExclGst").value = res.data.freightExclGst || "";
+                document.getElementById("gst").value = res.data.gst || "";
+                document.getElementById("placementDate").value = res.data.placementDate ? formatDateISO(res.data.placementDate) : "";
+                document.getElementById("placementTime").value = res.data.placementTime || "";
+                document.getElementById("releaseDate").value = res.data.releaseDate ? formatDateISO(res.data.releaseDate) : "";
+                document.getElementById("releaseTime").value = res.data.releaseTime || "";
+
+                // FREE HRS Sheet ke Y column se load karo. Agar wahan khali mila
+                // (jaise purani entries is feature se pehle ki), to yahin se
+                // calculate karke dikha do aur SAVE ke time Sheet me bhi bhar do.
+                let freeHrsFromSheet = parseFloat(res.data.freeHrs);
+                if (!isNaN(freeHrsFromSheet) && freeHrsFromSheet > 0) {
+                    document.getElementById("freeHrsDisplay").value = freeHrsFromSheet;
+                    freeHrsNeedsBackfill = false;
+                } else {
+                    let fallback = computeFreeHoursFallback(res.data.rakeType, res.data.wagons);
+                    document.getElementById("freeHrsDisplay").value = fallback;
+                    freeHrsNeedsBackfill = true;
+                    console.warn("FREE HRS Google Sheet (Y column) me khali tha is Rake ID ke liye. Calculate karke bhar diya:", fallback);
+                }
+
+                document.getElementById("statusDisplay").value = res.data.status || "";
+                calculateTotalFreight();
+                refreshDerivedFields();
+            } else {
+                selectedRakeId = "";
+                document.getElementById("rakeInfoTable").style.display = "none";
+                document.getElementById("entryForm").style.display = "none";
+                alert("Ye Rake ID Google Sheet me nahi mila!");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("ERROR: Check console.");
+        });
+}
+
+document.getElementById("chargeWeight").addEventListener("input", function() {
+    this.value = this.value.replace(/[^0-9.]/g, '');
+    let parts = this.value.split('.');
+    if (parts.length > 2) this.value = parts[0] + '.' + parts.slice(1).join('');
+    parts = this.value.split('.');
+    if (parts[1] && parts[1].length > 1) {
+        this.value = parts[0] + '.' + parts[1].substring(0, 1);
+    }
+});
+
+function calculateTotalFreight() {
+    let freight = parseFloat(document.getElementById("freightExclGst").value) || 0;
+    let gst = parseFloat(document.getElementById("gst").value) || 0;
+    document.getElementById("totalFreightInclGst").value = (freight + gst).toFixed(2);
+}
+
+document.getElementById("freightExclGst").addEventListener("input", calculateTotalFreight);
+document.getElementById("gst").addEventListener("input", calculateTotalFreight);
+
+function formatDateISO(dmy) {
+    if (!dmy) return "";
+    let p = dmy.split("/"); // DD/MM/YYYY
+    if (p.length !== 3) return "";
+    return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
+function formatDateDMY(isoDate) {
+    if (!isoDate) return "";
+    let p = isoDate.split("-"); // YYYY-MM-DD
+    return `${p[2]}/${p[1]}/${p[0]}`;
+}
+
+function submitUpdateEntry() {
+    if (!selectedRakeId) { alert("Pehle ek valid Rake ID select karo!"); return; }
+
+    let totalDet = computeTotalDet(
+        document.getElementById("placementDate").value,
+        document.getElementById("placementTime").value,
+        document.getElementById("releaseDate").value,
+        document.getElementById("releaseTime").value
+    );
+
+    let updateData = [
+        document.getElementById("rrNumber").value.trim(),
+        formatDateDMY(document.getElementById("rrDate").value),
+        document.getElementById("chargeWeight").value,
+        document.getElementById("freightExclGst").value,
+        document.getElementById("gst").value,
+        document.getElementById("totalFreightInclGst").value,
+        formatDateDMY(document.getElementById("placementDate").value),
+        document.getElementById("placementTime").value,
+        formatDateDMY(document.getElementById("releaseDate").value),
+        document.getElementById("releaseTime").value,
+        totalDet                                                       // X - TOTAL DET. (HH:MM)
+    ];
+
+    let btn = document.getElementById("updateSubmitBtn");
+    btn.disabled = true;
+    btn.innerText = "SUBMITTING...";
+
+    let nightIncentive = document.getElementById("nightIncDisplay").value;
+    let netDet = document.getElementById("netDetDisplay").value;
+    let demmHrs = document.getElementById("demmHrsDisplay").value;
+    let demmAmt = document.getElementById("demmAmtDisplay").value;
+
+    let payload = {
+        action: "updateEntry",
+        sheetId: SHEET_ID,
+        sheetName: SHEET_NAME,
+        rakeId: selectedRakeId,
+        data: updateData,
+        nightIncentive: nightIncentive,
+        netDet: netDet,
+        demmHrs: demmHrs,
+        demmAmt: demmAmt
+    };
+
+    // Agar Sheet ke Y column me FREE HRS pehle se khali tha, to abhi jo humne
+    // calculate karke dikhaya hain wahi bhej rahe hain taaki Sheet me bhi bhar jaaye.
+    // (Normal case me FREE HRS Inward Tally.html submit ke time hi bhar chuka hota hain,
+    // to yeh field tab bheja hi nahi jaata aur Sheet ka Y column touch nahi hota.)
+    if (freeHrsNeedsBackfill) {
+        payload.freeHrs = document.getElementById("freeHrsDisplay").value;
+    }
+
+    console.log("WTR SAVE payload:", payload);
+
+    fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.status === "success") {
+            alert("DATA UPDATE SUCCESSFULLY !!!");
+            location.reload();
+            handleRakeIdSelected(); // STATUS aur baaki fields ko latest data se refresh karo
+            loadPendingRakeIds();   // Dropdown se DONE ho chuki rake id hata do
+        } else {
+            alert("ERROR: " + (res.message || "Update nahi ho paaya."));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("ERROR: Check console.");
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "SUBMIT";
+    });
+}
+
+// TOTAL DET. logic: (Release Date+Time) - (Placement Date+Time), formatted as HH:MM
+// e.g. 45 hrs 10 min => "45:10"
+function computeTotalDet(pDate, pTime, rDate, rTime) {
+    if (!pDate || !pTime || !rDate || !rTime) return "";
+    let placement = new Date(`${pDate}T${pTime}:00`);
+    let release = new Date(`${rDate}T${rTime}:00`);
+    if (isNaN(placement.getTime()) || isNaN(release.getTime())) return "";
+    let diffMs = release - placement;
+    if (diffMs < 0) return "";
+    let totalMinutes = Math.round(diffMs / 60000);
+    let hours = Math.floor(totalMinutes / 60);
+    let minutes = totalMinutes % 60;
+    return `${hours}:${minutes.toString().padStart(2, "0")}`;
+}
+
+function updateTotalDetDisplay() {
+    let pDate = document.getElementById("placementDate").value;
+    let pTime = document.getElementById("placementTime").value;
+    let rDate = document.getElementById("releaseDate").value;
+    let rTime = document.getElementById("releaseTime").value;
+    document.getElementById("totalDetDisplay").value = computeTotalDet(pDate, pTime, rDate, rTime);
+}
+
+["placementDate", "placementTime", "releaseDate", "releaseTime"].forEach(id => {
+    document.getElementById(id).addEventListener("input", refreshDerivedFields);
+    document.getElementById(id).addEventListener("change", refreshDerivedFields);
+});
+
+// NIGHT INCENTIVE logic:
+// Placement Date+Time + Free Hrs. = "free window end" (till jab tak unloading free hain)
+// Is window (Placement -> Placement+FreeHrs) ke andar jo bhi hours 22:00 se 06:00 (raat) ke beech aate hain,
+// unka 50% NIGHT INCENTIVE ke roop me diya jata hain.
+function computeNightIncentive(pDate, pTime, freeHrs) {
+    if (!pDate || !pTime) return "";
+    let hrs = parseFloat(freeHrs);
+    if (isNaN(hrs) || hrs <= 0) return "";
+
+    let placement = new Date(`${pDate}T${pTime}:00`);
+    if (isNaN(placement.getTime())) return "";
+
+    let windowEnd = new Date(placement.getTime() + hrs * 3600000);
+
+    let totalNightMinutes = 0;
+    let cursor = new Date(placement);
+    cursor.setHours(0, 0, 0, 0);
+    cursor.setDate(cursor.getDate() - 1); // ek din pehle se check shuru karo (raat ka overlap na chhute)
+
+    while (cursor <= windowEnd) {
+        let nightStart = new Date(cursor);
+        nightStart.setHours(22, 0, 0, 0);
+        let nightEnd = new Date(nightStart.getTime() + 8 * 3600000); // 22:00 se agle din 06:00 tak = 8 hrs
+
+        let overlapStart = new Date(Math.max(placement.getTime(), nightStart.getTime()));
+        let overlapEnd = new Date(Math.min(windowEnd.getTime(), nightEnd.getTime()));
+
+        if (overlapEnd > overlapStart) {
+            totalNightMinutes += (overlapEnd - overlapStart) / 60000;
+        }
+        cursor.setDate(cursor.getDate() + 1);
+    }
+
+    let incentiveMinutes = Math.round(totalNightMinutes * 0.5); // night hours ka 50%
+    let ihrs = Math.floor(incentiveMinutes / 60);
+    let imin = incentiveMinutes % 60;
+    return `${ihrs.toString().padStart(2, "0")}:${imin.toString().padStart(2, "0")}`;
+}
+
+function updateNightIncDisplay() {
+    let pDate = document.getElementById("placementDate").value;
+    let pTime = document.getElementById("placementTime").value;
+    let freeHrs = document.getElementById("freeHrsDisplay").value;
+    document.getElementById("nightIncDisplay").value = computeNightIncentive(pDate, pTime, freeHrs);
+}
+
+// HH:MM string -> total minutes
+function parseHHMMToMinutes(str) {
+    if (!str) return 0;
+    let parts = str.toString().split(":");
+    if (parts.length !== 2) return 0;
+    let h = parseInt(parts[0], 10) || 0;
+    let m = parseInt(parts[1], 10) || 0;
+    return h * 60 + m;
+}
+
+// total minutes -> HH:MM string (clamped at 0)
+function minutesToHHMM(totalMinutes) {
+    if (totalMinutes < 0) totalMinutes = 0;
+    let h = Math.floor(totalMinutes / 60);
+    let m = totalMinutes % 60;
+    return `${h}:${m.toString().padStart(2, "0")}`;
+}
+
+// NET DET. logic: TOTAL DET. (X) - FREE HRS. (Y) - NIGHT INCENTIVE (Z), HH:MM format
+function computeNetDet(totalDetStr, freeHrs, nightIncStr) {
+    let totalMin = parseHHMMToMinutes(totalDetStr);
+    let freeMin = (parseFloat(freeHrs) || 0) * 60;
+    let nightMin = parseHHMMToMinutes(nightIncStr);
+    return minutesToHHMM(totalMin - freeMin - nightMin);
+}
+
+// DEMM. HRS. logic: NET DET. ko agle poore ghante me round off karo
+// (koi bhi minute ho to +1 hr, jaise 05:50 => 6, 06:01 => 7, 06:00 => 6)
+function computeDemmHrs(netDetStr) {
+    let parts = (netDetStr || "0:00").split(":");
+    let h = parseInt(parts[0], 10) || 0;
+    let m = parseInt(parts[1], 10) || 0;
+    return m > 0 ? h + 1 : h;
+}
+
+// DEMM. AMT. logic: slab-wise rate per wagon x No. of wagons (F column)
+const DEMM_SLABS = [
+    { hrs: 6,        rate: 150 },    // UPTO 6 HRS.
+    { hrs: 6,        rate: 165 },    // 7 TO 12 HRS.
+    { hrs: 12,       rate: 187.5 },  // 13 TO 24 HRS.
+    { hrs: 24,       rate: 225 },    // 25 TO 48 HRS.
+    { hrs: 24,       rate: 300 },    // 49 TO 72 HRS.
+    { hrs: Infinity, rate: 450 }     // ABOVE 72 HRS.
+];
+
+function computeDemmAmount(wagonCount, demmHrs) {
+    let remaining = demmHrs;
+    let perWagon = 0;
+    for (let i = 0; i < DEMM_SLABS.length && remaining > 0; i++) {
+        let chargeable = Math.min(remaining, DEMM_SLABS[i].hrs);
+        perWagon += chargeable * DEMM_SLABS[i].rate;
+        remaining -= chargeable;
+    }
+    return Math.round(perWagon * (parseInt(wagonCount) || 0) * 100) / 100;
+}
+
+// Master refresh: TOTAL DET. -> NIGHT INCENTIVE -> NET DET. -> DEMM. HRS. -> DEMM. AMT.
+function refreshDerivedFields() {
+    updateTotalDetDisplay();
+    updateNightIncDisplay();
+
+    let totalDet = document.getElementById("totalDetDisplay").value;
+    let freeHrs = document.getElementById("freeHrsDisplay").value;
+    let nightInc = document.getElementById("nightIncDisplay").value;
+
+    let netDet = computeNetDet(totalDet, freeHrs, nightInc);
+    let demmHrs = computeDemmHrs(netDet);
+    let demmAmt = computeDemmAmount(selectedWagonCount, demmHrs);
+
+    document.getElementById("netDetDisplay").value = netDet;
+    document.getElementById("demmHrsDisplay").value = demmHrs;
+    document.getElementById("demmAmtDisplay").value = demmAmt.toFixed(2);
+}
+
+loadPendingRakeIds();
+</script>
+</body>
+</html>
