@@ -62,9 +62,8 @@ function doGet(e) {
     }
 
     // Placement Memo ka "SELECT RAKE ID" dropdown yahi action use karta hain.
-    // Status "DELIVERED" match karte hain (pehle yahan "Arrived" tha, jo galat
-    // rakes dikha raha tha).
-    if (action === "pending") {
+    // Status "DELIVERED" match karte hain.
+    if (action === "placement_memo") {
       var lastRow3 = sheet.getLastRow();
       var idsList2 = [];
       if (lastRow3 >= 2) {
@@ -78,7 +77,24 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
-    if (action === "done") {
+    // WTR (Wagon Transfer Register) ka "SELECT RAKE ID" dropdown yahi action use karta hain.
+    // Status "ARRIVED" match karte hain (jo rakes Inward Tally se aayi hain aur WTR mein
+    // placement/release detail bharne ka wait kar rahi hain).
+    if (action === "wtr") {
+      var lastRowW = sheet.getLastRow();
+      var idsListW = [];
+      if (lastRowW >= 2) {
+        var rowsW = sheet.getRange(2, 1, lastRowW - 1, 30).getValues();
+        for (var w = rowsW.length - 1; w >= 0; w--) {
+          var stW = rowsW[w][29];
+          if (stW === "ARRIVED") { idsListW.push(rowsW[w][0]); }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({status:"success", rakeIds: idsListW}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === "delivery_book") {
       var lastRow4 = sheet.getLastRow();
       var idsList3 = [];
       if (lastRow4 >= 2) {

@@ -329,7 +329,7 @@ function loadPendingRakeIds() {
     placeholderOpt.value = "";
     selectEl.appendChild(placeholderOpt);
 
-    let url = APPS_SCRIPT_URL + "?action=pending&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
+    let url = APPS_SCRIPT_URL + "?action=wtr&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
 
     fetch(url)
         .then(r => r.json())

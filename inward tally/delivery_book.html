@@ -598,7 +598,7 @@ function loadReleasedRakeIds() {
     placeholderOpt.value = "";
     selectEl.appendChild(placeholderOpt);
 
-    let url = APPS_SCRIPT_URL + "?action=done&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
+    let url = APPS_SCRIPT_URL + "?action=delivery_book&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
 
     fetch(url)
         .then(r => r.json())

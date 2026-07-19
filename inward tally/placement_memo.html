@@ -354,7 +354,7 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
 
     // ---------------- Load Rake ID dropdown (status = Arrived) ----------------
     function loadPendingRakes() {
-        var url = API_URL + "?action=pending&sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME);
+        var url = API_URL + "?action=placement_memo&sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME);
         fetch(url)
             .then(function (r) { return r.json(); })
             .then(function (res) {
