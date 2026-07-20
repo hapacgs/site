@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outstanding Position of HAPA Goods Shed</title>
+    <style>
+        :root {
+            --primary: #002060;
+            --secondary: #1e3a8a;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --purple: #6d28d9;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --border: #a6b5c7;
+            --highlight: #f59e0b; /* Color for HAPA highlight */
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            margin: 0; 
+            padding: 15px; 
+            background-color: var(--bg); 
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .container { 
+            max-width: 98%; 
+            margin: 0 auto 25px auto; 
+            background: var(--surface); 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h2 { 
+            color: var(--primary); 
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 5px;
+            font-weight: 700;
+        }
+
+        /* HAPA Highlight Style */
+        .hapa-highlight {
+            color: var(--highlight);
+            background-color: rgba(245, 158, 11, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .developer-credits {
+            font-size: 13px;
+            color: #475569;
+            font-weight: 600;
+            font-style: italic;
+        }
+
+        /* AUTO PERIOD DISPLAY BAR */
+        .period-info-bar {
+            display: none;
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            border: 1px solid #bfdbfe;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--secondary);
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .period-badge {
+            background-color: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* PAYMENT DETAILS DYNAMIC FILTER PANEL */
+        .payment-filter-panel {
+            display: none;
+            background: #f1f5f9;
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .filter-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .filter-field input, .filter-field select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 13px;
+            min-width: 150px;
+            background: white;
+        }
+        .btn-filter-submit {
+            background-color: var(--primary);
+            color: white;
+            font-weight: bold;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-filter-submit:hover {
+            background-color: var(--secondary);
+        }
+        
+        /* BUTTON DASHBOARD GROUP */
+        .button-group-wrapper {
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-bottom: 15px;
+            padding: 8px 4px 12px 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .button-group { 
+            display: inline-flex; 
+            gap: 14px; 
+            width: 100%;
+        }
+        .button-group button {
+            flex: 1;
+            min-width: 180px;
+            padding: 14px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            letter-spacing: 0.3px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            border: 1px solid transparent;
+        }
+        
+        .button-group button:active {
+            transform: scale(0.96) translateY(0) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+
+        .btn-view-charges-summary { 
+            background: linear-gradient(135deg, #f0f9ff, #e0f2fe); 
+            color: #0369a1; 
+            border: 1px solid #bae6fd !important;
+        }
+        .btn-view-charges-summary:hover, .btn-view-charges-summary.active { 
+            transform: translateY(-4px); background: #e6f4fe; box-shadow: 0 10px 20px -3px rgba(14, 165, 233, 0.35);
+        }
+
+        .btn-view-cust-summary { 
+            background: linear-gradient(135deg, #f0fdf4, #d1fae5); 
+            color: #15803d; 
+            border: 1px solid #a7f3d0 !important;
+        }
+        .btn-view-cust-summary:hover, .btn-view-cust-summary.active { 
+            transform: translateY(-4px); background: #e6fdf0; box-shadow: 0 10px 20px -3px rgba(16, 185, 129, 0.35);
+        }
+
+        .btn-view-outstanding { 
+            background: linear-gradient(135deg, #fff5f5, #ffe2e2); 
+            color: #dc2626; 
+            border: 1px solid #fca5a5 !important;
+        }
+        .btn-view-outstanding:hover, .btn-view-outstanding.active { 
+            transform: translateY(-4px); background: #ffebeb; box-shadow: 0 10px 20px -3px rgba(239, 68, 68, 0.35);
+        }
+
+        .btn-view-period-summary { 
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe); 
+            color: #6d28d9; 
+            border: 1px solid #ddd6fe !important;
+        }
+        .btn-view-period-summary:hover, .btn-view-period-summary.active { 
+            transform: translateY(-4px); background: #f0ecfe; box-shadow: 0 10px 20px -3px rgba(139, 92, 246, 0.35);
+        }
+        .btn-sub-period-text {
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0.85;
+        }
+
+        .btn-view-payment-details {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            color: #b45309;
+            border: 1px solid #fde68a !important;
+        }
+        .btn-view-payment-details:hover, .btn-view-payment-details.active {
+            transform: translateY(-4px); background: #fffdf5; box-shadow: 0 10px 20px -3px rgba(245, 158, 11, 0.35);
+        }
+
+        /* RAILWAY MARQUEE SLOGAN BAR */
+        .marquee-container {
+            background-color: #002060;
+            color: #ffffff;
+            padding: 8px 0;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .marquee-container marquee {
+            vertical-align: middle;
+        }
+        .marquee-spacer {
+            margin: 0 40px;
+            color: #f59e0b;
+            font-weight: bold;
+        }
+
+        .export-btn-container { display: none; margin-bottom: 12px; text-align: right; }
+        .btn-export { background-color: #15803d; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; transition: 0.2s; }
+        .btn-export:hover { background-color: #166534; }
+
+        .dynamic-section-header {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 20px 0 10px 0;
+            border-left: 5px solid var(--primary);
+        }
+
+        /* TABLES */
+        .table-wrapper { 
+            overflow-x: auto; 
+            margin-top: 10px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border);
+            -webkit-overflow-scrolling: touch;
+            background: white;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; background: white; }
+        
+        th, td { border: 1px solid var(--border); padding: 12px 14px; font-size: 13px; vertical-align: middle; }
+        th { background-color: var(--primary); color: white; text-transform: uppercase; font-weight: 600; font-size: 12px; letter-spacing: 0.5px; position: sticky; top: 0; text-align: center !important; }
+        
+        .align-left { text-align: left !important; }
+        .align-right { text-align: right !important; font-variant-numeric: tabular-nums; }
+        .align-center { text-align: center !important; }
+
+        tr:nth-child(even) { background-color: #f8fafc; }
+        tr:hover { background-color: #f1f5f9; }
+
+        /* FOOTNOTE STYLES */
+        .footnote-container {
+            display: none;
+            margin-top: 25px;
+            background: #fafafa;
+            border: 1px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .footnote-title { font-size: 15px; font-weight: 700; color: var(--primary); margin-top: 0; margin-bottom: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 6px; }
+        .footnote-row { display: flex; padding: 6px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .footnote-charge-title { width: 300px; font-weight: 600; color: var(--secondary); }
+        .footnote-parties-list { flex: 1; color: #475569; }
+        .footnote-party-pill { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 2px 8px; border-radius: 4px; margin-right: 8px; display: inline-block; font-size: 12px; font-weight: 500; }
+        .footnote-party-pill span { color: var(--danger); font-weight: 700; }
+
+        .summary-table { min-width: 100% !important; max-width: 700px; margin: auto; }
+        .ledger-table { min-width: 100% !important; }
+        .clickable-row { color: var(--primary); font-weight: bold; cursor: pointer; text-decoration: underline; }
+        .clickable-row:hover { color: #2563eb; background-color: #eff6ff !important; }
+        .total-row { background-color: #cbd5e1 !important; font-weight: bold; font-size: 14px; color: var(--primary); }
+        
+        .bifurcation-box { display: none; margin-top: 25px; background: #fff; padding: 20px; border: 2px solid var(--primary); border-radius: 8px; }
+
+        /* MOBILE RESPONSIVE MEDIA QUERIES */
+        @media (max-width: 768px) {
+            body { padding: 8px; }
+            .container { padding: 12px; border-radius: 8px; max-width: 100%; margin-bottom: 15px; }
+            h2 { font-size: 18px; line-height: 1.4; }
+            .hapa-highlight { padding: 1px 5px; }
+            .developer-credits { font-size: 11px; }
+            .dynamic-section-header { font-size: 15px; padding: 10px; }
+            
+            /* Inputs and Buttons on Mobile */
+            .payment-filter-panel { flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; }
+            .filter-field input, .filter-field select { min-width: 100%; box-sizing: border-box; }
+            .button-group button { min-width: 150px; padding: 10px 12px; font-size: 13px; }
+            
+            /* Responsive Footnotes */
+            .footnote-row { flex-direction: column; gap: 4px; }
+            .footnote-charge-title { width: 100%; font-size: 13px; }
+            
+            /* Prevent structural breakdown while allowing tables to swipe smoothly */
+            table { min-width: 900px; } 
+            .summary-table { min-width: 100% !important; }
+            th, td { padding: 8px 10px; font-size: 12px; }
+            .total-row { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- HEADER WITHOUT "DASHBOARD -" AND WITH HIGHLIGHTED HAPA -->
+        <div class="header-section">
+            <h2>Outstanding Position of <span class="hapa-highlight">HAPA</span> Goods Shed (RJT Division - W.R.)</h2>
+            <div class="developer-credits">Designed & Developed by Gaurang Thakker, CGS - HAPA</div>
+        </div>
+        
+        <!-- AUTOMATIC CALCULATION PERIOD BAR INFO -->
+        <div id="periodInfoBar" class="period-info-bar">
+            <div>
+                📅 <b>Selected Period Range:</b> <span id="lblPeriodDates" style="color: #dc2626; font-weight: 700;">Calculating...</span>
+            </div>
+            <div>
+                <span class="period-badge" id="lblPeriodName">Auto Period</span>
+            </div>
+        </div>
+
+        <!-- DYNAMIC PANEL FOR PAYMENT DETAILS FILTER -->
+        <div id="paymentFilterPanel" class="payment-filter-panel">
+            <div class="filter-field">
+                <label>From Date:</label>
+                <input type="date" id="txtFilterFromDate">
+            </div>
+            <div class="filter-field">
+                <label>To Date:</label>
+                <input type="date" id="txtFilterToDate">
+            </div>
+            <div class="filter-field">
+                <label>Customer Wise:</label>
+                <select id="ddlFilterCustomer"><option value="ALL">-- ALL CUSTOMERS --</option></select>
+            </div>
+            <div class="filter-field">
+                <label>Type of Charges:</label>
+                <select id="ddlFilterCharges"><option value="ALL">-- ALL CHARGES --</option></select>
+            </div>
+            <div>
+                <button type="button" class="btn-filter-submit" onclick="executePaymentDetailsQuery(true)">🔍 Submit Filter</button>
+            </div>
+        </div>
+
+        <!-- 5 CUSTOM ACTION BUTTONS GROUP -->
+        <div class="button-group-wrapper">
+            <div class="button-group">
+                <button id="btnCharges" onclick="switchMode('charges')" class="btn-view-charges-summary">
+                    <span>📈 Charges Wise</span>
+                </button>
+                <button id="btnCustomer" onclick="switchMode('customer')" class="btn-view-cust-summary">
+                    <span>📊 Customer Wise</span>
+                </button>
+                <button id="btnOutstanding" onclick="switchMode('outstanding')" class="btn-view-outstanding">
+                    <span>🔍 Total Outstanding</span>
+                </button>
+                <button id="btnPeriod" onclick="switchMode('period')" class="btn-view-period-summary">
+                    <span>📅 Outstanding Summary</span>
+                    <span id="btnLatestPeriodDisplay" class="btn-sub-period-text">loading period...</span>
+                </button>
+                <button id="btnPaymentDetails" onclick="switchMode('payment_details')" class="btn-view-payment-details">
+                    <span>💰 Payment Details</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- RIGHT-TO-LEFT MARQUEE FOR FREIGHT/GOODS INFORMATION AND SLOGANS -->
+        <div class="marquee-container">
+            <marquee direction="left" scrollamount="5" onmouseover="this.stop();" onmouseout="this.start();">
+                <span>🛠️ भारतीय रेल - देश की जीवनरेखा | Indian Railways - Lifeline of the Nation</span>
+                <span class="marquee-spacer">|</span>
+                <span>📦 Speed up Wagon Turnaround to maximize Freight Revenue Operations!</span>
+                <span class="marquee-spacer">|</span>
+                <span>🌾 माल गोदाम में सुरक्षित रखरखाव और त्वरित लोडिंग ही हमारी प्राथमिकता है।</span>
+                <span class="marquee-spacer">|</span>
+                <span>⏱️ Avoid Demurrage and Wharfage, ensure timely clearance of Goods Supply!</span>
+                <span class="marquee-spacer">|</span>
+                <span>💼 संरक्षा, सुरक्षा एवं समय पालन - माल परिवहन की मुख्य कसौटी।</span>
+                <span class="marquee-spacer">|</span>
+                <span>🚛 Integrated Logistics support ensures seamless movement of heavy cargo rakes.</span>
+                <span class="marquee-spacer">|</span>
+                <span>🛡️ Zero Damage, Zero Delay: Safety First in Freight Handling.</span>
+            </marquee>
+        </div>
+        
+        <div id="exportBtnWrapper" class="export-btn-container">
+            <button onclick="exportTableToExcel()" class="btn-export">🟢 Export to Excel</button>
+        </div>
+
+        <div id="dynamicTableTitleHeader" class="dynamic-section-header">Loading Sheet Data...</div>
+
+        <div class="table-wrapper" id="mainTableWrapper">
+            <table id="mainTable">
+                <thead id="tableHeader"></thead>
+                <tbody id="dashboardBody">
+                    <tr>
+                        <td colspan="12" style='text-align:center; color:#666;'>Real-time database fetch ho raha hai...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- DYNAMIC BIFURCATION DRILL DOWN -->
+        <div id="bifurcationBox" class="bifurcation-box">
+            <h3 id="bifurcationTitle" style="color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--primary); padding-bottom: 5px;">Outstanding Breakup</h3>
+            <div style="overflow-x:auto;">
+                <table style="min-width: 100%; max-width: 600px;">
+                    <thead>
+                        <tr id="bifurcationHeader"></tr>
+                    </thead>
+                    <tbody id="bifurcationBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FOOTNOTE SECTION FOR PERIOD LEDGER -->
+        <div id="summaryFootnoteSection" class="footnote-container">
+            <div class="footnote-title">📋 Party Wise Closing Account Breakdowns:</div>
+            <div id="footnoteRowsContainer"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWK07qRGdTuurjOBGfWtbA1HCR2bEz_qPZee8WOyV6OH8kfOu1VIiIqCwy6Vo3Xw8K/exec";
+
+        let chargeList = ["DEBIT OUTSTANDING (ADMITTED)", "DEBIT OUTSTANDING (DISPUTTED)", "FREIGHT OUTSTANDING / MPA", "WHARFAGE CHARGES", "DEMMURAGE CHARGES", "SHUNTING CHARGES", "STABLING CHARGES", "PUNNATIVE CHARGES", "DETENTION CHARGES", "OTHER CHARGS", "UNDER CHARGES"];
+        let customerList = [{code: "IFFC", name: "INDIAN FARMERS FERTILISER COOPERATIVE LTD."}, {code: "FCI", name: "FOOD CORPORATION OF INDIA LTD."}, {code: "GSFC", name: "GUJARAT STATE FERTILIZER CO."}, {code: "DLI", name: "DISTRIBUTION LOGISTICS INFRASTRUCTURE PVT. LTD"}, {code: "KRIB", name: "KRISHAK BHARATI COOPERATIVE LIMITED"}, {code: "MCDS", name: "MALCHAND DINDAYAL SALTS PVT. LTD."}, {code: "JK", name: "J K CEMENT LTD."}];
+
+        let rawSheetData = [];
+        let activeView = "charges"; 
+
+        let calculatedFromDate = null;
+        let calculatedToDate = null;
+        let formattedFromStr = "";
+        let formattedToStr = "";
+
+        window.onload = function() { 
+            setupFilterDropdowns();
+            calculateLatestPeriod();
+            fetchData();
+        };
+
+        function setupFilterDropdowns() {
+            let ddlCust = document.getElementById('ddlFilterCustomer');
+            customerList.forEach(c => {
+                let opt = document.createElement('option'); opt.value = c.code; opt.innerText = c.code + " - " + c.name;
+                ddlCust.appendChild(opt);
+            });
+            let ddlChg = document.getElementById('ddlFilterCharges');
+            chargeList.forEach(c => {
+                let opt = document.createElement('option'); opt.value = c; opt.innerText = c;
+                ddlChg.appendChild(opt);
+            });
+        }
+
+        function calculateLatestPeriod() {
+            let today = new Date();
+            let year = today.getFullYear();
+            let month = today.getMonth(); 
+            let date = today.getDate();
+
+            let targetYear = year;
+            let targetMonth = month;
+            let periodName = "";
+            let pStart = 1, pEnd = 10;
+
+            if (date >= 1 && date <= 10) {
+                targetMonth = month - 1;
+                if (targetMonth < 0) { targetMonth = 11; targetYear = year - 1; }
+                pStart = 21;
+                let lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+                pEnd = lastDay;
+                periodName = "Previous Month: 3rd Period";
+            } else if (date >= 11 && date <= 20) {
+                pStart = 1; pEnd = 10;
+                periodName = "Current Month: 1st Period";
+            } else {
+                pStart = 11; pEnd = 20;
+                periodName = "Current Month: 2nd Period";
+            }
+
+            calculatedFromDate = new Date(targetYear, targetMonth, pStart, 0, 0, 0);
+            calculatedToDate = new Date(targetYear, targetMonth, pEnd, 23, 59, 59, 999);
+
+            formattedFromStr = calculatedFromDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+            formattedToStr = calculatedToDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+
+            document.getElementById('lblPeriodDates').innerText = `${formattedFromStr} to ${formattedToStr}`;
+            document.getElementById('lblPeriodName').innerText = periodName;
+            document.getElementById('btnLatestPeriodDisplay').innerText = `${formattedFromStr} to ${formattedToStr}`;
+
+            let inputFrom = targetYear + "-" + String(targetMonth + 1).padStart(2, '0') + "-" + String(pStart).padStart(2, '0');
+            let inputTo = targetYear + "-" + String(targetMonth + 1).padStart(2, '0') + "-" + String(pEnd).padStart(2, '0');
+            
+            document.getElementById('txtFilterFromDate').value = inputFrom;
+            document.getElementById('txtFilterToDate').value = inputTo;
+        }
+
+        function fetchData() {
+            fetch(SCRIPT_URL).then(res => res.json()).then(data => {
+                rawSheetData = data;
+                refreshCurrentView();
+            }).catch(err => {
+                document.getElementById('dashboardBody').innerHTML = "<tr><td colspan='12' style='text-align:center; color:red;'>⚠️ Connection Error! Live sync failed.</td></tr>";
+            });
+        }
+
+        function setTableLayout(type) {
+            document.getElementById('exportBtnWrapper').style.display = "none";
+            document.getElementById('summaryFootnoteSection').style.display = "none";
+            document.getElementById('bifurcationBox').style.display = "none";
+            document.getElementById('mainTable').className = "";
+            
+            if (type === 'ledger') {
+                document.getElementById('periodInfoBar').style.display = "flex";
+            } else {
+                document.getElementById('periodInfoBar').style.display = "none";
+            }
+
+            if (type === 'payment_details') {
+                document.getElementById('paymentFilterPanel').style.display = "flex";
+            } else {
+                document.getElementById('paymentFilterPanel').style.display = "none";
+            }
+            
+            document.getElementById('btnCharges').classList.remove('active');
+            document.getElementById('btnCustomer').classList.remove('active');
+            document.getElementById('btnOutstanding').classList.remove('active');
+            document.getElementById('btnPeriod').classList.remove('active');
+            document.getElementById('btnPaymentDetails').classList.remove('active');
+
+            if(type === 'charges-summary' || type === 'cust-summary') {
+                document.getElementById('mainTable').className = "summary-table";
+            } else if (type === 'ledger' || type === 'payment_details' || type === 'normal') {
+                document.getElementById('mainTable').className = "ledger-table";
+            }
+        }
+
+        function switchMode(mode) {
+            activeView = mode;
+            refreshCurrentView();
+        }
+
+        function refreshCurrentView() {
+            if(rawSheetData.length === 0) return;
+
+            if(activeView === "charges") {
+                loadChargesSummaryData(rawSheetData);
+            } else if (activeView === "customer") {
+                loadCustomerSummaryData(rawSheetData);
+            } else if (activeView === "outstanding") {
+                loadFullDashboardData('outstanding', rawSheetData);
+            } else if (activeView === "period") {
+                generatePeriodLedgerSummary();
+            } else if (activeView === "payment_details") {
+                executePaymentDetailsQuery(false); 
+            }
+        }
+
+        // --- 1. CHARGES WISE SUMMARY ---
+        function loadChargesSummaryData(data) {
+            setTableLayout('charges-summary');
+            document.getElementById('btnCharges').classList.add('active');
+            document.getElementById('dynamicTableTitleHeader').innerText = "Charges Wise Outstanding Breakup Summary";
+
+            const head = document.getElementById('tableHeader');
+            head.innerHTML = `<tr><th>Type of Charge (Click for Breakup)</th><th class="align-right">Total Outstanding Amount</th></tr>`;
+            
+            const tbody = document.getElementById('dashboardBody');
+            tbody.innerHTML = "";
+
+            let chargeSummary = {}; 
+            chargeList.forEach(c => { chargeSummary[c] = 0; });
+
+            data.forEach(row => {
+                let charge = row.typeOfCharges || "OTHER CHARGS";
+                let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
+                if (isNaN(osVal) || osVal <= 0) return;
+                chargeSummary[charge] = (chargeSummary[charge] || 0) + osVal;
+            });
+
+            let grandTotal = 0;
+            Object.keys(chargeSummary).forEach(charge => {
+                let totalOS = chargeSummary[charge]; 
+                grandTotal += totalOS;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="clickable-row align-left" onclick="showChargesBifurcation('${charge}', ${totalOS})">📈 ${charge}</td><td class="align-right" style="${totalOS > 0 ? 'color:red; font-weight:bold;': 'color:green;'}">₹ ${totalOS.toFixed(2)}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            const totalTr = document.createElement('tr'); 
+            totalTr.className = "total-row";
+            totalTr.innerHTML = `<td class="align-left" style="text-align:right !important;">💰 GRAND TOTAL OUTSTANDING:</td><td class="align-right" style="color:var(--danger);">₹ ${grandTotal.toFixed(2)}</td>`;
+            tbody.appendChild(totalTr);
+        }
+
+        function showChargesBifurcation(chargeType, totalOS) {
+            document.getElementById('bifurcationTitle').innerText = `📊 Breakup For Charge: ${chargeType}`;
+            document.getElementById('bifurcationHeader').innerHTML = `<th>Customer Code</th><th class="align-right">Outstanding Amount</th>`;
+            const bBody = document.getElementById('bifurcationBody'); 
+            bBody.innerHTML = "";
+
+            if(totalOS === 0) { 
+                bBody.innerHTML = "<tr><td colspan='2' style='text-align:center; color:green; font-weight:bold;'>🎉 Everything Clear!</td></tr>"; 
+                document.getElementById('bifurcationBox').style.display = "block"; 
+                return; 
+            }
+
+            let custSummary = {};
+            rawSheetData.forEach(row => {
+                if(row.typeOfCharges === chargeType) {
+                    let code = row.custCode || "UNKNOWN";
+                    let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
+                    if(isNaN(osVal) || osVal <= 0) return;
+                    custSummary[code] = (custSummary[code] || 0) + osVal;
+                }
+            });
+
+            Object.keys(custSummary).forEach(code => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="align-left">🏢 <b>${code}</b></td><td class="align-right" style="color:red; font-weight:bold;">₹ ${custSummary[code].toFixed(2)}</td>`;
+                bBody.appendChild(tr);
+            });
+            document.getElementById('bifurcationBox').style.display = "block";
+        }
+
+        // --- 2. CUSTOMER WISE SUMMARY ---
+        function loadCustomerSummaryData(data) {
+            setTableLayout('cust-summary');
+            document.getElementById('btnCustomer').classList.add('active');
+            document.getElementById('dynamicTableTitleHeader').innerText = "Customer Wise Outstanding Report";
+
+            const head = document.getElementById('tableHeader');
+            head.innerHTML = `<tr><th>Customer Name (Click to view Breakup)</th><th class="align-right">Total Outstanding Amount</th></tr>`;
+            
+            const tbody = document.getElementById('dashboardBody');
+            tbody.innerHTML = "";
+
+            let customerSummary = {}; 
+            let nameMap = {};
+            customerList.forEach(c => { nameMap[c.code] = c.name; });
+
+            data.forEach(row => {
+                let code = row.custCode || "UNKNOWN";
+                let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
+                if (isNaN(osVal) || osVal <= 0) return;
+                customerSummary[code] = (customerSummary[code] || 0) + osVal;
+            });
+
+            let grandTotal = 0;
+            Object.keys(customerSummary).forEach(code => {
+                let fullName = nameMap[code] || "Registered New Customer";
+                let totalOS = customerSummary[code]; 
+                grandTotal += totalOS;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="clickable-row align-left" onclick="showCustomerBifurcation('${code}', '${fullName}')">🏢 ${code} - ${fullName}</td><td class="align-right" style="font-weight:bold; color:red;">₹ ${totalOS.toFixed(2)}</td>`;
+                tbody.appendChild(tr);
+            });
+
+            const totalTr = document.createElement('tr'); 
+            totalTr.className = "total-row";
+            totalTr.innerHTML = `<td class="align-left" style="text-align:right !important;">💰 GRAND TOTAL OUTSTANDING:</td><td class="align-right" style="color:var(--danger);">₹ ${grandTotal.toFixed(2)}</td>`;
+            tbody.appendChild(totalTr);
+        }
+
+        function showCustomerBifurcation(custCode, fullName) {
+            document.getElementById('bifurcationTitle').innerText = `📊 Breakup For Customer: ${custCode}`;
+            document.getElementById('bifurcationHeader').innerHTML = `<th>Type of Charge</th><th class="align-right">Outstanding Amount</th>`;
+            const bBody = document.getElementById('bifurcationBody'); 
+            bBody.innerHTML = "";
+            let chargeSummary = {};
+
+            rawSheetData.forEach(row => {
+                if(row.custCode === custCode) {
+                    let chargeType = row.typeOfCharges || "OTHER CHARGES";
+                    let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
+                    if(isNaN(osVal) || osVal <= 0) return;
+                    chargeSummary[chargeType] = (chargeSummary[chargeType] || 0) + osVal;
+                }
+            });
+
+            Object.keys(chargeSummary).forEach(charge => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="align-left"><b>${charge}</b></td><td class="align-right" style="color:red; font-weight:bold;">₹ ${chargeSummary[charge].toFixed(2)}</td>`;
+                bBody.appendChild(tr);
+            });
+
+            document.getElementById('bifurcationBox').style.display = "block";
+        }
+
+        // --- 3. TOTAL OUTSTANDING DATA LEDGER (UPDATED TITLE & GRAND TOTAL ROW) ---
+        function loadFullDashboardData(filterType, data) {
+            setTableLayout('normal');
+            document.getElementById('btnOutstanding').classList.add('active');
+            // Title changed to Total Outstanding at HAPA
+            document.getElementById('dynamicTableTitleHeader').innerText = "Total Outstanding at HAPA";
+
+            const head = document.getElementById('tableHeader');
+            head.innerHTML = `
+                <tr>
+                    <th>Type of Charges</th><th>Cust. Code</th><th>Accrual Date</th>
+                    <th>Accrual Amt.</th><th>Hrs. / Days</th><th>Payment Date</th>
+                    <th>Paid Amount</th><th>Waiver / Credit</th><th>G.S.T. Paid</th>
+                    <th>C.R. No.</th><th>O/S Amount</th><th>Remarks</th>
+                </tr>`;
+
+            const tbody = document.getElementById('dashboardBody');
+            tbody.innerHTML = "";
+
+            let totalAccrual = 0, totalPaid = 0, totalWaiver = 0, totalGst = 0, totalOSGrand = 0;
+
+            data.forEach(row => {
+                let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
+                if(filterType === 'outstanding' && (isNaN(osVal) || osVal <= 0)) return;
+
+                let accAmt = parseFloat(row.accrualAmt || 0);
+                let paidAmt = parseFloat(row.paidAmount || 0);
+                let waiverAmt = parseFloat(row.waiverCredit || 0);
+                let gstAmt = parseFloat(row.gstPaid || 0);
+
+                totalAccrual += accAmt;
+                totalPaid += paidAmt;
+                totalWaiver += waiverAmt;
+                totalGst += gstAmt;
+                totalOSGrand += osVal;
+
+                const tr = document.createElement('tr');
+                let accDate = row.accrualDate ? new Date(row.accrualDate).toLocaleDateString('en-GB') : '';
+                let payDate = row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('en-GB') : '';
+
+                tr.innerHTML = `
+                    <td class="align-left">${row.typeOfCharges || ''}</td><td class="align-left">${row.custCode || ''}</td><td class="align-left">${accDate}</td>
+                    <td class="align-right">₹ ${accAmt.toFixed(2)}</td><td class="align-left">${row.hrsDays || ''}</td>
+                    <td class="align-left">${payDate}</td><td class="align-right">₹ ${paidAmt.toFixed(2)}</td><td class="align-right">₹ ${waiverAmt.toFixed(2)}</td><td class="align-right">₹ ${gstAmt.toFixed(2)}</td>
+                    <td class="align-left">${row.crNo || ''}</td><td class="align-right" style="${osVal > 0 ? 'color: red; font-weight: bold;' : ''}">₹ ${osVal.toFixed(2)}</td><td class="align-left">${row.remarks || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if(tbody.innerHTML === "") {
+                tbody.innerHTML = "<tr><td colspan='12' style='text-align:center;'>No Outstanding Data Available.</td></tr>";
+            } else {
+                // Added structural Grand Total Row at the end
+                const totalTr = document.createElement('tr');
+                totalTr.className = "total-row";
+                totalTr.innerHTML = `
+                    <td colspan="3" class="align-right" style="text-align:right !important;">💰 GRAND TOTAL:</td>
+                    <td class="align-right">₹ ${totalAccrual.toFixed(2)}</td>
+                    <td></td>
+                    <td></td>
+                    <td class="align-right">₹ ${totalPaid.toFixed(2)}</td>
+                    <td class="align-right">₹ ${totalWaiver.toFixed(2)}</td>
+                    <td class="align-right">₹ ${totalGst.toFixed(2)}</td>
+                    <td></td>
+                    <td class="align-right" style="color:var(--danger);">₹ ${totalOSGrand.toFixed(2)}</td>
+                    <td></td>
+                `;
+                tbody.appendChild(totalTr);
+            }
+        }
+
+        // --- 4. OUTSTANDING SUMMARY (PERIOD LEDGER) ---
+        function generatePeriodLedgerSummary() {
+            setTableLayout('ledger');
+            document.getElementById('btnPeriod').classList.add('active');
+            document.getElementById('exportBtnWrapper').style.display = "block";
+            document.getElementById('dynamicTableTitleHeader').innerText = "Outstanding Summary Period Ledger View";
+
+            const head = document.getElementById('tableHeader');
+            head.innerHTML = `
+                <tr>
+                    <th>Type of Charges</th>
+                    <th>Opening Balance</th>
+                    <th>Fresh Accountal</th>
+                    <th>Total (Op + Fresh)</th>
+                    <th>Paid</th>
+                    <th>Credit / Waiver</th>
+                    <th>GST Paid</th>
+                    <th>Outstanding (Closing)</th>
+                </tr>`;
+            
+            const tbody = document.getElementById('dashboardBody');
+            tbody.innerHTML = "";
+
+            let ledger = {};
+            chargeList.forEach(c => {
+                ledger[c] = { opening: 0, fresh: 0, paid: 0, waiver: 0, gst: 0, partyBreakdown: {} };
+            });
+
+            rawSheetData.forEach(row => {
+                let charge = row.typeOfCharges || "OTHER CHARGS";
+                let code = row.custCode || "UNKNOWN";
+
+                if (ledger[charge] === undefined) {
+                    ledger[charge] = { opening: 0, fresh: 0, paid: 0, waiver: 0, gst: 0, partyBreakdown: {} };
+                }
+                if (!ledger[charge].partyBreakdown[code]) {
+                    ledger[charge].partyBreakdown[code] = { opening: 0, fresh: 0, paid: 0, waiver: 0 };
+                }
+
+                let aAmt = row.accrualAmt ? parseFloat(row.accrualAmt) : 0;
+                let pAmt = row.paidAmount ? parseFloat(row.paidAmount) : 0;
+                let wAmt = row.waiverCredit ? parseFloat(row.waiverCredit) : 0;
+                let gAmt = row.gstPaid ? parseFloat(row.gstPaid) : 0;
+
+                let rowAccDate = row.accrualDate ? new Date(row.accrualDate) : null;
+                let rowPayDate = row.paymentDate ? new Date(row.paymentDate) : null;
+
+                if(rowAccDate && rowAccDate < calculatedFromDate) {
+                    ledger[charge].opening += aAmt;
+                    ledger[charge].partyBreakdown[code].opening += aAmt;
+                }
+                if(rowPayDate && rowPayDate < calculatedFromDate) {
+                    ledger[charge].opening -= (pAmt + wAmt);
+                    ledger[charge].partyBreakdown[code].opening -= (pAmt + wAmt);
+                }
+
+                if(rowAccDate && rowAccDate >= calculatedFromDate && rowAccDate <= calculatedToDate) {
+                    ledger[charge].fresh += aAmt;
+                    ledger[charge].partyBreakdown[code].fresh += aAmt;
+                }
+
+                if(rowPayDate && rowPayDate >= calculatedFromDate && rowPayDate <= calculatedToDate) {
+                    ledger[charge].paid += pAmt;
+                    ledger[charge].partyBreakdown[code].paid += pAmt;
+                    ledger[charge].waiver += wAmt;
+                    ledger[charge].partyBreakdown[code].waiver += wAmt;
+                    ledger[charge].gst += gAmt;
+                }
+            });
+
+            let tOp = 0, tFresh = 0, tSum = 0, tPaid = 0, tWaiver = 0, tGst = 0, tClosing = 0;
+            const footnoteContainer = document.getElementById('footnoteRowsContainer');
+            footnoteContainer.innerHTML = "";
+            let hasAnyFootnote = false;
+
+            Object.keys(ledger).forEach(charge => {
+                let item = ledger[charge];
+                let totalOpFresh = item.opening + item.fresh;
+                let closingOS = totalOpFresh - (item.paid + item.waiver);
+
+                tOp += item.opening; tFresh += item.fresh; tSum += totalOpFresh;
+                tPaid += item.paid; tWaiver += item.waiver; tGst += item.gst; tClosing += closingOS;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="align-left" style="font-weight:bold; color:var(--primary);">📊 ${charge}</td>
+                    <td class="align-right">₹ ${item.opening.toFixed(2)}</td>
+                    <td class="align-right" style="color:#0056b3;">₹ ${item.fresh.toFixed(2)}</td>
+                    <td class="align-right" style="background-color:#f8fafc; font-weight:600;">₹ ${totalOpFresh.toFixed(2)}</td>
+                    <td class="align-right" style="color:var(--success);">₹ ${item.paid.toFixed(2)}</td>
+                    <td class="align-right" style="color:var(--warning);">₹ ${item.waiver.toFixed(2)}</td>
+                    <td class="align-right" style="color:var(--info);">₹ ${item.gst.toFixed(2)}</td>
+                    <td class="align-right" style="font-weight:bold; color:${closingOS > 0 ? 'var(--danger)':'var(--success)'};">₹ ${closingOS.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+
+                let partyPillsHTML = "";
+                Object.keys(item.partyBreakdown).forEach(pCode => {
+                    let pData = item.partyBreakdown[pCode];
+                    let pClosing = (pData.opening + pData.fresh) - (pData.paid + pData.waiver);
+                    
+                    if(pClosing > 0.01 || pClosing < -0.01) {
+                        partyPillsHTML += `<div class="footnote-party-pill">🏢 ${pCode}: <span>₹${pClosing.toFixed(2)}</span></div>`;
+                    }
+                });
+
+                if (partyPillsHTML) {
+                    hasAnyFootnote = true;
+                    const fRow = document.createElement('div');
+                    fRow.className = "footnote-row";
+                    fRow.innerHTML = `
+                        <div class="footnote-charge-title">📈 ${charge}:</div>
+                        <div class="footnote-parties-list">${partyPillsHTML}</div>
+                    `;
+                    footnoteContainer.appendChild(fRow);
+                }
+            });
+
+            const totalTr = document.createElement('tr');
+            totalTr.className = "total-row";
+            totalTr.innerHTML = `
+                <td class="align-left" style="text-align:right !important;">💰 GRAND TOTAL:</td>
+                <td class="align-right">₹ ${tOp.toFixed(2)}</td>
+                <td class="align-right">₹ ${tFresh.toFixed(2)}</td>
+                <td class="align-right" style="background-color:#cbd5e1;">₹ ${tSum.toFixed(2)}</td>
+                <td class="align-right">₹ ${tPaid.toFixed(2)}</td>
+                <td class="align-right">₹ ${tWaiver.toFixed(2)}</td>
+                <td class="align-right">₹ ${tGst.toFixed(2)}</td>
+                <td class="align-right" style="color:var(--danger); font-size:14px;">₹ ${tClosing.toFixed(2)}</td>
+            `;
+            tbody.appendChild(totalTr);
+
+            if (hasAnyFootnote) {
+                document.getElementById('summaryFootnoteSection').style.display = "block";
+            }
+        }
+
+        // --- 5. PAYMENT DETAILS ---
+        function executePaymentDetailsQuery(isFilteredByUser = false) {
+            setTableLayout('payment_details');
+            document.getElementById('btnPaymentDetails').classList.add('active');
+            document.getElementById('exportBtnWrapper').style.display = "block";
+
+            let fromStr = document.getElementById('txtFilterFromDate').value;
+            let toStr = document.getElementById('txtFilterToDate').value;
+            let custFilter = document.getElementById('ddlFilterCustomer').value;
+            let chargeFilter = document.getElementById('ddlFilterCharges').value;
+
+            let headingFrom = fromStr ? new Date(fromStr).toLocaleDateString('en-GB') : formattedFromStr;
+            let headingTo = toStr ? new Date(toStr).toLocaleDateString('en-GB') : formattedToStr;
+            
+            document.getElementById('dynamicTableTitleHeader').innerText = `Payment History (From Date : ${headingFrom} - To Date : ${headingTo})`;
+
+            let filterFromDate = fromStr ? new Date(fromStr + "T00:00:00") : calculatedFromDate;
+            let filterToDate = toStr ? new Date(toStr + "T23:59:59") : calculatedToDate;
+
+            const head = document.getElementById('tableHeader');
+            head.innerHTML = `
+                <tr>
+                    <th>Payment Date</th><th>Cust. Code</th><th>Type of Charges</th>
+                    <th>Accrual Date</th><th>Accrual Amt</th><th>Paid Amount</th>
+                    <th>Waiver / Credit</th><th>GST Paid</th><th>C.R. Number</th><th>Remarks</th>
+                </tr>`;
+
+            const tbody = document.getElementById('dashboardBody');
+            tbody.innerHTML = "";
+
+            let totalPaid = 0, totalWaiver = 0, totalGst = 0;
+
+            let validPaymentRecords = [];
+            rawSheetData.forEach(row => {
+                if(!row.paymentDate) return; 
+                let pDate = new Date(row.paymentDate);
+
+                if(filterFromDate && pDate < filterFromDate) return;
+                if(filterToDate && pDate > filterToDate) return;
+                if(isFilteredByUser && custFilter !== "ALL" && row.custCode !== custFilter) return;
+                if(isFilteredByUser && chargeFilter !== "ALL" && row.typeOfCharges !== chargeFilter) return;
+
+                validPaymentRecords.push({
+                    dateObject: pDate,
+                    rowData: row
+                });
+            });
+
+            validPaymentRecords.sort((a, b) => b.dateObject - a.dateObject);
+
+            validPaymentRecords.forEach(item => {
+                let row = item.rowData;
+                let paidAmt = parseFloat(row.paidAmount || 0);
+                let waiverAmt = parseFloat(row.waiverCredit || 0);
+                let gstAmt = parseFloat(row.gstPaid || 0);
+
+                totalPaid += paidAmt; totalWaiver += waiverAmt; totalGst += gstAmt;
+
+                let displayPayDate = item.dateObject.toLocaleDateString('en-GB');
+                let displayAccDate = row.accrualDate ? new Date(row.accrualDate).toLocaleDateString('en-GB') : '';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="align-center" style="font-weight:600;">📅 ${displayPayDate}</td>
+                    <td class="align-left"><b>${row.custCode || ''}</b></td>
+                    <td class="align-left">${row.typeOfCharges || ''}</td>
+                    <td class="align-center">${displayAccDate}</td>
+                    <td class="align-right">₹ ${parseFloat(row.accrualAmt || 0).toFixed(2)}</td>
+                    <td class="align-right" style="color:var(--success); font-weight:600;">₹ ${paidAmt.toFixed(2)}</td>
+                    <td class="align-right" style="color:var(--warning);">₹ ${waiverAmt.toFixed(2)}</td>
+                    <td class="align-right" style="color:var(--info);">₹ ${gstAmt.toFixed(2)}</td>
+                    <td class="align-center">${row.crNo || ''}</td>
+                    <td class="align-left">${row.remarks || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if(tbody.innerHTML === "") {
+                tbody.innerHTML = "<tr><td colspan='10' style='text-align:center; color:#777;'>Is selected date range ya filters ke hisab se koi payment history nahi mili.</td></tr>";
+            } else {
+                const totalTr = document.createElement('tr');
+                totalTr.className = "total-row";
+                totalTr.innerHTML = `
+                    <td colspan="5" class="align-right" style="text-align:right !important;">💰 TOTAL COLLECTED SUM:</td>
+                    <td class="align-right" style="color:var(--success);">₹ ${totalPaid.toFixed(2)}</td>
+                    <td class="align-right" style="color:var(--warning);">₹ ${totalWaiver.toFixed(2)}</td>
+                    <td class="align-right" style="color:var(--info);">₹ ${totalGst.toFixed(2)}</td>
+                    <td colspan="2"></td>
+                `;
+                tbody.appendChild(totalTr);
+            }
+        }
+
+        // --- EXCEL EXPORT ---
+        function exportTableToExcel() {
+            let table = document.getElementById("mainTable");
+            let cloneTable = table.cloneNode(true);
+            
+            let cells = cloneTable.getElementsByTagName("td");
+            for(let i=0; i<cells.length; i++) {
+                let text = cells[i].innerText;
+                if(text.includes("₹")) {
+                    cells[i].innerText = text.replace("₹", "").trim();
+                }
+            }
+
+            let html = cloneTable.outerHTML;
+
+            if(document.getElementById('summaryFootnoteSection').style.display === "block") {
+                let footnoteData = document.getElementById('summaryFootnoteSection').innerText;
+                html += `<br><br><h3>${footnoteData.replace(/\n/g, '<br>')}</h3>`;
+            }
+
+            let titleStr = document.getElementById('dynamicTableTitleHeader').innerText || "Outstanding_Report";
+            let fileName = titleStr.replace(/[^a-zA-Z0-9]/g, "_") + ".xls";
+
+            let blob = new Blob([html], { type: "application/vnd.ms-excel" });
+            let a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>
