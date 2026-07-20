@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shunting Charge Memo - HAPA Goods Shed</title>
+<style>
+    :root{
+        --navy-900:#03192e; --navy-800:#062a4a; --navy-700:#0a3a63;
+        --cyan-300:#7fe9fb; --cyan-400:#22d3ee; --text:#dcf2f9; --muted:#8fb4c7;
+        --border:rgba(34,211,238,0.25);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: radial-gradient(1200px 600px at 50% -10%, var(--navy-700) 0%, var(--navy-900) 60%);
+        color: var(--text); min-height: 100vh; padding: 18px;
+    }
+    .page-title{
+        text-align:center; text-transform: uppercase; letter-spacing: 2px;
+        font-size: 26px; font-weight: 700; color: var(--cyan-300);
+        text-shadow: 0 0 18px rgba(34,211,238,0.35); margin: 6px 0 20px;
+    }
+    .card{
+        max-width: 1000px; margin: 0 auto 18px; background: rgba(6, 26, 46, 0.85);
+        border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; backdrop-filter: blur(10px);
+    }
+    #resultsCard{ max-width: 1180px; }
+    .filter-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; align-items:end; }
+    .field{ display:flex; flex-direction:column; gap:5px; font-size:12px; }
+    .field label{ font-weight:700; color: var(--cyan-300); }
+    input, select, button{
+        background: var(--navy-800); color: var(--text); border: 1px solid var(--border);
+        border-radius: 8px; padding: 9px 12px; font-size: 13px; outline: none; width: 100%;
+    }
+    button{
+        cursor: pointer; background: linear-gradient(100deg, var(--navy-700) 0%, var(--navy-800) 100%);
+        color: var(--cyan-300); font-weight: 600; border-color: rgba(34,211,238,0.4); transition: background 0.2s ease;
+    }
+    button:hover{ background: var(--navy-700); }
+    #submitBtn{ width:auto; padding: 8px 22px; font-size: 13px; align-self:flex-start; }
+    button:disabled{ opacity: 0.5; cursor: not-allowed; }
+    .status-msg{ max-width: 1000px; margin: 0 auto 12px; font-size: 13px; color: var(--muted); text-align:center; }
+    .status-msg.error{ color: #ff9b9b; }
+    .table-wrap{ overflow-x:auto; }
+    table.results-table{ width:100%; border-collapse: collapse; font-size:11px; table-layout: fixed; }
+    table.results-table th, table.results-table td{ border: 1px solid var(--border); padding: 6px 5px; text-align:center; word-wrap: break-word; }
+    table.results-table th{ background: rgba(34,211,238,0.1); color: var(--cyan-300); line-height:1.3; }
+    table.results-table tr:hover td{ background: rgba(34,211,238,0.06); }
+    table.results-table th.col-pdf, table.results-table td.col-pdf{ width: 44px; }
+    table.results-table th.col-sr{ width: 34px; }
+    .gen-row-btn{ width: 26px; height: 26px; padding: 0; display:inline-flex; align-items:center; justify-content:center; border-radius: 6px; }
+    .gen-row-btn svg{ pointer-events:none; width:14px; height:14px; }
+    .hint{ font-size:11px; color:var(--muted); text-align:center; max-width:1000px; margin:0 auto 14px; }
+
+    /* ===== A4 sheet: TWO identical copies, split exactly at center, dashed cut line ===== */
+    #statementWrap{ display:none; }
+    .a4-actions{ max-width: 210mm; margin: 0 auto 12px; text-align:center; }
+    .a4-actions button{ width:auto; display:inline-block; padding: 9px 20px; }
+    .a4-page{
+        width: 210mm; height: 297mm; margin: 0 auto 24px; background:#ffffff; color:#000000;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+        display:flex; flex-direction:column;
+    }
+    .memo-copy{
+        height: 148.5mm; padding: 8mm 12mm; box-sizing:border-box; display:flex; flex-direction:column;
+        position:relative; text-transform: uppercase; overflow:hidden;
+    }
+    /* Everything for one copy lives in here so it can be auto-scaled down to always fit the fixed A4 half-page */
+    .scale-wrap{
+        height:100%; width:100%; display:flex; flex-direction:column;
+        transform-origin: top center;
+    }
+    .cut-line{ position:relative; height:0; border-top: 2px dashed #444; margin: 0; }
+    .cut-line span{
+        position:absolute; top:-9px; left:50%; transform:translateX(-50%);
+        background:#fff; padding:0 10px; font-size:10px; letter-spacing:2px; color:#444;
+    }
+    .copy-tag{
+        position:absolute; top:5mm; right:12mm; font-size:9px; letter-spacing:1px;
+        text-transform:uppercase; color:#000; border:1px solid #000; border-radius:3px; padding:2px 6px;
+    }
+    .memo-title{
+        text-align:center; text-transform:uppercase; font-weight:800; font-size:15px;
+        letter-spacing:2px; border-top:2px double #000; border-bottom:2px double #000;
+        padding:5px 4px; margin:0 0 8px; color:#000;
+    }
+    .memo-row{
+        display:flex; gap: 20px; font-size:11.5px; padding:6px 8px; margin-bottom:7px;
+        background:#ffffff; border:1px solid #000;
+    }
+    .memo-row .f{ flex:1; display:flex; gap:6px; align-items:baseline; }
+    .memo-row .f .lbl{ font-weight:700; white-space:nowrap; color:#000; }
+    .memo-row .f .val{ flex:1; border-bottom:1px solid #000; min-height:13px; font-weight:700; padding:0 2px; color:#000; }
+    .memo-row .f .val[contenteditable="true"]:empty:before{ content: attr(data-ph); font-weight:400; color:#777; text-transform:none; }
+    .memo-num{ font-weight:800; margin-right:4px; color:#000; }
+
+    /* ===== Shunting Details highlighted box ===== */
+    .shunt-box{ border:2px solid #000; padding:7px 9px; margin-bottom:7px; }
+    .sd-title{ text-align:center; font-weight:800; font-size:12px; letter-spacing:0.5px; margin-bottom:6px; color:#000; }
+    .sd-row{ display:flex; align-items:baseline; gap:8px; font-size:11.5px; padding:3px 0; color:#000; }
+    .sd-row .lbl{ font-weight:700; white-space:nowrap; min-width:190px; }
+    .val-date, .val-time{ border-bottom:1px solid #000; font-weight:700; padding:0 4px; min-height:13px; display:inline-block; }
+    .val-date{ min-width:90px; }
+    .val-time{ min-width:56px; }
+    .val-date[contenteditable="true"]:empty:before, .val-time[contenteditable="true"]:empty:before{
+        content: attr(data-ph); font-weight:400; color:#777; text-transform:none;
+    }
+    .roundoff{ font-weight:800; margin-left:6px; }
+
+    .table-cap{ font-size:11.5px; font-weight:800; margin: 2px 0 5px; color:#000; }
+    table.line-table{ width:100%; border-collapse:collapse; font-size:11px; margin-bottom:7px; }
+    table.line-table th, table.line-table td{ border:1px solid #000; padding:5px 6px; text-align:center; color:#000; background:#fff; }
+    table.line-table th{ font-weight:800; }
+    table.line-table td[contenteditable="true"]{ outline:none; font-weight:700; }
+    table.line-table td[contenteditable="true"]:empty:before{ content: attr(data-ph); color:#999; font-weight:400; }
+
+    .remarks{ font-size:11px; margin:0 0 6px; line-height:1.6; background:#ffffff; border:1px solid #000; padding:7px 8px; color:#000; }
+    .remarks .rlabel{ font-weight:800; }
+
+    .memo-footer{ margin-top:auto; display:flex; justify-content:space-around; align-items:flex-end; padding-top:8px; gap:10px; }
+    .sign-space{ text-align:center; font-size:10.5px; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; color:#000; }
+    .sig-gap{ height:24px; }
+    /* -- Signature stamp: identical to Demmurage Bill's blue rubber-stamp look, the ONLY colour exception -- */
+    .stamp-box{
+        display:inline-block;
+        border: 2px solid rgba(19,56,140,0.8);
+        border-radius: 6px;
+        padding: 6px 16px 5px;
+        transform: rotate(-3deg);
+        color: rgba(19,56,140,0.85);
+        white-space: nowrap;
+    }
+    .stamp-box .hi{ font-weight:700; margin: 0; line-height: 1.5; white-space: nowrap; }
+    .stamp-box .en{ font-weight:700; margin: 0; line-height: 1.5; letter-spacing: 0.3px; white-space: nowrap; }
+    .sign-cap{ border-top:1px solid #000; padding-top:3px; min-width:130px; font-weight:800; letter-spacing:0.3px; font-size:10px; color:#000; }
+
+    /* ===== Manual-entry highlight + tooltip (screen only, never printed) ===== */
+    .manual-field{ position:relative; background:rgba(255,224,79,0.28); }
+    .manual-field:hover, .manual-field:focus{ background:rgba(255,193,7,0.4); outline:none; }
+    .manual-field::after{
+        content: attr(data-tooltip);
+        position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
+        background:#13388c; color:#fff; padding:4px 9px; border-radius:5px;
+        font-size:10px; font-weight:700; letter-spacing:0.2px; text-transform:none;
+        white-space:nowrap; opacity:0; pointer-events:none; transition:opacity 0.12s ease;
+        z-index:80; box-shadow:0 3px 10px rgba(0,0,0,0.25);
+    }
+    .manual-field::before{
+        content:""; position:absolute; bottom:calc(100% + 1px); left:50%; transform:translateX(-50%);
+        border:5px solid transparent; border-top-color:#13388c; opacity:0; pointer-events:none;
+        transition:opacity 0.12s ease; z-index:80;
+    }
+    .manual-field:hover::after, .manual-field:focus::after,
+    .manual-field:hover::before, .manual-field:focus::before{ opacity:1; }
+    /* Copy 2 fields are auto-filled from Copy 1 and are not manually editable */
+    .mirror-field{ background:rgba(0,0,0,0.03); cursor:default; }
+
+    @page{ size: A4; margin: 0; }
+    @media print{
+        body{ background:#fff !important; padding:0; }
+        .page-title, .card, .status-msg, .a4-actions, .hint{ display:none !important; }
+        #statementWrap{ display:block !important; }
+        .a4-page{ box-shadow:none; margin:0; }
+        .manual-field{ background:transparent !important; }
+        .manual-field::after, .manual-field::before{ content:none !important; display:none !important; }
+        .mirror-field{ background:transparent !important; }
+    }
+</style>
+</head>
+<body>
+
+    <div class="page-title">Shunting Charge Memo</div>
+
+    <!-- ===== Search / Filter ===== -->
+    <div class="card" id="filterCard">
+        <div class="filter-grid">
+            <div class="field">
+                <label for="stationFrom">From Station</label>
+                <input list="stationList" id="stationFrom" placeholder="Type or select station">
+                <datalist id="stationList"></datalist>
+            </div>
+            <div class="field">
+                <label for="fromDate">Release Date (From)</label>
+                <input type="text" id="fromDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric">
+            </div>
+            <div class="field">
+                <label for="toDate">Release Date (To)</label>
+                <input type="text" id="toDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric">
+            </div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <button id="submitBtn" disabled>Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-msg" id="statusMsg">Data is Loading... Please Wait</div>
+
+    <!-- ===== Results ===== -->
+    <div class="card" id="resultsCard" style="display:none;">
+        <div class="table-wrap">
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th class="col-sr">Sr. No.</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Wagons</th>
+                        <th>Placement Date &amp; Time</th>
+                        <th>Release Date &amp; Time</th>
+                        <th class="col-pdf">PDF</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== A4 Memo (2 copies) ===== -->
+    <div id="statementWrap">
+        <div class="a4-actions">
+            <button id="printBtn">Print</button>
+        </div>
+        <div class="a4-page" id="a4Page">
+            <div class="memo-copy" id="copy1"></div>
+            <div class="cut-line"><span>&#9986; CUT HERE &#9986;</span></div>
+            <div class="memo-copy" id="copy2"></div>
+        </div>
+    </div>
+
+<script>
+    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
+    var SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
+    var SHEET_NAME = "IW_data";
+    var TO_STATION = "HAPA";
+
+    var statusMsg = document.getElementById('statusMsg');
+    var resultsCard = document.getElementById('resultsCard');
+    var resultsBody = document.getElementById('resultsBody');
+    var stationList = document.getElementById('stationList');
+    var statementWrap = document.getElementById('statementWrap');
+
+    var allRecords = [];
+    var filteredRecords = [];
+    var currentRec = null;
+
+    function buildUrl(params){
+        var url = APPS_SCRIPT_URL + "?sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME);
+        for (var key in params){ url += "&" + key + "=" + encodeURIComponent(params[key]); }
+        return url;
+    }
+    function setStatus(msg, isError){
+        statusMsg.textContent = msg || "";
+        statusMsg.className = "status-msg" + (isError ? " error" : "");
+    }
+    function parseDMY(str){
+        if (!str) return null;
+        var parts = str.split("/");
+        if (parts.length !== 3) return null;
+        var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (!d || !m || !y) return null;
+        return new Date(y, m - 1, d);
+    }
+    function parseInputDMY(str){
+        if (!str) return null;
+        str = str.trim();
+        var parts = str.split(/[\/\-\.]/);
+        if (parts.length !== 3) return null;
+        var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (!d || !m || !y) return null;
+        return new Date(y, m - 1, d);
+    }
+    function pad2(n){ return n < 10 ? "0" + n : "" + n; }
+    function formatDMY(dt){ return pad2(dt.getDate()) + "/" + pad2(dt.getMonth() + 1) + "/" + dt.getFullYear(); }
+    // Whatever format a date arrives in from the sheet — always show DD/MM/YYYY, same on mobile & PC
+    // (only plain text inputs are used, never native <input type="date">).
+    function toDMY(str){
+        if (!str) return "";
+        str = str.toString().trim();
+        var m = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+        if (m) return pad2(parseInt(m[1], 10)) + "/" + pad2(parseInt(m[2], 10)) + "/" + m[3];
+        m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (m) return pad2(parseInt(m[3], 10)) + "/" + pad2(parseInt(m[2], 10)) + "/" + m[1];
+        var d = new Date(str);
+        if (!isNaN(d.getTime())) return formatDMY(d);
+        return str;
+    }
+    function setDefaultDateRange(){
+        var today = new Date();
+        var prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        document.getElementById('fromDate').value = formatDMY(prevMonthStart);
+        document.getElementById('toDate').value = formatDMY(today);
+    }
+    function pickField(obj, patterns){
+        var keys = Object.keys(obj || {});
+        for (var p = 0; p < patterns.length; p++){
+            for (var i = 0; i < keys.length; i++){
+                if (keys[i].toLowerCase().indexOf(patterns[p]) !== -1) return obj[keys[i]];
+            }
+        }
+        return "";
+    }
+
+    // Same candidate source as Release/Placement Memo — placement_memo action
+    function fetchCandidateIds(){
+        return fetch(buildUrl({ action: "placement_memo" }))
+            .then(function(r){ return r.json(); })
+            .then(function(res){
+                if (res && res.status === "success" && Array.isArray(res.rakeIds)) return res.rakeIds;
+                return [];
+            })
+            .catch(function(){ return []; });
+    }
+    function fetchAllRecords(){
+        return fetchCandidateIds().then(function(ids){
+            if (ids.length === 0) return [];
+            return Promise.all(ids.map(function(id){
+                return fetch(buildUrl({ action: "getRow", rakeId: id }))
+                    .then(function(r){ return r.json(); })
+                    .then(function(res){
+                        if (res.status === "success" && res.found) return { id: id, data: res.data };
+                        return null;
+                    })
+                    .catch(function(){ return null; });
+            }));
+        }).then(function(list){
+            return list.filter(function(x){ return x !== null; });
+        });
+    }
+    function populateStationList(){
+        var seen = {};
+        stationList.innerHTML = "";
+        allRecords.forEach(function(rec){
+            var s = rec.data.from;
+            if (s && !seen[s]){
+                seen[s] = true;
+                var opt = document.createElement('option');
+                opt.value = s;
+                stationList.appendChild(opt);
+            }
+        });
+    }
+    function init(){
+        setStatus("Data is Loading... Please Wait");
+        var submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        setDefaultDateRange();
+        fetchAllRecords().then(function(records){
+            allRecords = records;
+            populateStationList();
+            if (records.length === 0){
+                setStatus("No rakes with placement/release data found.", true);
+            } else {
+                setStatus("Data loaded — showing current & previous month by default.");
+                submitFilter();
+            }
+            submitBtn.disabled = false;
+        }).catch(function(err){
+            setStatus("Error loading data: " + err.message, true);
+            submitBtn.disabled = false;
+        });
+    }
+    function renderResults(records){
+        resultsBody.innerHTML = "";
+        if (records.length === 0){
+            resultsCard.style.display = "block";
+            resultsBody.innerHTML = '<tr><td colspan="7">No matching rakes found.</td></tr>';
+            return;
+        }
+        var pdfIconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            '<path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#e53935"/>' +
+            '<path d="M14 2v4a1 1 0 0 0 1 1h4" fill="#ff8a80"/>' +
+            '<text x="12" y="16.5" text-anchor="middle" font-size="6.5" font-family="Arial, sans-serif" font-weight="700" fill="#fff">PDF</text>' +
+            '</svg>';
+        records.forEach(function(rec, idx){
+            var d = rec.data;
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td class="col-sr">' + (idx + 1) + '</td>' +
+                '<td>' + (d.from || "-") + '</td>' +
+                '<td>' + TO_STATION + '</td>' +
+                '<td>' + (d.wagons || "-") + '</td>' +
+                '<td>' + toDMY(d.placementDate) + ' ' + (d.placementTime || "-") + '</td>' +
+                '<td>' + toDMY(d.releaseDate) + ' ' + (d.releaseTime || "-") + '</td>' +
+                '<td class="col-pdf"><button type="button" class="gen-row-btn" data-idx="' + idx + '" title="Generate PDF Memo">' + pdfIconSvg + '</button></td>';
+            resultsBody.appendChild(tr);
+        });
+        resultsCard.style.display = "block";
+        document.querySelectorAll('.gen-row-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
+                generateMemo(rec);
+            });
+        });
+    }
+    function submitFilter(){
+        var station = document.getElementById('stationFrom').value.trim().toLowerCase();
+        var fromD = parseInputDMY(document.getElementById('fromDate').value);
+        var toD = parseInputDMY(document.getElementById('toDate').value);
+        filteredRecords = allRecords.filter(function(rec){
+            var d = rec.data;
+            if (station && (!d.from || d.from.toLowerCase().indexOf(station) === -1)) return false;
+            if (fromD || toD){
+                var rDate = parseDMY(d.releaseDate);
+                if (!rDate) return false;
+                if (fromD && rDate < fromD) return false;
+                if (toD && rDate > toD) return false;
+            }
+            return true;
+        });
+        var count = filteredRecords.length;
+        setStatus("Record Found : " + (count < 10 ? "0" + count : count) + " Rake" + (count === 1 ? "" : "s"));
+        renderResults(filteredRecords);
+        statementWrap.style.display = "none";
+    }
+
+    function wagonTypeOf(d){
+        return pickField(d, ["wagontype", "wagon & type", "wgntype"]) || (d.wagons || "");
+    }
+
+    function copyHtml(d, tag){
+        return '<div class="scale-wrap">' +
+            '<div class="copy-tag">' + tag + '</div>' +
+            '<div class="memo-title">Shunting Charge Memo</div>' +
+            '<div class="memo-row"><div class="f"><span class="memo-num">1.</span><span class="lbl">From Station :</span><span class="val">' + (d.from || "") + '</span></div>' +
+                '<div class="f"><span class="lbl">To Station :</span><span class="val">' + TO_STATION + '</span></div></div>' +
+            '<div class="memo-row"><div class="f"><span class="memo-num">2.</span><span class="lbl">Type of Wagons :</span><span class="val" contenteditable="true" data-role="wagonType" data-ph="fill">' + wagonTypeOf(d) + '</span></div>' +
+                '<div class="f"><span class="lbl">No. of Wagons :</span><span class="val">' + (d.wagons || "") + '</span></div></div>' +
+            '<div class="shunt-box">' +
+                '<div class="sd-title">:: Shunting Details ::</div>' +
+                '<div class="sd-row"><span class="lbl">Commencement Date &amp; Time :</span>' +
+                    '<span class="val-date manual-field" contenteditable="true" data-role="commDate" data-ph="DD/MM/YYYY" data-tooltip="Manual entry required" inputmode="numeric"></span>' +
+                    '<span class="val-time manual-field" contenteditable="true" data-role="commTime" data-ph="HH:MM" data-tooltip="Manual entry required" inputmode="numeric"></span></div>' +
+                '<div class="sd-row"><span class="lbl">Completion Date &amp; Time :</span>' +
+                    '<span class="val-date manual-field" contenteditable="true" data-role="compDate" data-ph="DD/MM/YYYY" data-tooltip="Manual entry required" inputmode="numeric"></span>' +
+                    '<span class="val-time manual-field" contenteditable="true" data-role="compTime" data-ph="HH:MM" data-tooltip="Manual entry required" inputmode="numeric"></span></div>' +
+                '<div class="sd-row"><span class="lbl">Total Time Taken :</span>' +
+                    '<span class="val-time" data-role="totalTime">-</span>' +
+                    '<span class="roundoff" data-role="roundOff"></span></div>' +
+            '</div>' +
+            '<div class="table-cap">3. Placement Particulars :</div>' +
+            '<table class="line-table"><thead><tr><th style="width:16%;">Sr No.</th><th>Line No.</th><th style="width:26%;">Total Wagon</th></tr></thead>' +
+            '<tbody>' +
+                '<tr><td>1</td><td>Inward Line</td><td class="manual-field" contenteditable="true" data-role="wagonCount" data-ph="0" data-tooltip="Manual entry required" inputmode="numeric"></td></tr>' +
+                '<tr><td>2</td><td>Outward Line</td><td class="manual-field" contenteditable="true" data-role="wagonCount" data-ph="0" data-tooltip="Manual entry required" inputmode="numeric"></td></tr>' +
+                '<tr><td>3</td><td>Loose-3 Line</td><td class="manual-field" contenteditable="true" data-role="wagonCount" data-ph="0" data-tooltip="Manual entry required" inputmode="numeric"></td></tr>' +
+                '<tr><td colspan="2" style="font-weight:800;">Total</td><td data-role="wagonTotal" style="font-weight:800;">0</td></tr>' +
+            '</tbody></table>' +
+            '<div class="remarks"><span class="rlabel">4. Remarks :</span> Please collect Shunting Charges as per rules.</div>' +
+            '<div class="memo-footer">' +
+                '<div class="sign-space"><div class="stamp-box">' +
+                    '<div class="hi">मुख्य माल पर्यवेक्षक - हापा</div>' +
+                    '<div class="en">CHIEF GOODS SUPERVISOR - HAPA</div>' +
+                    '<div class="hi">राजकोट मंडल (प. रे.)</div>' +
+                    '<div class="en">RAJKOT DIVISION (W.R.)</div>' +
+                '</div><div class="sign-cap">CGS-HAPA</div></div>' +
+                '<div class="sign-space"><div class="sig-gap"></div><div class="sign-cap">CYM-HAPA</div></div>' +
+            '</div>' +
+        '</div>';
+    }
+
+    // dd/MM/yyyy + HH:MM -> Date object (ya null agar invalid)
+    function parseDMYHM(dateStr, timeStr){
+        if (!dateStr || !timeStr) return null;
+        var dm = dateStr.trim().match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+        var tm = timeStr.trim().match(/^(\d{1,2}):(\d{2})$/);
+        if (!dm || !tm) return null;
+        var d = parseInt(dm[1], 10), mo = parseInt(dm[2], 10) - 1, y = parseInt(dm[3], 10);
+        var h = parseInt(tm[1], 10), mi = parseInt(tm[2], 10);
+        var dt = new Date(y, mo, d, h, mi);
+        return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    // Total Time Taken = Completion - Commencement (HH:MM). Round-off is always UP to the next
+    // whole hour whenever there's any leftover minutes — e.g. 00:45 -> R/O 01 HRS., 01:01 -> R/O 02 HRS.
+    function recalcShuntTime(copyEl){
+        var commDate = copyEl.querySelector('[data-role="commDate"]');
+        var commTime = copyEl.querySelector('[data-role="commTime"]');
+        var compDate = copyEl.querySelector('[data-role="compDate"]');
+        var compTime = copyEl.querySelector('[data-role="compTime"]');
+        var totalEl = copyEl.querySelector('[data-role="totalTime"]');
+        var roundEl = copyEl.querySelector('[data-role="roundOff"]');
+        if (!commDate || !commTime || !compDate || !compTime || !totalEl || !roundEl) return;
+        var start = parseDMYHM(commDate.textContent, commTime.textContent);
+        var end = parseDMYHM(compDate.textContent, compTime.textContent);
+        if (!start || !end || end <= start){
+            totalEl.textContent = "-";
+            roundEl.textContent = "";
+            return;
+        }
+        var totalMin = Math.round((end - start) / 60000);
+        var hh = Math.floor(totalMin / 60), mm = totalMin % 60;
+        totalEl.textContent = pad2(hh) + ":" + pad2(mm);
+        var roundHrs = Math.ceil(totalMin / 60);
+        roundEl.textContent = "(R/O " + pad2(roundHrs) + " HRS.)";
+    }
+
+    function recalcWagonTotal(copyEl){
+        var cells = copyEl.querySelectorAll('[data-role="wagonCount"]');
+        var total = 0;
+        cells.forEach(function(c){ var v = parseInt(c.textContent, 10); if (!isNaN(v)) total += v; });
+        var totalCell = copyEl.querySelector('[data-role="wagonTotal"]');
+        if (totalCell) totalCell.textContent = total;
+    }
+
+    // Put the caret at the end of a contenteditable field after we rewrite its text
+    function placeCaretAtEnd(el){
+        el.focus();
+        if (typeof window.getSelection !== "undefined" && typeof document.createRange !== "undefined"){
+            var range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            var sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+    }
+    // Auto-insert "/" while typing a date so the user only ever types digits (DD/MM/YYYY)
+    function formatDateField(el){
+        var digits = el.textContent.replace(/[^\d]/g, '').slice(0, 8);
+        var out = digits;
+        if (digits.length > 4) out = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+        else if (digits.length > 2) out = digits.slice(0, 2) + '/' + digits.slice(2);
+        if (el.textContent !== out){ el.textContent = out; placeCaretAtEnd(el); }
+    }
+    // Auto-insert ":" while typing a time so the user only ever types digits (HH:MM)
+    function formatTimeField(el){
+        var digits = el.textContent.replace(/[^\d]/g, '').slice(0, 4);
+        var out = digits;
+        if (digits.length > 2) out = digits.slice(0, 2) + ':' + digits.slice(2);
+        if (el.textContent !== out){ el.textContent = out; placeCaretAtEnd(el); }
+    }
+    // Auto-insert "/" while typing a date into a plain <input> field (search filters)
+    function formatDateInputEl(inputEl){
+        var digits = inputEl.value.replace(/[^\d]/g, '').slice(0, 8);
+        var out = digits;
+        if (digits.length > 4) out = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+        else if (digits.length > 2) out = digits.slice(0, 2) + '/' + digits.slice(2);
+        inputEl.value = out;
+    }
+
+    // Copy 2 is auto-filled from Copy 1 — user never has to enter anything twice
+    function syncCopies(copy1, copy2){
+        ['wagonType', 'commDate', 'commTime', 'compDate', 'compTime'].forEach(function(role){
+            var src = copy1.querySelector('[data-role="' + role + '"]');
+            var dst = copy2.querySelector('[data-role="' + role + '"]');
+            if (src && dst) dst.textContent = src.textContent;
+        });
+        var srcCells = copy1.querySelectorAll('[data-role="wagonCount"]');
+        var dstCells = copy2.querySelectorAll('[data-role="wagonCount"]');
+        srcCells.forEach(function(c, i){ if (dstCells[i]) dstCells[i].textContent = c.textContent; });
+        recalcShuntTime(copy2);
+        recalcWagonTotal(copy2);
+        fitMemoToPage(copy1);
+        fitMemoToPage(copy2);
+    }
+
+    // Copy 1 is the master copy the user fills in; Copy 2 mirrors it automatically and stays read-only
+    function wireMasterCopy(copy1, copy2){
+        ['commDate', 'compDate'].forEach(function(role){
+            var el = copy1.querySelector('[data-role="' + role + '"]');
+            if (el) el.addEventListener('input', function(){
+                formatDateField(el);
+                recalcShuntTime(copy1);
+                syncCopies(copy1, copy2);
+            });
+        });
+        ['commTime', 'compTime'].forEach(function(role){
+            var el = copy1.querySelector('[data-role="' + role + '"]');
+            if (el) el.addEventListener('input', function(){
+                formatTimeField(el);
+                recalcShuntTime(copy1);
+                syncCopies(copy1, copy2);
+            });
+        });
+        var wagonTypeEl = copy1.querySelector('[data-role="wagonType"]');
+        if (wagonTypeEl) wagonTypeEl.addEventListener('input', function(){ syncCopies(copy1, copy2); });
+        copy1.querySelectorAll('[data-role="wagonCount"]').forEach(function(el){
+            el.addEventListener('input', function(){
+                recalcWagonTotal(copy1);
+                syncCopies(copy1, copy2);
+            });
+        });
+    }
+
+    // Copy 2's fields are filled automatically — lock them so the user can't (and needn't) type into them
+    // Shrinks a copy's content just enough to always fit inside its fixed A4 half-page — never spills onto another page
+    function fitMemoToPage(copyEl){
+        var wrap = copyEl.querySelector('.scale-wrap');
+        if (!wrap) return;
+        wrap.style.transform = 'none';
+        var available = wrap.clientHeight;
+        var natural = wrap.scrollHeight;
+        if (available > 0 && natural > available){
+            var scale = available / natural;
+            wrap.style.transform = 'scale(' + scale + ')';
+        }
+    }
+
+    function lockMirrorCopy(copy2){
+        copy2.querySelectorAll('.manual-field').forEach(function(el){
+            el.setAttribute('contenteditable', 'false');
+            el.classList.remove('manual-field');
+            el.classList.add('mirror-field');
+            el.removeAttribute('data-tooltip');
+        });
+        var wagonTypeEl = copy2.querySelector('[data-role="wagonType"]');
+        if (wagonTypeEl){
+            wagonTypeEl.setAttribute('contenteditable', 'false');
+            wagonTypeEl.classList.add('mirror-field');
+        }
+    }
+
+    function generateMemo(rec){
+        if (!rec) return;
+        currentRec = rec;
+        var d = rec.data;
+        var copy1 = document.getElementById('copy1');
+        var copy2 = document.getElementById('copy2');
+        copy1.innerHTML = copyHtml(d, "CGS-HAPA COPY");
+        copy2.innerHTML = copyHtml(d, "CYM-HAPA COPY");
+        lockMirrorCopy(copy2);
+        wireMasterCopy(copy1, copy2);
+        syncCopies(copy1, copy2);
+        statementWrap.style.display = "block";
+        statementWrap.scrollIntoView({ behavior: "smooth" });
+    }
+
+    ['fromDate', 'toDate'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', function(){ formatDateInputEl(el); });
+    });
+
+    document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+    document.getElementById('submitBtn').addEventListener('click', submitFilter);
+
+    init();
+</script>
+</body>
+</html>
