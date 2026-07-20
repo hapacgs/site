@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Clearance Register - HAPA - v16</title>
+    <style>
+        :root {
+            --primary: #002060;
+            --secondary: #1e3a8a;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --purple: #6d28d9;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #1e293b;
+            --border: #a6b5c7;
+        }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            margin: 0; 
+            padding: 15px; 
+            background-color: var(--bg); 
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .container { 
+            max-width: 98%; 
+            margin: 0 auto 25px auto; 
+            background: var(--surface); 
+            padding: 20px; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+        }
+
+        h2 { 
+            color: var(--primary); 
+            font-size: 20px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            font-weight: 700;
+        }
+
+        .form-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+            gap: 15px; 
+            margin-bottom: 20px; 
+        }
+
+        .form-group { display: flex; flex-direction: column; position: relative; }
+        label { font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #475569; }
+        input, select { 
+            padding: 10px 12px; 
+            border: 1px solid var(--border); 
+            border-radius: 6px; 
+            font-size: 14px; 
+            background-color: var(--surface);
+            transition: all 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(0,32,96,0.1); }
+        
+        input[readonly] {
+            background-color: #f1f5f9;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+        .btn-submit { 
+            background-color: var(--success); 
+            color: white; 
+            padding: 12px 20px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 15px; 
+            font-weight: bold; 
+            width: 100%; 
+            transition: 0.2s; 
+        }
+        .btn-submit:hover { background-color: #059669; transform: translateY(-1px); }
+        
+        /* ⭐ Nav Button Style for Accrual Form */
+        .btn-nav-link {
+            background-color: var(--purple);
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            width: 100%;
+            transition: 0.2s;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .btn-nav-link:hover { background-color: #5b21b6; transform: translateY(-1px); }
+
+        .filter-panel {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--purple);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .actions-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-filter-action {
+            flex: 1;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: 0.2s;
+            text-align: center;
+        }
+        .btn-clear { background-color: #64748b; }
+        .btn-clear:hover { background-color: #475569; }
+        
+        .btn-history { background-color: #0284c7; }
+        .btn-history:hover { background-color: #0369a1; }
+
+        .success-msg { display: none; background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; padding: 12px; border-radius: 6px; margin-top: 15px; font-size: 15px; font-weight: bold; text-align: center; }
+        
+        .table-wrapper { 
+            overflow-x: auto; 
+            margin-top: 10px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border);
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 1500px; background: white; }
+        th, td { border: 1px solid var(--border); padding: 12px 14px; font-size: 13px; vertical-align: middle; }
+        th { background-color: var(--primary); color: white; text-transform: uppercase; font-weight: 600; font-size: 12px; letter-spacing: 0.5px; position: sticky; top: 0; text-align: center !important; }
+        
+        .align-left { text-align: left !important; }
+        .align-right { text-align: right !important; font-variant-numeric: tabular-nums; }
+        .align-center { text-align: center !important; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        tr:hover { background-color: #f1f5f9; }
+
+        .btn-action-received { background-color: var(--purple); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; white-space: nowrap; }
+        .btn-action-received:hover { background-color: #5b21b6; }
+        .btn-action-received:disabled { background-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+
+        .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; }
+        .status-paid { background-color: #d1fae5; color: #065f46; }
+        .status-pending { background-color: #fee2e2; color: #991b1b; }
+
+        .dynamic-section-header {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 20px 0 10px 0;
+            border-left: 5px solid var(--primary);
+        }
+
+        /* 🔒 PASSWORD POPUP MODAL STYLES */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-box {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 320px;
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .modal-box h3 { margin-top: 0; color: var(--primary); font-size: 16px; margin-bottom: 15px; }
+        .modal-box input[type="password"] {
+            width: 90%;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 16px;
+            letter-spacing: 5px;
+        }
+        .modal-buttons { display: flex; gap: 10px; }
+        .modal-btn {
+            flex: 1; padding: 10px; border: none; border-radius: 5px;
+            font-weight: bold; cursor: pointer; font-size: 14px;
+        }
+        .modal-btn-confirm { background: var(--success); color: white; }
+        .modal-btn-cancel { background: #cbd5e1; color: #475569; }
+        @keyframes fadeIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 id="formTitle">Payment Clearance Form (Update Received Payments)</h2>
+        <form id="paymentForm">
+            <input type="hidden" id="editRowIndex" value="">
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>TYPE OF CHARGES</label>
+                    <input type="text" id="typeOfCharges" readonly placeholder="Select from table...">
+                </div>
+
+                <div class="form-group">
+                    <label>CUST. CODE</label>
+                    <input type="text" id="custCode" readonly placeholder="Select from table...">
+                </div>
+
+                <div class="form-group">
+                    <label>ORIGINAL ACCRUAL AMT.</label>
+                    <input type="text" id="accrualAmt" readonly placeholder="₹ 0.00">
+                </div>
+
+                <div class="form-group">
+                    <label>PAYMENT DATE</label>
+                    <input type="date" id="paymentDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>PAID AMOUNT</label>
+                    <input type="number" step="0.01" id="paidAmount" required placeholder="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label>WAIVER / CREDIT</label>
+                    <input type="number" step="0.01" id="waiverCredit" value="0.00">
+                </div>
+
+                <div class="form-group">
+                    <label>G.S.T. PAID</label>
+                    <input type="number" step="0.01" id="gstPaid" value="0.00">
+                </div>
+            </div>
+            <!-- Main Action Button -->
+            <button type="submit" id="submitBtn" class="btn-submit">🔒 Update Received Payment</button>
+        </form>
+        
+        <!-- ⭐ Accrual Form Button placed perfectly below Update Button -->
+        <button class="btn-nav-link" onclick="window.location.href='index.html'">📉 Accrual Form</button>
+        
+        <div id="successAlertBox" class="success-msg">🎉 Payment Updated & Sheet Sync Done Successfully!</div>
+    </div>
+
+    <div class="container">
+        <div class="filter-panel">
+            <h3 style="margin-top:0; margin-bottom:10px; font-size:15px; color:var(--purple);">⚡ Live Advanced Filters</h3>
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label id="dateFromLabel">From Date (Accrual)</label>
+                    <input type="date" id="filterFromDate" onchange="applyLiveFilters()">
+                </div>
+                <div class="form-group">
+                    <label id="dateToLabel">To Date (Accrual)</label>
+                    <input type="date" id="filterToDate" onchange="applyLiveFilters()">
+                </div>
+                <div class="form-group">
+                    <label>Customer Code</label>
+                    <select id="filterCustomer" onchange="applyLiveFilters()">
+                        <option value="">-- All Customers --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Type of Charge</label>
+                    <select id="filterCharge" onchange="applyLiveFilters()">
+                        <option value="">-- All Charges --</option>
+                    </select>
+                </div>
+                <!-- Clean Actions Section (Back to 2 buttons side-by-side) -->
+                <div class="form-group" style="min-width: 260px;">
+                    <label>Actions</label>
+                    <div class="actions-wrapper">
+                        <button class="btn-filter-action btn-clear" onclick="resetFilters()">🔄 Clear Filters</button>
+                        <button class="btn-filter-action btn-history" id="historyToggleBtn" onclick="togglePaymentDetailsMode()">💳 Payment Details</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="dynamicTableTitleHeader" class="dynamic-section-header">Pending Outstanding Ledger View</div>
+        
+        <div class="table-wrapper">
+            <table id="mainTable">
+                <thead id="tableHeaderContent">
+                    </thead>
+                <tbody id="outstandingRecordsBody">
+                    <tr>
+                        <td colspan="13" style='text-align:center; color:#666;'>Loading Live Ledger Records From Sheet...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="passwordModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>🔒 Enter Authentication Password</h3>
+            <input type="password" id="securePasswordInput" placeholder="••••" autocomplete="off">
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="closePasswordModal()">Cancel</button>
+                <button class="modal-btn modal-btn-confirm" onclick="confirmPasswordAndSubmit()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWK07qRGdTuurjOBGfWtbA1HCR2bEz_qPZee8WOyV6OH8kfOu1VIiIqCwy6Vo3Xw8K/exec";
+        const SECRET_PASS = "94976";
+
+        let rawSheetData = [];
+        let currentViewMode = "pending"; 
+
+        function setDefaultDate() {
+            document.getElementById('paymentDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function loadOutstandingEntries(justUpdatedCust = null, justUpdatedCharge = null) {
+            fetch(SCRIPT_URL)
+            .then(res => res.json())
+            .then(data => {
+                rawSheetData = data;
+                
+                let activeCustomers = new Set();
+                let activeCharges = new Set();
+
+                data.forEach(row => {
+                    if(row.custCode) activeCustomers.add(row.custCode.trim());
+                    if(row.typeOfCharges) activeCharges.add(row.typeOfCharges.trim());
+                });
+
+                populateFilterDropdown('filterCustomer', activeCustomers, "-- All Customers --");
+                populateFilterDropdown('filterCharge', activeCharges, "-- All Charges --");
+
+                if (justUpdatedCust && justUpdatedCharge) {
+                    document.getElementById('filterCustomer').value = justUpdatedCust;
+                    document.getElementById('filterCharge').value = justUpdatedCharge;
+                    switchToPaymentDetailsView();
+                } else {
+                    renderTableStructureAndData();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('outstandingRecordsBody').innerHTML = "<tr><td colspan='13' style='text-align:center; color:red;'>⚠️ Error Loading Data from Google Sheet.</td></tr>";
+            });
+        }
+
+        function populateFilterDropdown(elementId, setElements, defaultText) {
+            const selectEl = document.getElementById(elementId);
+            const currentValue = selectEl.value;
+            selectEl.innerHTML = `<option value="">${defaultText}</option>`;
+            Array.from(setElements).sort().forEach(item => {
+                selectEl.innerHTML += `<option value="${item}">${item}</option>`;
+            });
+            selectEl.value = currentValue;
+        }
+
+        function renderTableStructureAndData() {
+            const headerEl = document.getElementById('tableHeaderContent');
+            const tbody = document.getElementById('outstandingRecordsBody');
+            
+            const selectedCust = document.getElementById('filterCustomer').value;
+            const selectedCharge = document.getElementById('filterCharge').value;
+            const fromDateVal = document.getElementById('filterFromDate').value;
+            const toDateVal = document.getElementById('filterToDate').value;
+
+            let count = 0;
+
+            if (currentViewMode === "pending") {
+                headerEl.innerHTML = `
+                    <tr>
+                        <th>Type of Charges</th><th>Cust Code</th><th>Accrual Date</th>
+                        <th>Accrual Amt.</th><th>Hrs. / Day</th><th>C.R. No.</th><th>O/S Amount</th><th>Status</th><th>Remarks</th><th>Action</th>
+                    </tr>
+                `;
+                tbody.innerHTML = "";
+
+                rawSheetData.forEach(row => {
+                    let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
+                    if (isNaN(osVal) || osVal <= 0) return; 
+
+                    if (selectedCust && row.custCode !== selectedCust) return;
+                    if (selectedCharge && row.typeOfCharges !== selectedCharge) return;
+                    if (!checkDateFilter(row.accrualDate, fromDateVal, toDateVal)) return;
+
+                    count++;
+                    const tr = document.createElement('tr');
+                    let accDate = row.accrualDate ? new Date(row.accrualDate).toLocaleDateString('en-GB') : '';
+
+                    tr.innerHTML = `
+                        <td class="align-left">${row.typeOfCharges || ''}</td>
+                        <td class="align-left">${row.custCode || ''}</td>
+                        <td class="align-center">${accDate}</td>
+                        <td class="align-right">₹ ${parseFloat(row.accrualAmt || 0).toFixed(2)}</td>
+                        <td class="align-left">${row.hrsDays || ''}</td>
+                        <td class="align-left" style="color:#6d28d9; font-weight:600;">${row.crNo || 'N.A.'}</td>
+                        <td class="align-right" style="font-weight: bold; color: red;">₹ ${osVal.toFixed(2)}</td>
+                        <td class="align-center"><span class="status-badge status-pending">⏳ Pending</span></td>
+                        <td class="align-left">${row.remarks || ''}</td>
+                        <td class="align-center">
+                            <button class="btn-action-received" onclick="selectRowForClearance('${row.rowIndex}', '${row.typeOfCharges}', '${row.custCode}', '${row.accrualAmt}', '${osVal}')">💰 Payment Received</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } else {
+                headerEl.innerHTML = `
+                    <tr>
+                        <th>Type of Charges</th><th>Cust Code</th><th>Accrual Date</th><th>Accrual Amt.</th><th>Hrs. / Day</th>
+                        <th>Payment Date</th><th>Paid Amount</th><th>Waiver / Credit</th><th>G.S.T. Paid</th>
+                        <th>C.R. No.</th><th>Remarks</th><th>Status</th><th>Action</th>
+                    </tr>
+                `;
+                tbody.innerHTML = "";
+
+                let paidRecords = rawSheetData.filter(row => {
+                    let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
+                    if (isNaN(osVal)) osVal = 0;
+                    
+                    if (osVal > 0) return false; 
+                    if (selectedCust && row.custCode !== selectedCust) return false;
+                    if (selectedCharge && row.typeOfCharges !== selectedCharge) return false;
+                    if (!checkDateFilter(row.paymentDate, fromDateVal, toDateVal)) return false;
+                    return true;
+                });
+
+                paidRecords.sort((a, b) => {
+                    let dateA = a.paymentDate ? new Date(a.paymentDate) : new Date(0);
+                    let dateB = b.paymentDate ? new Date(b.paymentDate) : new Date(0);
+                    return dateB - dateA; 
+                });
+
+                paidRecords.forEach(row => {
+                    count++;
+                    const tr = document.createElement('tr');
+                    let accDate = row.accrualDate ? new Date(row.accrualDate).toLocaleDateString('en-GB') : '';
+                    let payDate = row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('en-GB') : '-';
+
+                    tr.innerHTML = `
+                        <td class="align-left">${row.typeOfCharges || ''}</td>
+                        <td class="align-left">${row.custCode || ''}</td>
+                        <td class="align-center">${accDate}</td>
+                        <td class="align-right">₹ ${parseFloat(row.accrualAmt || 0).toFixed(2)}</td>
+                        <td class="align-left">${row.hrsDays || ''}</td>
+                        <td class="align-center" style="font-weight:600; color:#1e3a8a; background:#eff6ff;">${payDate}</td>
+                        <td class="align-right" style="font-weight:600; color:green;">₹ ${parseFloat(row.paidAmount || 0).toFixed(2)}</td>
+                        <td class="align-right">₹ ${parseFloat(row.waiverCredit || 0).toFixed(2)}</td>
+                        <td class="align-right">₹ ${parseFloat(row.gstPaid || 0).toFixed(2)}</td>
+                        <td class="align-left" style="color:#6d28d9; font-weight:bold; background:#f5f3ff;">${row.crNo || ''}</td>
+                        <td class="align-left">${row.remarks || ''}</td>
+                        <td class="align-center"><span class="status-badge status-paid">✅ Fully Paid</span></td>
+                        <td class="align-center">
+                            <button class="btn-action-received" disabled>💰 Payment Received</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            let totalCols = currentViewMode === "pending" ? 10 : 13;
+            if(count === 0) {
+                tbody.innerHTML = `<tr><td colspan='${totalCols}' style='text-align:center; color:#666; font-weight:bold;'>No records found matching filters.</td></tr>`;
+            }
+        }
+
+        function checkDateFilter(recordDateStr, fromStr, toStr) {
+            if (!fromStr && !toStr) return true; 
+            if (!recordDateStr) return false;
+            
+            let recDate = new Date(recordDateStr);
+            recDate.setHours(0,0,0,0);
+
+            if (fromStr) {
+                let fromDate = new Date(fromStr);
+                fromDate.setHours(0,0,0,0);
+                if (recDate < fromDate) return false;
+            }
+            if (toStr) {
+                let toDate = new Date(toStr);
+                toDate.setHours(0,0,0,0);
+                if (recDate > toDate) return false;
+            }
+            return true;
+        }
+
+        function applyLiveFilters() {
+            renderTableStructureAndData();
+        }
+
+        function switchToPaymentDetailsView() {
+            currentViewMode = "paid";
+            const btn = document.getElementById('historyToggleBtn');
+            btn.innerText = "⏳ Show Outstanding";
+            btn.style.backgroundColor = "var(--warning)";
+            document.getElementById('dateFromLabel').innerText = "From Date (Payment)"; 
+            document.getElementById('dateToLabel').innerText = "To Date (Payment)";     
+            document.getElementById('dynamicTableTitleHeader').innerText = "Received Payment History Log (Latest Payment First View)";
+            renderTableStructureAndData();
+        }
+
+        function togglePaymentDetailsMode() {
+            document.getElementById('filterFromDate').value = "";
+            document.getElementById('filterToDate').value = "";
+
+            if (currentViewMode === "pending") {
+                switchToPaymentDetailsView();
+            } else {
+                currentViewMode = "pending";
+                const btn = document.getElementById('historyToggleBtn');
+                btn.innerText = "💳 Payment Details";
+                btn.style.backgroundColor = "#0284c7";
+                document.getElementById('dateFromLabel').innerText = "From Date (Accrual)";
+                document.getElementById('dateToLabel').innerText = "To Date (Accrual)";
+                document.getElementById('dynamicTableTitleHeader').innerText = "Pending Outstanding Ledger View";
+                renderTableStructureAndData();
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('filterCustomer').value = "";
+            document.getElementById('filterCharge').value = "";
+            document.getElementById('filterFromDate').value = "";
+            document.getElementById('filterToDate').value = "";
+            
+            currentViewMode = "pending";
+            const btn = document.getElementById('historyToggleBtn');
+            btn.innerText = "💳 Payment Details";
+            btn.style.backgroundColor = "#0284c7";
+            
+            document.getElementById('dateFromLabel').innerText = "From Date (Accrual)";
+            document.getElementById('dateToLabel').innerText = "To Date (Accrual)";
+            document.getElementById('dynamicTableTitleHeader').innerText = "Pending Outstanding Ledger View";
+            
+            renderTableStructureAndData();
+        }
+
+        function selectRowForClearance(rowIndex, type, cust, originalAmt, currentOS) {
+            document.getElementById('editRowIndex').value = rowIndex;
+            document.getElementById('typeOfCharges').value = type;
+            document.getElementById('custCode').value = cust;
+            document.getElementById('accrualAmt').value = "₹ " + parseFloat(originalAmt).toFixed(2);
+            document.getElementById('paidAmount').value = parseFloat(currentOS).toFixed(2);
+            
+            document.getElementById('formTitle').innerText = `🔒 Processing Received Payment - Row: ${rowIndex}`;
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        document.getElementById('paymentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const rowIndex = document.getElementById('editRowIndex').value;
+            if(!rowIndex) {
+                alert("⚠️ Kripya niche table me se kisi entry ka 'Payment Received' button dabayein!");
+                return;
+            }
+
+            document.getElementById('securePasswordInput').value = "";
+            document.getElementById('passwordModal').style.display = "flex";
+            document.getElementById('securePasswordInput').focus();
+        });
+
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = "none";
+        }
+
+        function confirmPasswordAndSubmit() {
+            const enteredPass = document.getElementById('securePasswordInput').value;
+            
+            if (enteredPass !== SECRET_PASS) {
+                alert("❌ Unauthorized Password! Update dropped.");
+                closePasswordModal();
+                return;
+            }
+
+            closePasswordModal();
+
+            const targetCust = document.getElementById('custCode').value;
+            const targetCharge = document.getElementById('typeOfCharges').value;
+
+            const formData = {
+                action: "update", 
+                rowIndex: document.getElementById('editRowIndex').value,
+                paymentDate: document.getElementById('paymentDate').value,
+                paidAmount: document.getElementById('paidAmount').value,
+                waiverCredit: document.getElementById('waiverCredit').value,
+                gstPaid: document.getElementById('gstPaid').value
+            };
+
+            fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                mode: 'no-cors', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(formData) 
+            })
+            .then(() => {
+                const successBox = document.getElementById('successAlertBox');
+                successBox.style.display = 'block';
+                setTimeout(() => { successBox.style.display = 'none'; }, 5000);
+
+                document.getElementById('editRowIndex').value = "";
+                document.getElementById('formTitle').innerText = "Payment Clearance Form (Update Received Payments)";
+                document.getElementById('paymentForm').reset();
+                setDefaultDate();
+                
+                loadOutstandingEntries(targetCust, targetCharge);
+            })
+            .catch(error => alert('Network error occurred during execution: ' + error));
+        }
+
+        document.getElementById('securePasswordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                confirmPasswordAndSubmit();
+            }
+        });
+
+        window.onload = function() {
+            setDefaultDate();
+            loadOutstandingEntries();
+        };
+    </script>
+</body>
+</html>
