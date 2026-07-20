@@ -1,1 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOIS Outward Data Uploader</title>
+<style>
+  :root{
+    --bg-1:#040c16;
+    --bg-2:#081a2e;
+    --cyan:#22e5ff;
+    --cyan-soft:#7be6ffcc;
+    --blue:#2b6dff;
+    --glass:rgba(255,255,255,0.06);
+    --glass-border:rgba(120,220,255,0.25);
+    --text-main:#eaf6ff;
+    --text-dim:#9fc4d8;
+    --danger:#ff4d6d;
+    --danger-glow:rgba(255,77,109,0.45);
+    --success:#2be2a3;
+  }
 
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    color:var(--text-main);
+    background:
+      radial-gradient(circle at 15% 10%, rgba(43,109,255,0.25), transparent 40%),
+      radial-gradient(circle at 85% 0%, rgba(34,229,255,0.18), transparent 45%),
+      radial-gradient(circle at 50% 100%, rgba(34,229,255,0.10), transparent 55%),
+      linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    padding:36px 18px 60px;
+  }
+
+  .wrap{ max-width:920px; margin:0 auto; }
+
+  .glass{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:18px;
+    backdrop-filter:blur(16px) saturate(140%);
+    -webkit-backdrop-filter:blur(16px) saturate(140%);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  header.glass{
+    padding:26px 30px;
+    margin-bottom:22px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    gap:16px;
+  }
+
+  .mode-group{
+    display:flex;
+    gap:26px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+
+  .mode-option{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:14px;
+    font-weight:600;
+    color:var(--text-main);
+    cursor:pointer;
+    padding:6px 16px;
+    border-radius:20px;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(120,220,255,0.2);
+    transition:border-color .2s ease, box-shadow .2s ease;
+  }
+
+  .mode-option:has(input:checked){
+    border-color:var(--cyan);
+    box-shadow:0 0 12px rgba(34,229,255,0.35);
+    color:var(--cyan);
+  }
+
+  .mode-option input[type="radio"]{
+    width:16px; height:16px;
+    accent-color:var(--cyan);
+    cursor:pointer;
+  }
+
+  .mode-option input[type="radio"]:disabled{
+    cursor:not-allowed;
+    opacity:0.5;
+  }
+
+  .mode-option:has(input:disabled){
+    opacity:0.6;
+    cursor:not-allowed;
+  }
+
+  h1{
+    font-size:22px;
+    margin:0;
+    letter-spacing:0.6px;
+    color:var(--cyan);
+    text-transform:uppercase;
+    text-shadow:0 0 14px rgba(34,229,255,0.45);
+  }
+
+  h1 span{
+    display:block;
+    font-size:12.5px;
+    font-weight:400;
+    color:var(--text-dim);
+    margin-top:4px;
+    letter-spacing:0.4px;
+  }
+
+  /* ---------- Steps Infographic ---------- */
+  .steps-panel{ padding:26px 26px 30px; margin-bottom:22px; }
+
+  .steps-title{
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:1.4px;
+    color:var(--cyan-soft);
+    margin:0 0 20px;
+    font-weight:600;
+  }
+
+  .steps-row{
+    display:flex;
+    flex-wrap:nowrap;
+    gap:6px;
+    position:relative;
+    overflow-x:auto;
+  }
+
+  .step-card{
+    flex:1 1 0;
+    min-width:0;
+    background:rgba(255,255,255,0.04);
+    border:1px solid rgba(120,220,255,0.18);
+    border-radius:8px;
+    padding:8px 4px 7px;
+    text-align:center;
+    position:relative;
+    transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+
+  .step-card:hover{
+    transform:translateY(-2px);
+    border-color:var(--cyan);
+    box-shadow:0 4px 12px rgba(34,229,255,0.25);
+  }
+
+  .step-num{
+    width:17px; height:17px;
+    margin:0 auto 4px;
+    border-radius:50%;
+    background:linear-gradient(135deg, var(--cyan), var(--blue));
+    color:#031421;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700;
+    font-size:9px;
+    box-shadow:0 0 6px rgba(34,229,255,0.5);
+  }
+
+  .step-icon{ font-size:12px; margin-bottom:3px; }
+
+  .step-label{
+    font-size:8.5px;
+    color:var(--text-main);
+    font-weight:600;
+    line-height:1.2;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .step-arrow{
+    align-self:center;
+    color:var(--cyan);
+    font-size:11px;
+    opacity:0.7;
+    flex:0 0 auto;
+  }
+
+  @media (max-width:720px){
+    .step-label{ font-size:7.5px; }
+    .steps-row{ gap:4px; }
+  }
+
+  /* ---------- Upload Panel ---------- */
+  .panel{ padding:28px 30px; }
+
+  .field-label{
+    font-size:13px;
+    color:var(--text-dim);
+    margin-bottom:8px;
+    display:block;
+    letter-spacing:0.3px;
+  }
+
+  input[type="file"]{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    background:rgba(255,255,255,0.05);
+    border:1px dashed rgba(120,220,255,0.4);
+    color:var(--text-main);
+    margin-bottom:20px;
+    font-size:14px;
+  }
+
+  input[type="file"]::file-selector-button{
+    background:linear-gradient(135deg, var(--cyan), var(--blue));
+    border:none;
+    color:#031421;
+    padding:8px 14px;
+    border-radius:8px;
+    font-weight:600;
+    margin-right:12px;
+    cursor:pointer;
+  }
+
+  .btn-row{ display:flex; flex-wrap:wrap; gap:12px; margin-bottom:6px; }
+
+  button{
+    border:none;
+    padding:12px 22px;
+    border-radius:10px;
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+    letter-spacing:0.3px;
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+
+  button:active{ transform:translateY(1px); }
+
+  #previewBtn{
+    background:linear-gradient(135deg, var(--cyan), #17b9d6);
+    color:#04141f;
+    box-shadow:0 4px 16px rgba(34,229,255,0.35);
+  }
+  #previewBtn:hover{ box-shadow:0 6px 22px rgba(34,229,255,0.5); }
+
+  .btn-save{
+    background:linear-gradient(135deg, var(--blue), #1a3fa8);
+    color:#eaf6ff;
+    box-shadow:0 4px 16px rgba(43,109,255,0.35);
+  }
+  .btn-save:hover:not(:disabled){ box-shadow:0 6px 22px rgba(43,109,255,0.5); }
+  .btn-save:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+    box-shadow:none;
+  }
+
+  .hl{
+    color:var(--cyan);
+    font-weight:800;
+    text-shadow:0 0 8px rgba(34,229,255,0.5);
+  }
+
+  #status{
+    margin-top:18px;
+    font-weight:600;
+    font-size:14.5px;
+    min-height:20px;
+  }
+  .status-info{ color:var(--cyan-soft); }
+  .status-success{ color:var(--success); }
+  .status-error{ color:var(--danger); }
+  .status-progress{ color:#8fb8ff; }
+
+  .info-box{
+    margin-top:16px;
+    background:rgba(34,229,255,0.07);
+    border-left:3px solid var(--cyan);
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:13.5px;
+    color:var(--text-main);
+    line-height:1.6;
+    display:none;
+  }
+
+  .error-box{
+    margin-top:16px;
+    background:rgba(255,77,109,0.10);
+    border-left:3px solid var(--danger);
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:13.5px;
+    color:#ffd7de;
+    line-height:1.6;
+    display:none;
+    box-shadow:0 0 18px var(--danger-glow) inset;
+  }
+
+  .error-box strong{ color:#ff8fa3; }
+
+  h3.section-title{
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+    color:var(--cyan-soft);
+    margin:26px 0 12px;
+    font-weight:600;
+  }
+
+  .preview-box{
+    background:rgba(2,10,18,0.7);
+    border:1px solid rgba(120,220,255,0.2);
+    color:#c9f3ff;
+    padding:16px;
+    border-radius:10px;
+    max-height:380px;
+    overflow-y:auto;
+    white-space:pre-wrap;
+    font-family:'Consolas', monospace;
+    font-size:12.5px;
+    display:none;
+  }
+
+  .preview-box::-webkit-scrollbar{ width:8px; }
+  .preview-box::-webkit-scrollbar-thumb{ background:rgba(34,229,255,0.35); border-radius:6px; }
+
+  .dup-tag{
+    display:inline-block;
+    background:var(--danger);
+    color:#fff;
+    font-size:10.5px;
+    font-weight:700;
+    padding:1px 8px;
+    border-radius:6px;
+    margin-left:8px;
+    vertical-align:middle;
+  }
+
+  footer{
+    text-align:center;
+    color:var(--text-dim);
+    font-size:12px;
+    margin-top:26px;
+    letter-spacing:0.3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="glass">
+    <h1>Outward Data Uploader
+      <span>Import FOIS RR-Base freight data into Google Sheets</span>
+    </h1>
+    <div class="mode-group">
+      <label class="mode-option">
+        <input type="radio" name="saveMode" id="modePeriodical" value="periodical" checked>
+        Periodical
+      </label>
+      <label class="mode-option">
+        <input type="radio" name="saveMode" id="modeMonthly" value="monthly">
+        Monthly
+      </label>
+    </div>
+  </header>
+
+  <div class="glass steps-panel">
+    <p class="steps-title">How To Download The CSV File From FOIS Portal</p>
+    <div class="steps-row">
+      <div class="step-card">
+        <div class="step-num">1</div>
+        <div class="step-icon">🌐</div>
+        <div class="step-label">FOIS Portal</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step-card">
+        <div class="step-num">2</div>
+        <div class="step-icon">📤</div>
+        <div class="step-label">Outward</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step-card">
+        <div class="step-num">3</div>
+        <div class="step-icon">📦</div>
+        <div class="step-label">Freight Details</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step-card">
+        <div class="step-num">4</div>
+        <div class="step-icon">🧾</div>
+        <div class="step-label">RR-Base</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step-card">
+        <div class="step-num">5</div>
+        <div class="step-icon">📅</div>
+        <div class="step-label">From & To Date</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step-card">
+        <div class="step-num">6</div>
+        <div class="step-icon">✅</div>
+        <div class="step-label">Submit</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step-card">
+        <div class="step-num">7</div>
+        <div class="step-icon">⬇️</div>
+        <div class="step-label">Download Excel</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="glass panel">
+    <label class="field-label">Select the CSV file downloaded from FOIS</label>
+    <input type="file" id="csvFile" accept=".csv" />
+
+    <div class="btn-row">
+      <button id="previewBtn" onclick="processCSV()">1. Data Preview</button>
+      <button id="saveBtnPeriodical" class="btn-save" onclick="saveToSheet('periodical')" disabled>2. Save to Google Sheet (<span class="hl">Periodical</span>)</button>
+      <button id="saveBtnMonthly" class="btn-save" onclick="saveToSheet('monthly')" disabled>3. Save to Google Sheet (<span class="hl">Monthly</span>)</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="infoBox" class="info-box"></div>
+    <div id="errorBox" class="error-box"></div>
+
+    <h3 class="section-title">Data Preview</h3>
+    <div id="jsonPreview" class="preview-box"></div>
+  </div>
+
+  <footer>Cyan-Blue Dark Glass Interface · FOIS RR-Base Data Pipeline</footer>
+</div>
+
+<script>
+    let globalPayload = null;
+    let globalRecords = [];
+
+    const STORAGE_KEY = "fois_uploaded_record_signatures";
+
+    const modePeriodical = document.getElementById("modePeriodical");
+    const modeMonthly = document.getElementById("modeMonthly");
+    const saveBtnPeriodical = document.getElementById("saveBtnPeriodical");
+    const saveBtnMonthly = document.getElementById("saveBtnMonthly");
+
+    let dataReady = false;
+
+    function getSelectedMode() {
+        return modeMonthly.checked ? "monthly" : "periodical";
+    }
+
+    // Keeps the correct Save button enabled based on which radio is
+    // selected. Only takes effect once a file has been previewed successfully.
+    function updateSaveButtons() {
+        if (!dataReady) {
+            saveBtnPeriodical.disabled = true;
+            saveBtnMonthly.disabled = true;
+            return;
+        }
+        const mode = getSelectedMode();
+        saveBtnPeriodical.disabled = (mode !== "periodical");
+        saveBtnMonthly.disabled = (mode !== "monthly");
+    }
+
+    modePeriodical.addEventListener("change", updateSaveButtons);
+    modeMonthly.addEventListener("change", updateSaveButtons);
+
+    function getStoredSignatures() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function saveStoredSignatures(signatures) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(signatures));
+        } catch (e) {
+            // Storage unavailable, ignore silently
+        }
+    }
+
+    function recordSignature(record) {
+        // Build a stable signature from all field values of the record
+        return Object.keys(record)
+            .sort()
+            .map(key => key + "=" + record[key])
+            .join("||");
+    }
+
+    function setStatus(message, type) {
+        const statusDiv = document.getElementById("status");
+        statusDiv.className = "status-" + type;
+        statusDiv.innerText = message;
+    }
+
+    function processCSV() {
+        const fileInput = document.getElementById("csvFile");
+        const previewDiv = document.getElementById("jsonPreview");
+        const infoBox = document.getElementById("infoBox");
+        const errorBox = document.getElementById("errorBox");
+        const file = fileInput.files[0];
+
+        errorBox.style.display = "none";
+        errorBox.innerHTML = "";
+        infoBox.style.display = "none";
+        previewDiv.style.display = "none";
+        dataReady = false;
+        updateSaveButtons();
+
+        if (!file) {
+            setStatus("Please upload a CSV file first.", "error");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const lines = text.split('\n');
+
+            // Extract dates from row 2
+            const row2 = lines[1] || "";
+            const fromDateMatch = row2.match(/From Date:\s*([\d-]+)/i);
+            const toDateMatch = row2.match(/To Date:\s*([\d-]+)/i);
+
+            const fromDate = fromDateMatch ? fromDateMatch[1] : "N/A";
+            const toDate = toDateMatch ? toDateMatch[1] : "N/A";
+
+            if (lines.length < 4) {
+                setStatus("Invalid file format. Please upload a file downloaded from the FOIS portal.", "error");
+                return;
+            }
+
+            // Row 3 has the headers
+            const headers = lines[2].split(',').map(h => h.replace(/"/g, '').trim());
+            let jsonDataArray = [];
+
+            for (let i = 3; i < lines.length; i++) {
+                if (lines[i].trim() === "") continue;
+                const values = lines[i]
+                    .split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/)
+                    .map(v => v.replace(/"/g, '').trim());
+
+                let obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = values[index] || "";
+                });
+                jsonDataArray.push(obj);
+            }
+
+            if (jsonDataArray.length === 0) {
+                setStatus("No data rows found in this file.", "error");
+                return;
+            }
+
+            // ---- Duplicate detection ----
+            const storedSignatures = getStoredSignatures();
+            const seenInFile = new Set();
+            const duplicatesWithinFile = [];
+            const duplicatesAlreadySaved = [];
+
+            jsonDataArray.forEach((record, idx) => {
+                const sig = recordSignature(record);
+                if (seenInFile.has(sig)) {
+                    duplicatesWithinFile.push(idx + 1);
+                } else {
+                    seenInFile.add(sig);
+                }
+                if (storedSignatures.includes(sig)) {
+                    duplicatesAlreadySaved.push(idx + 1);
+                }
+            });
+
+            const hasDuplicates = duplicatesWithinFile.length > 0 || duplicatesAlreadySaved.length > 0;
+
+            globalPayload = {
+                fromDate: fromDate,
+                toDate: toDate,
+                jsonData: JSON.stringify(jsonDataArray, null, 2)
+            };
+            globalRecords = jsonDataArray;
+
+            infoBox.innerHTML =
+                "<strong>Extracted Info:</strong><br>" +
+                "From Date: " + fromDate + "<br>" +
+                "To Date: " + toDate + "<br>" +
+                "Total Records: " + jsonDataArray.length;
+            infoBox.style.display = "block";
+
+            previewDiv.innerText = globalPayload.jsonData;
+            previewDiv.style.display = "block";
+
+            if (hasDuplicates) {
+                let msg = "<strong>Duplicate Entry Detected.</strong> This file cannot be saved until duplicates are resolved.<br>";
+                if (duplicatesWithinFile.length > 0) {
+                    msg += "Duplicate rows within this file (row numbers): " + duplicatesWithinFile.join(", ") + "<br>";
+                }
+                if (duplicatesAlreadySaved.length > 0) {
+                    msg += "Rows already saved to Google Sheet previously (row numbers): " + duplicatesAlreadySaved.join(", ") + "<br>";
+                }
+                errorBox.innerHTML = msg;
+                errorBox.style.display = "block";
+                setStatus("Duplicate Entry. Please check the file and try again.", "error");
+                dataReady = false;
+                updateSaveButtons();
+            } else {
+                const mode = getSelectedMode();
+                setStatus("Data Preview is ready. Click Save to Google Sheet (" +
+                    (mode === "monthly" ? "Monthly" : "Periodical") +
+                    ") to upload the data.", "success");
+                dataReady = true;
+                updateSaveButtons();
+                // Lock the mode selection once a file has been loaded/previewed
+                modePeriodical.disabled = true;
+                modeMonthly.disabled = true;
+            }
+        };
+
+        reader.readAsText(file);
+    }
+
+    function saveToSheet(mode) {
+        if (!globalPayload) return;
+
+        const label = mode === "monthly" ? "Monthly" : "Periodical";
+        setStatus("Uploading data to Google Sheet (" + label + ")...", "progress");
+
+        saveBtnPeriodical.disabled = true;
+        saveBtnMonthly.disabled = true;
+
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwrwr-A4veONfJJIb3ztDGjEthpnMrv7UAUcEdFq1e40JidnXbKyLgKFDRpGLrCykT1/exec";
+
+        // sheetTarget tells the Apps Script backend which sheet to write to:
+        // "Periodical" -> Sheet 1, "Monthly" -> Sheet 2.
+        // The doPost handler in Apps Script must read this field and route
+        // the write accordingly (not covered by the doGet script shared earlier,
+        // which is a separate read-only report endpoint).
+        const payloadToSend = Object.assign({}, globalPayload, { sheetTarget: label });
+
+        fetch(WEB_APP_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+                "Content-Type": "text/plain"
+            },
+            body: JSON.stringify(payloadToSend)
+        })
+        .then(() => {
+            // Record signatures locally so future uploads can be checked for duplicates
+            const storedSignatures = getStoredSignatures();
+            globalRecords.forEach(record => {
+                const sig = recordSignature(record);
+                if (!storedSignatures.includes(sig)) {
+                    storedSignatures.push(sig);
+                }
+            });
+            saveStoredSignatures(storedSignatures);
+
+            setStatus("Data successfully sent to Google Sheet (" + label + "). Refreshing...", "success");
+            // Auto refresh the page once the data has been saved
+            setTimeout(function() {
+                location.reload();
+            }, 900);
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            setStatus("Error. Please check your connection and try again.", "error");
+            updateSaveButtons();
+        });
+    }
+</script>
+
+</body>
+</html>
