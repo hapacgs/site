@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demmurage Bill - HAPA Goods Shed</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+    :root{
+        --navy-900:#03192e;
+        --navy-800:#062a4a;
+        --navy-700:#0a3a63;
+        --cyan-300:#7fe9fb;
+        --cyan-400:#22d3ee;
+        --text:#dcf2f9;
+        --muted:#8fb4c7;
+        --border:rgba(34,211,238,0.25);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: radial-gradient(1200px 600px at 50% -10%, var(--navy-700) 0%, var(--navy-900) 60%);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 18px;
+    }
+
+    .page-title{
+        text-align:center;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--cyan-300);
+        text-shadow: 0 0 18px rgba(34,211,238,0.35);
+        margin: 6px 0 20px;
+    }
+
+    .card{
+        max-width: 1000px;
+        margin: 0 auto 18px;
+        background: rgba(6, 26, 46, 0.85);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px 18px;
+        backdrop-filter: blur(10px);
+    }
+    #resultsCard{ max-width: 1180px; }
+    .card h3{
+        margin: 0 0 14px;
+        font-size: 14px;
+        color: var(--cyan-300);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+
+    .filter-grid{
+        display:grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        align-items:end;
+    }
+    .field{ display:flex; flex-direction:column; gap:5px; font-size:12px; }
+    .field label{ font-weight:700; color: var(--cyan-300); }
+    input, select, button{
+        background: var(--navy-800);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 9px 12px;
+        font-size: 13px;
+        outline: none;
+        width: 100%;
+    }
+    button{
+        cursor: pointer;
+        background: linear-gradient(100deg, var(--navy-700) 0%, var(--navy-800) 100%);
+        color: var(--cyan-300);
+        font-weight: 600;
+        border-color: rgba(34,211,238,0.4);
+        transition: background 0.2s ease;
+    }
+    button:hover{ background: var(--navy-700); }
+    #submitBtn{ width:auto; padding: 8px 22px; font-size: 13px; align-self:flex-start; }
+    button:disabled{ opacity: 0.5; cursor: not-allowed; }
+
+    .status-msg{ max-width: 1000px; margin: 0 auto 12px; font-size: 13px; color: var(--muted); text-align:center; }
+    .status-msg.error{ color: #ff9b9b; }
+
+    /* ===== Results table ===== */
+    .table-wrap{ overflow-x:auto; }
+    table.results-table{ width:100%; border-collapse: collapse; font-size:10.5px; table-layout: fixed; }
+    table.results-table th, table.results-table td{
+        border: 1px solid var(--border);
+        padding: 5px 4px;
+        text-align:center;
+        word-wrap: break-word;
+    }
+    table.results-table th{ background: rgba(34,211,238,0.1); color: var(--cyan-300); line-height:1.3; }
+    table.results-table tr:hover td{ background: rgba(34,211,238,0.06); }
+    table.results-table th.col-wgn, table.results-table td.col-wgn{ width: 42px; }
+    table.results-table th.col-pdf, table.results-table td.col-pdf{ width: 44px; }
+    table.results-table th.col-sr{ width: 34px; }
+
+    .gen-row-btn{
+        width: 26px; height: 26px; padding: 0; display:inline-flex;
+        align-items:center; justify-content:center; border-radius: 6px;
+    }
+    .gen-row-btn svg{ pointer-events:none; width:14px; height:14px; }
+
+    .gen-btn-row{ text-align:center; margin-top: 14px; }
+    #generateBtn{ max-width: 280px; margin: 0 auto; padding: 11px 18px; font-size: 14px; }
+
+    /* ===== A4 statement — plain black-on-white, professional print look ===== */
+    #statementWrap{ display:none; }
+    .a4-page{
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto 24px;
+        background: #ffffff;
+        color: #000000;
+        padding: 14mm 12mm;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        font-family: 'Cambria', 'Georgia', 'Times New Roman', serif;
+    }
+
+    /* -- Header -- */
+    .statement-header{
+        text-align:center;
+        border-top: 3px double #000;
+        border-bottom: 3px double #000;
+        padding: 9px 6px 8px;
+        margin: 0 0 14px;
+    }
+    .statement-header .main-title{
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 5px;
+        margin: 0;
+    }
+    .statement-header .sub-title{
+        font-size: 11px;
+        letter-spacing: 1.5px;
+        color: #000;
+        text-transform: uppercase;
+        margin-top: 4px;
+    }
+
+    /* -- Info section: clean form layout, no visible table grid -- */
+    .info-panel{
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 30px;
+        row-gap: 2px;
+        margin: 2px 0 8px;
+    }
+    .info-item{
+        display:flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        border-bottom: 1px dotted #666;
+        padding: 4px 0 3px;
+        font-size: 12.5px;
+    }
+    .info-item .i-label{
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        color: #000;
+        white-space: nowrap;
+    }
+    .info-item .i-value{
+        font-weight: 600;
+        text-align: right;
+        flex: 1;
+    }
+    select.plain-select{
+        border: none; border-bottom: 1px solid #000; border-radius: 0;
+        background: transparent; color: #000; padding: 0 2px 1px;
+        font-size: 12px; font-weight: 600; width: auto; font-family: inherit;
+    }
+    .info-banner{
+        text-align: center;
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+        background: #f6f6f6;
+        padding: 6px 10px;
+        margin: 6px 0 12px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    .charge-box{ text-align:center; margin: 10px 0 16px; }
+    .charge-box .cap{ font-size:12.5px; font-weight:700; margin-bottom:6px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .charge-box .amt-wrap{
+        display:inline-flex; align-items:baseline; gap: 10px; min-width: 190px;
+        border: 2px solid #000; border-radius: 10px; background: #f7f7f7;
+        padding: 9px 24px;
+    }
+    .charge-box .amt{ font-size: 21px; font-weight: 800; letter-spacing: 0.5px; }
+    .charge-box .gst-note{ font-size: 11px; font-weight: 700; color:#333; }
+    .charge-box .amt-words{ margin-top: 6px; font-size: 16px; font-weight:600; font-style: italic; }
+
+    .foot-note{
+        margin-top: 14px; padding-top: 7px; border-top: 1px dashed #999;
+        font-size: 11px; line-height: 1.5; color:#222;
+    }
+
+    .wagon-title{ text-align:center; font-size:12.5px; font-weight:700; margin: 14px 0 8px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    /* Two independent columns (left/right, up to 30 rows each) — each renders only its
+       own rows, so a rake with few wagons never leaves a half-empty grid. */
+    .wagon-split{ display:flex; gap: 26px; margin-bottom: 14px; }
+    .wagon-col{ flex: 1 1 0; min-width: 0; }
+    .wagon-col-right{ border-left: 1px dashed #bbb; padding-left: 26px; }
+    .wagon-col[hidden]{ display:none; }
+
+    table.wagon-table{
+        width:100%; border-collapse: collapse; font-size:11.5px;
+        font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    }
+    table.wagon-table th, table.wagon-table td{ border: 1px solid #000; padding: 4px 6px; text-align:center; }
+    table.wagon-table th{
+        background: #2c2c2c; color:#fff; font-weight: 700; letter-spacing: 0.3px;
+        font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+    }
+    table.wagon-table tbody tr:nth-child(even){ background:#f7f7f7; }
+
+    .footer-row{ display:flex; justify-content: space-between; align-items:stretch; flex-wrap:wrap; gap: 16px; margin-top: 8px; }
+    .footer-tables-row{ display:flex; align-items:stretch; flex-wrap:wrap; gap: 16px; flex: 1 1 auto; }
+
+    /* -- Demmurage Details: modern compact panel, no table grid (saves space) — sized to ~60% -- */
+    .demm-details-panel{
+        flex: 1 1 138px; max-width: 156px;
+        border: 1px solid #000; border-radius: 6px; overflow: hidden;
+        align-self: flex-start;
+    }
+    .demm-details-panel .ddp-title{
+        text-align:center; font-weight:800; font-size:9px; text-transform:uppercase;
+        letter-spacing:0.3px; background:#2c2c2c; color:#fff; padding:4px 5px;
+    }
+    .demm-details-panel .ddp-row{
+        display:flex; flex-direction:column; gap:1px;
+        padding: 3px 6px; border-bottom: 1px solid #ddd; font-size:9.5px;
+    }
+    .demm-details-panel .ddp-row:last-child{ border-bottom:none; }
+    .demm-details-panel .ddp-row .ddp-label{ font-weight:600; color:#333; font-size:8px; text-transform:uppercase; }
+    .demm-details-panel .ddp-row .ddp-value{ font-weight:700; }
+    .demm-details-panel .ddp-row.hl{ background:#eee; font-weight:800; }
+    .demm-details-panel .ddp-row.hl .ddp-label, .demm-details-panel .ddp-row.hl .ddp-value{ font-size:10px; }
+
+    /* -- Slab table: modern rounded card look — sized to ~60% -- */
+    .slab-wrap{
+        flex: 1 1 192px; max-width: 228px;
+        border: 1px solid #000; border-radius: 6px; overflow: hidden;
+        align-self: flex-start;
+    }
+    .slab-wrap .slab-cap{
+        text-align:center; font-weight:800; font-size:9px; text-transform:uppercase;
+        letter-spacing:0.3px; background:#2c2c2c; color:#fff; padding:4px 5px;
+    }
+    table.slab-table{ width:100%; border-collapse: collapse; font-size:9px; }
+    table.slab-table th, table.slab-table td{ border: 1px solid #ddd; padding: 3px 4px; text-align:center; }
+    table.slab-table th{ background:#f2f2f2; font-weight:700; border-bottom: 1px solid #000; font-size:8px; }
+    table.slab-table tbody tr:nth-child(even){ background:#fafafa; }
+    table.slab-table tfoot td{ font-weight:800; background:#eee; border-top: 1px solid #000; border-bottom:none; }
+
+    /* -- Signature: blue rubber-stamp look, only colour exception on the page -- */
+    .sign-block{ text-align:center; font-size:12px; min-width: 220px; flex: 0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; }
+    .sign-block .sig-space{ height: 20px; }
+    .stamp-box{
+        display:inline-block;
+        border: 2px solid rgba(19,56,140,0.8);
+        border-radius: 6px;
+        padding: 6px 16px 5px;
+        transform: rotate(-3deg);
+        color: rgba(19,56,140,0.85);
+        white-space: nowrap;
+    }
+    .stamp-box .hi{ font-weight:700; margin: 0; line-height: 1.5; white-space: nowrap; }
+    .stamp-box .en{ font-weight:700; margin: 0; line-height: 1.5; letter-spacing: 0.3px; white-space: nowrap; }
+
+    .a4-actions{ max-width: 210mm; margin: 0 auto 12px; text-align:center; }
+    .a4-actions button{ width:auto; display:inline-block; padding: 9px 20px; }
+
+    /* -- Density levels: applied automatically so 60+ wagon rakes still fit one A4 page -- */
+    .a4-page.dense-1{ padding: 12mm 11mm; }
+    .a4-page.dense-1 .info-item{ font-size: 11.5px; padding: 3px 0 2px; }
+    .a4-page.dense-1 .wagon-title{ margin: 10px 0 6px; }
+    .a4-page.dense-1 table.wagon-table th, .a4-page.dense-1 table.wagon-table td{ padding: 3px 5px; font-size: 10.5px; }
+    .a4-page.dense-1 .charge-box{ margin: 8px 0 12px; }
+    .a4-page.dense-1 .wagon-split{ gap: 20px; }
+    .a4-page.dense-1 .wagon-col-right{ padding-left: 20px; }
+    .a4-page.dense-1 .foot-note{ font-size: 10.5px; margin-top: 10px; padding-top: 5px; }
+
+    .a4-page.dense-2{ padding: 10mm 10mm; }
+    .a4-page.dense-2 .statement-header .main-title{ font-size: 19px; letter-spacing: 3px; }
+    .a4-page.dense-2 .info-item{ font-size: 10.5px; padding: 2px 0; }
+    .a4-page.dense-2 .wagon-title{ margin: 8px 0 5px; font-size: 11.5px; }
+    .a4-page.dense-2 table.wagon-table th, .a4-page.dense-2 table.wagon-table td{ padding: 2px 4px; font-size: 9.5px; }
+    .a4-page.dense-2 .charge-box .amt{ font-size: 18px; }
+    .a4-page.dense-2 .charge-box .amt-wrap{ padding: 6px 18px; }
+    .a4-page.dense-2 .charge-box{ margin: 6px 0 10px; }
+    .a4-page.dense-2 .charge-box .amt-words{ font-size: 15px; margin-top: 4px; }
+    .a4-page.dense-2 .wagon-split{ gap: 16px; }
+    .a4-page.dense-2 .wagon-col-right{ padding-left: 16px; }
+    .a4-page.dense-2 .demm-details-panel .ddp-row{ font-size: 9px; padding-top:2px; padding-bottom:2px; }
+    .a4-page.dense-2 .foot-note{ font-size: 9.5px; margin-top: 8px; padding-top: 4px; }
+
+    .a4-page.dense-3{ padding: 9mm 9mm; }
+    .a4-page.dense-3 .statement-header{ padding: 6px 4px 6px; margin-bottom: 10px; }
+    .a4-page.dense-3 .statement-header .main-title{ font-size: 17px; letter-spacing: 2px; }
+    .a4-page.dense-3 .info-item{ font-size: 9.5px; padding: 1.5px 0; }
+    .a4-page.dense-3 .wagon-title{ margin: 6px 0 4px; font-size: 11px; }
+    .a4-page.dense-3 table.wagon-table th, .a4-page.dense-3 table.wagon-table td{ padding: 1.5px 3px; font-size: 8.5px; }
+    .a4-page.dense-3 .charge-box .amt{ font-size: 16px; }
+    .a4-page.dense-3 .charge-box .amt-wrap{ padding: 5px 14px; }
+    .a4-page.dense-3 .charge-box{ margin: 5px 0 8px; }
+    .a4-page.dense-3 .charge-box .amt-words{ font-size: 14px; margin-top: 3px; }
+    .a4-page.dense-3 .footer-row{ margin-top: 5px; }
+    .a4-page.dense-3 .wagon-split{ gap: 14px; }
+    .a4-page.dense-3 .wagon-col-right{ padding-left: 14px; }
+    .a4-page.dense-3 .foot-note{ font-size: 9px; margin-top: 6px; padding-top: 4px; }
+
+    @page{ size: A4; margin: 0; }
+    @media print{
+        body{ background:#fff !important; padding:0; }
+        .page-title, .card, .status-msg, .a4-actions{ display:none !important; }
+        #statementWrap{ display:block !important; }
+        .a4-page{ box-shadow:none; margin:0; width:210mm; min-height:297mm; }
+    }
+</style>
+</head>
+<body>
+
+    <div class="page-title">Demmurage Bill</div>
+
+    <!-- ===== Search / Filter ===== -->
+    <div class="card" id="filterCard">
+        <div class="filter-grid">
+            <div class="field">
+                <label for="stationFrom">Station From</label>
+                <input list="stationList" id="stationFrom" placeholder="Type or select station">
+                <datalist id="stationList"></datalist>
+            </div>
+            <div class="field">
+                <label for="consigneeCode">Consignee Code</label>
+                <input list="consigneeList" id="consigneeCode" placeholder="Type or select consignee">
+                <datalist id="consigneeList"></datalist>
+            </div>
+            <div class="field">
+                <label for="fromDate">Release Date (From)</label>
+                <input type="text" id="fromDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric">
+            </div>
+            <div class="field">
+                <label for="toDate">Release Date (To)</label>
+                <input type="text" id="toDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric">
+            </div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <button id="submitBtn" disabled>Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-msg" id="statusMsg">Data is Loading... Please Wait</div>
+
+    <!-- ===== Results ===== -->
+    <div class="card" id="resultsCard" style="display:none;">
+        <div class="table-wrap">
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th class="col-sr" rowspan="2">Sr. No.</th>
+                        <th rowspan="2">From</th>
+                        <th rowspan="2">To</th>
+                        <th class="col-wgn" rowspan="2">WGN.</th>
+                        <th rowspan="2">RR No.</th>
+                        <th rowspan="2">RR Date</th>
+                        <th rowspan="2">CMDT</th>
+                        <th rowspan="2">CNSG</th>
+                        <th rowspan="2">Placement Date &amp; Time</th>
+                        <th rowspan="2">Release Date &amp; Time</th>
+                        <th colspan="2">Demmurage</th>
+                        <th class="col-pdf" rowspan="2">PDF</th>
+                    </tr>
+                    <tr>
+                        <th>Hrs.</th>
+                        <th>Amt.</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== A4 Statement ===== -->
+    <div id="statementWrap">
+        <div class="a4-actions">
+            <button id="printBtn">Print</button>
+        </div>
+        <div class="a4-page">
+          <div class="a4-content">
+            <div class="statement-header">
+                <div class="main-title">DEMURRAGE STATEMENT</div>
+                <div class="sub-title">HAPA Goods Shed &middot; Rajkot Division (W.R.)</div>
+            </div>
+
+            <div class="info-panel">
+                <div class="info-item"><span class="i-label">RR No. &amp; Date</span><span class="i-value" id="fRrNoDate">-</span></div>
+                <div class="info-item"><span class="i-label">Invoice No.</span><span class="i-value" id="fInvoiceNo">-</span></div>
+                <div class="info-item"><span class="i-label">From Station</span><span class="i-value" id="fFromStation">-</span></div>
+                <div class="info-item"><span class="i-label">Name of Party</span><span class="i-value" id="fParty">-</span></div>
+                <div class="info-item"><span class="i-label">Commodity</span><span class="i-value" id="fCommodity">-</span></div>
+                <div class="info-item"><span class="i-label">Type of U/L</span><span class="i-value">
+                    <select id="fUlType" class="plain-select">
+                        <option value="MANUAL UNLOADING">MANUAL UNLOADING</option>
+                        <option value="MECHANIZED UNLOADING">MECHANIZED UNLOADING</option>
+                    </select>
+                </span></div>
+                <div class="info-item"><span class="i-label">Demm. Rate</span><span class="i-value">Rs. 150 / Hr (Upto 6 Hrs.)*</span></div>
+                <div class="info-item"><span class="i-label">No. of Wagon</span><span class="i-value" id="fWagonCount">-</span></div>
+            </div>
+
+            <div class="info-banner" id="fPlacementRelease">-</div>
+
+            <div class="info-panel">
+                <div class="info-item"><span class="i-label">Free Time</span><span class="i-value" id="fFreeTime">-</span></div>
+                <div class="info-item"><span class="i-label">Demmurage</span><span class="i-value" id="fDemmTime">-</span></div>
+            </div>
+
+            <div class="charge-box">
+                <div class="cap">Demmurage Charge in Rs. ::</div>
+                <div class="amt-wrap">
+                    <div class="amt" id="fDemmAmt">-</div>
+                    <div class="gst-note">(+ 5% G.S.T.)</div>
+                </div>
+                <div class="amt-words" id="fDemmAmtWords">-</div>
+            </div>
+
+            <div class="wagon-title">:: DETAILS OF WAGONS ARE AS UNDER ::</div>
+            <div class="wagon-split" id="wagonSplit">
+                <div class="wagon-col" id="wagonColLeft">
+                    <table class="wagon-table">
+                        <thead><tr><th>SR. NO.</th><th>RLY</th><th>WAGON TYPE</th><th>WAGON NO.</th></tr></thead>
+                        <tbody id="wagonTableBodyLeft"></tbody>
+                    </table>
+                </div>
+                <div class="wagon-col wagon-col-right" id="wagonColRight">
+                    <table class="wagon-table">
+                        <thead><tr><th>SR. NO.</th><th>RLY</th><th>WAGON TYPE</th><th>WAGON NO.</th></tr></thead>
+                        <tbody id="wagonTableBodyRight"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="footer-row">
+                <div class="footer-tables-row">
+                    <div class="demm-details-panel">
+                        <div class="ddp-title">Demmurage Details</div>
+                        <div class="ddp-row"><span class="ddp-label">Free Hrs.</span><span class="ddp-value" id="fFreeHrs">-</span></div>
+                        <div class="ddp-row"><span class="ddp-label">Night Inc.</span><span class="ddp-value" id="fNightInc">-</span></div>
+                        <div class="ddp-row"><span class="ddp-label">Detention Hrs.</span><span class="ddp-value" id="fDetentionHrs">-</span></div>
+                        <div class="ddp-row"><span class="ddp-label">Total Det.</span><span class="ddp-value" id="fTotalDet">-</span></div>
+                        <div class="ddp-row hl"><span class="ddp-label">Demm. Hrs.</span><span class="ddp-value" id="fDemmHrs2">-</span></div>
+                        <div class="ddp-row hl"><span class="ddp-label">Demm. Amt. Rs.</span><span class="ddp-value" id="fDemmAmt2">-</span></div>
+                    </div>
+
+                    <div class="slab-wrap">
+                        <div class="slab-cap">Slab Wise Demmurage Calculation</div>
+                        <table class="slab-table">
+                            <thead>
+                                <tr><th>SLAB</th><th>RATE / WGN.</th><th>CHG. HRS.</th><th>DEMM. Rs.</th></tr>
+                            </thead>
+                            <tbody id="slabTableBody"></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td>TOTAL</td><td>---</td>
+                                    <td id="slabTotalHrs">-</td>
+                                    <td id="slabTotalRs">-</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="sign-block">
+                    <div class="sig-space"></div>
+                    <div class="stamp-box">
+                        <div class="hi">मुख्य माल पर्यवेक्षक - हापा</div>
+                        <div class="en">CHIEF GOODS SUPERVISOR - HAPA</div>
+                        <div class="hi">राजकोट मंडल (प. रे.)</div>
+                        <div class="en">RAJKOT DIVISION (W.R.)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="foot-note">
+                <b>Note :</b> Railway Board's letter No. : No.TC-I/2025/201/efile/5 (3491463) Dated : 23-02-2026. -
+                As per Para No. 2.3 First application for waiver of Demurrage/Wharfage should be submitted by Party
+                within 10 (ten) days from the date upto which these charges had accrued.
+            </div>
+          </div>
+        </div>
+    </div>
+
+<script>
+    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
+    var SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
+    var SHEET_NAME = "IW_data";
+
+    var statusMsg = document.getElementById('statusMsg');
+    var resultsCard = document.getElementById('resultsCard');
+    var resultsBody = document.getElementById('resultsBody');
+    var stationList = document.getElementById('stationList');
+    var consigneeList = document.getElementById('consigneeList');
+    var statementWrap = document.getElementById('statementWrap');
+
+    var allRecords = []; // { id, data }
+
+    function buildUrl(params){
+        var url = APPS_SCRIPT_URL + "?sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME);
+        for (var key in params){ url += "&" + key + "=" + encodeURIComponent(params[key]); }
+        return url;
+    }
+
+    function setStatus(msg, isError){
+        statusMsg.textContent = msg || "";
+        statusMsg.className = "status-msg" + (isError ? " error" : "");
+    }
+
+    // dd/MM/yyyy string -> Date object (ya null agar invalid)
+    function parseDMY(str){
+        if (!str) return null;
+        var parts = str.split("/");
+        if (parts.length !== 3) return null;
+        var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (!d || !m || !y) return null;
+        return new Date(y, m - 1, d);
+    }
+
+    // Candidate rake ids: RELEASED (delivery_book) + DELIVERED (placement_memo) status
+    // — dono me placement/release data already bhara hota hai, isliye demmurage bill ban sakta hai.
+    function fetchCandidateIds(){
+        return Promise.all([
+            fetch(buildUrl({ action: "delivery_book" })).then(function(r){ return r.json(); }).catch(function(){ return { status:"error", rakeIds: [] }; }),
+            fetch(buildUrl({ action: "placement_memo" })).then(function(r){ return r.json(); }).catch(function(){ return { status:"error", rakeIds: [] }; })
+        ]).then(function(results){
+            var ids = [];
+            results.forEach(function(res){
+                if (res && res.status === "success" && Array.isArray(res.rakeIds)) ids = ids.concat(res.rakeIds);
+            });
+            return ids.filter(function(v, i){ return ids.indexOf(v) === i; });
+        });
+    }
+
+    function fetchAllRecords(){
+        return fetchCandidateIds().then(function(ids){
+            if (ids.length === 0) return [];
+            return Promise.all(ids.map(function(id){
+                return fetch(buildUrl({ action: "getRow", rakeId: id }))
+                    .then(function(r){ return r.json(); })
+                    .then(function(res){
+                        if (res.status === "success" && res.found) return { id: id, data: res.data };
+                        return null;
+                    })
+                    .catch(function(){ return null; });
+            }));
+        }).then(function(list){
+            return list.filter(function(x){ return x !== null; });
+        });
+    }
+
+    function populateStationList(){
+        var seen = {};
+        stationList.innerHTML = "";
+        allRecords.forEach(function(rec){
+            var s = rec.data.from;
+            if (s && !seen[s]){
+                seen[s] = true;
+                var opt = document.createElement('option');
+                opt.value = s;
+                stationList.appendChild(opt);
+            }
+        });
+    }
+
+    function populateConsigneeList(){
+        var seen = {};
+        consigneeList.innerHTML = "";
+        allRecords.forEach(function(rec){
+            var c = rec.data.consignee;
+            if (c && !seen[c]){
+                seen[c] = true;
+                var opt = document.createElement('option');
+                opt.value = c;
+                consigneeList.appendChild(opt);
+            }
+        });
+    }
+
+    // Text input me user "DD/MM/YYYY" jaisa likhega — usse Date object me convert karta hain
+    function parseInputDMY(str){
+        if (!str) return null;
+        str = str.trim();
+        var parts = str.split(/[\/\-\.]/);
+        if (parts.length !== 3) return null;
+        var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (!d || !m || !y) return null;
+        return new Date(y, m - 1, d);
+    }
+
+    function pad2(n){ return n < 10 ? "0" + n : "" + n; }
+    function formatDMY(dt){ return pad2(dt.getDate()) + "/" + pad2(dt.getMonth() + 1) + "/" + dt.getFullYear(); }
+
+    // Default filter: current month + previous month (Release Date range)
+    function setDefaultDateRange(){
+        var today = new Date();
+        var prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        document.getElementById('fromDate').value = formatDMY(prevMonthStart);
+        document.getElementById('toDate').value = formatDMY(today);
+    }
+
+    function init(){
+        setStatus("Data is Loading... Please Wait");
+        var submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        setDefaultDateRange();
+        fetchAllRecords().then(function(records){
+            allRecords = records;
+            populateStationList();
+            populateConsigneeList();
+            if (records.length === 0){
+                setStatus("No RELEASED/DELIVERED rakes found.", true);
+            } else {
+                setStatus("Data loaded — showing current & previous month by default.");
+                submitFilter();
+            }
+            submitBtn.disabled = false;
+        }).catch(function(err){
+            setStatus("Error loading data: " + err.message, true);
+            submitBtn.disabled = false;
+        });
+    }
+
+    function renderResults(records){
+        resultsBody.innerHTML = "";
+        if (records.length === 0){
+            resultsCard.style.display = "block";
+            resultsBody.innerHTML = '<tr><td colspan="13">No matching rakes found.</td></tr>';
+            return;
+        }
+        var pdfIconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            '<path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#e53935"/>' +
+            '<path d="M14 2v4a1 1 0 0 0 1 1h4" fill="#ff8a80"/>' +
+            '<text x="12" y="16.5" text-anchor="middle" font-size="6.5" font-family="Arial, sans-serif" font-weight="700" fill="#fff">PDF</text>' +
+            '</svg>';
+        records.forEach(function(rec, idx){
+            var d = rec.data;
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td class="col-sr">' + (idx + 1) + '</td>' +
+                '<td>' + (d.from || "-") + '</td>' +
+                '<td>' + (d.to || "-") + '</td>' +
+                '<td class="col-wgn">' + (d.wagons || "-") + '</td>' +
+                '<td>' + (d.rrNumber || "-") + '</td>' +
+                '<td>' + (d.rrDate || "-") + '</td>' +
+                '<td>' + (d.commodity || "-") + '</td>' +
+                '<td>' + (d.consignee || "-") + '</td>' +
+                '<td>' + (d.placementDate || "-") + ' ' + (d.placementTime || "-") + '</td>' +
+                '<td>' + (d.releaseDate || "-") + ' ' + (d.releaseTime || "-") + '</td>' +
+                '<td>' + fmtHrsColon(d.demmHrs) + '</td>' +
+                '<td>' + (d.demmAmt || "-") + '</td>' +
+                '<td class="col-pdf"><button type="button" class="gen-row-btn" data-idx="' + idx + '" title="Generate &amp; Download PDF Bill">' + pdfIconSvg + '</button></td>';
+            resultsBody.appendChild(tr);
+        });
+        resultsCard.style.display = "block";
+
+        document.querySelectorAll('.gen-row-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
+                generateStatement(rec);
+                setTimeout(function(){ downloadStatementPdf(rec); }, 60);
+            });
+        });
+    }
+
+    var filteredRecords = [];
+
+    function submitFilter(){
+        var station = document.getElementById('stationFrom').value.trim().toLowerCase();
+        var consignee = document.getElementById('consigneeCode').value.trim().toLowerCase();
+        var fromD = parseInputDMY(document.getElementById('fromDate').value);
+        var toD = parseInputDMY(document.getElementById('toDate').value);
+
+        filteredRecords = allRecords.filter(function(rec){
+            var d = rec.data;
+            if (station && (!d.from || d.from.toLowerCase().indexOf(station) === -1)) return false;
+            if (consignee && (!d.consignee || d.consignee.toLowerCase().indexOf(consignee) === -1)) return false;
+            if (fromD || toD){
+                var rDate = parseDMY(d.releaseDate);
+                if (!rDate) return false;
+                if (fromD && rDate < fromD) return false;
+                if (toD && rDate > toD) return false;
+            }
+            return true;
+        });
+
+        var count = filteredRecords.length;
+        setStatus("Record Found : " + (count < 10 ? "0" + count : count) + " Rake" + (count === 1 ? "" : "s"));
+        renderResults(filteredRecords);
+        statementWrap.style.display = "none";
+    }
+
+    function pickField(obj, patterns){
+        var keys = Object.keys(obj || {});
+        for (var p = 0; p < patterns.length; p++){
+            for (var i = 0; i < keys.length; i++){
+                if (keys[i].toLowerCase().indexOf(patterns[p]) !== -1) return obj[keys[i]];
+            }
+        }
+        return "";
+    }
+
+    // Left/right column (max 30 rows each). Har column apni khud ki rows render karta hain
+    // (koi blank padding row nahi) — isliye kam wagon hone par bhi khali jagah nahi bachti.
+    // Agar sab wagons left column me hi aa jaaye to right column hide karke left ko poori width de dete hain.
+    function renderWagonTable(wagonSummary){
+        var leftBody = document.getElementById('wagonTableBodyLeft');
+        var rightBody = document.getElementById('wagonTableBodyRight');
+        var rightCol = document.getElementById('wagonColRight');
+        leftBody.innerHTML = "";
+        rightBody.innerHTML = "";
+
+        var list = Array.isArray(wagonSummary) ? wagonSummary : [];
+        var rows = list.map(function(w, idx){
+            return {
+                sr: idx + 1,
+                rly: pickField(w, ["rly"]) || "-",
+                type: pickField(w, ["type"]) || "-",
+                no: pickField(w, ["wgn", "wagon", "no"]) || "-"
+            };
+        });
+
+        var perCol = Math.ceil(rows.length / 2);
+        var left = rows.slice(0, perCol);
+        var right = rows.slice(perCol);
+
+        function fill(body, arr){
+            arr.forEach(function(item){
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + item.sr + '</td><td>' + item.rly + '</td>' +
+                    '<td>' + item.type + '</td><td>' + item.no + '</td>';
+                body.appendChild(tr);
+            });
+        }
+        fill(leftBody, left);
+        fill(rightBody, right);
+
+        if (right.length === 0){
+            rightCol.setAttribute('hidden', 'hidden');
+        } else {
+            rightCol.removeAttribute('hidden');
+        }
+    }
+
+    function fmtHrsColon(v){
+        if (v === "" || v === null || typeof v === "undefined") return "-";
+        var s = v.toString();
+        return s.indexOf(":") !== -1 ? s : s + ":00";
+    }
+
+    // dd/MM/yyyy -> dd-MM-yyyy (sirf combined PLACEMENT/RELEASE line ke liye)
+    function toHyphenDate(str){
+        return (str || "-").toString().replace(/\//g, "-");
+    }
+
+    // Rate slabs jaisa Apps Script me hain — inhi se slab-wise breakdown table banta hai
+    var DEMM_SLABS = [
+        { label: "UPTO 6 HRS.",    hrs: 6,        rate: 150 },
+        { label: "7 TO 12 HRS.",   hrs: 6,        rate: 165 },
+        { label: "13 TO 24 HRS.",  hrs: 12,       rate: 187.5 },
+        { label: "25 TO 48 HRS.",  hrs: 24,       rate: 225 },
+        { label: "49 TO 72 HRS.",  hrs: 24,       rate: 300 },
+        { label: "ABOVE 72 HRS.",  hrs: Infinity, rate: 450 }
+    ];
+
+    function computeSlabBreakdown(demmHrsVal, wagonCountVal){
+        var remaining = parseFloat(demmHrsVal) || 0;
+        var wagons = parseInt(wagonCountVal, 10) || 0;
+        var totalChgHrs = 0, totalRs = 0;
+        var rows = DEMM_SLABS.map(function(slab){
+            var chargeable = Math.max(0, Math.min(remaining, slab.hrs));
+            remaining -= chargeable;
+            var rs = Math.round(chargeable * slab.rate * wagons * 100) / 100;
+            totalChgHrs += chargeable;
+            totalRs += rs;
+            return { label: slab.label, rate: slab.rate, chgHrs: chargeable, rs: rs };
+        });
+        return { rows: rows, totalChgHrs: totalChgHrs, totalRs: Math.round(totalRs * 100) / 100 };
+    }
+
+    function renderSlabTable(demmHrsVal, wagonCountVal){
+        var breakdown = computeSlabBreakdown(demmHrsVal, wagonCountVal);
+        var tbody = document.getElementById('slabTableBody');
+        tbody.innerHTML = "";
+        breakdown.rows.forEach(function(row){
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + row.label + '</td>' +
+                '<td>' + row.rate + '</td>' +
+                '<td>' + row.chgHrs + '</td>' +
+                '<td>' + row.rs + '</td>';
+            tbody.appendChild(tr);
+        });
+        document.getElementById('slabTotalHrs').textContent = breakdown.totalChgHrs;
+        document.getElementById('slabTotalRs').textContent = breakdown.totalRs;
+    }
+
+    // Slab card aur uske baju wale Demmurage Details panel ki height barabar karta hain
+    function equalizeFooterHeights(){
+        var detailsPanel = document.querySelector('.demm-details-panel');
+        var slabWrap = document.querySelector('.slab-wrap');
+        if (!detailsPanel || !slabWrap) return;
+        detailsPanel.style.height = 'auto';
+        slabWrap.style.height = 'auto';
+        var h = Math.max(detailsPanel.offsetHeight, slabWrap.offsetHeight);
+        detailsPanel.style.height = h + 'px';
+        slabWrap.style.height = h + 'px';
+    }
+
+    // Number ko Indian numbering system (Crore/Lakh/Thousand) me words me convert karta hain
+    function numberToWordsIndian(num){
+        num = Math.round(Math.abs(parseFloat(num) || 0));
+        if (num === 0) return "Zero";
+        var ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+        var tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+        function twoDigits(n){
+            if (n < 20) return ones[n];
+            return tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
+        }
+        function threeDigits(n){
+            var h = Math.floor(n / 100), rest = n % 100, str = "";
+            if (h) str += ones[h] + " Hundred" + (rest ? " " : "");
+            if (rest) str += twoDigits(rest);
+            return str;
+        }
+
+        var crore = Math.floor(num / 10000000); num %= 10000000;
+        var lakh = Math.floor(num / 100000); num %= 100000;
+        var thousand = Math.floor(num / 1000); num %= 1000;
+        var hundred = num;
+
+        var parts = [];
+        if (crore) parts.push(threeDigits(crore) + " Crore");
+        if (lakh) parts.push(threeDigits(lakh) + " Lakh");
+        if (thousand) parts.push(threeDigits(thousand) + " Thousand");
+        if (hundred) parts.push(threeDigits(hundred));
+        return parts.join(" ").trim();
+    }
+
+    // Chahe 5 wagon ho ya 60, statement hamesha ek hi A4 page me fit ho jaaye —
+    // isliye content overflow hone par font/padding ko step-by-step compact karta hain.
+    function fitToOnePage(){
+        var page = document.querySelector('.a4-page');
+        var content = document.querySelector('.a4-content');
+        if (!page || !content) return;
+        page.classList.remove('dense-1', 'dense-2', 'dense-3');
+        var mmToPx = 96 / 25.4;
+        var maxContentHeight = (297 - 28) * mmToPx - 6; // A4 height minus top/bottom padding, minus a small buffer
+        var levels = ['dense-1', 'dense-2', 'dense-3'];
+        for (var i = 0; i < levels.length; i++){
+            if (content.scrollHeight <= maxContentHeight) break;
+            page.classList.add(levels[i]);
+        }
+    }
+
+    function generateStatement(rec){
+        if (!rec) return;
+        var d = rec.data;
+
+        document.getElementById('fRrNoDate').textContent = (d.rrNumber || "-") + "   " + (d.rrDate || "");
+        document.getElementById('fInvoiceNo').textContent = d.invoiceNo || "-";
+        document.getElementById('fFromStation').textContent = d.from || "-";
+        document.getElementById('fParty').textContent = d.consignee || "-";
+        document.getElementById('fCommodity').textContent = d.commodity || "-";
+        document.getElementById('fWagonCount').textContent = d.wagons || "-";
+
+        document.getElementById('fPlacementRelease').innerHTML =
+            "PLACEMENT DATE &amp; TIME : " + toHyphenDate(d.placementDate) + " " + (d.placementTime || "-") +
+            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
+            "RELEASE DATE &amp; TIME : " + toHyphenDate(d.releaseDate) + " " + (d.releaseTime || "-");
+
+        document.getElementById('fFreeTime').textContent = (d.freeHrs || "0") + " HRS.";
+        document.getElementById('fDemmTime').textContent = fmtHrsColon(d.demmHrs) + " HRS.";
+
+        var amtNum = Math.round(parseFloat(d.demmAmt) || 0);
+        document.getElementById('fDemmAmt').textContent = "Rs. " + amtNum.toLocaleString('en-IN') + "/-";
+        document.getElementById('fDemmAmt2').textContent = amtNum.toLocaleString('en-IN');
+        document.getElementById('fDemmAmtWords').textContent = "Rupees " + numberToWordsIndian(amtNum) + " Only";
+
+        document.getElementById('fFreeHrs').textContent = fmtHrsColon(d.freeHrs);
+        document.getElementById('fNightInc').textContent = d.nightInc || "0:00";
+        document.getElementById('fDetentionHrs').textContent = d.netDet || "0:00";
+        document.getElementById('fTotalDet').textContent = d.totalDet || "0:00";
+        document.getElementById('fDemmHrs2').textContent = fmtHrsColon(d.demmHrs);
+
+        renderSlabTable(d.demmHrs, d.wagons);
+        renderWagonTable(d.wagonSummary);
+
+        statementWrap.style.display = "block";
+        fitToOnePage();
+        equalizeFooterHeights();
+        fitToOnePage(); // second pass: equalizing table heights can add a few px, so re-check
+        statementWrap.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // PDF icon click par statement screen par dikhta hain AND yahi function usse
+    // seedha PDF file ke roop me download bhi kar deta hain (html2pdf.js library se).
+    function downloadStatementPdf(rec){
+        var page = document.querySelector('.a4-page');
+        if (!page || typeof html2pdf === 'undefined') return;
+        var rrNo = (rec && rec.data && rec.data.rrNumber) ? String(rec.data.rrNumber).replace(/[^a-zA-Z0-9]+/g, '_') : 'statement';
+        var opt = {
+            margin: 0,
+            filename: 'Demmurage_Bill_' + rrNo + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(page).save();
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', submitFilter);
+    document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+    window.addEventListener('beforeprint', function(){ fitToOnePage(); equalizeFooterHeights(); fitToOnePage(); });
+
+    init();
+</script>
+</body>
+</html>
