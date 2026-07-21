@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Gallery</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="gallery-hero">
+    <h1>Photo Gallery</h1>
+    <div class="rule"></div>
+  </div>
+
+  <section class="card gallery-card">
+    <div class="gallery-head">
+      <h2>HAPA Goods Office - Rajkot Division (W.R.)</h2>
+      <div class="head-right">
+        <span class="count" id="frameCount">— frames</span>
+        <button class="refresh-btn" id="refreshBtn" type="button">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div id="galleryMount">
+      <div class="loading-state" id="loadingState">Loading the reel...</div>
+    </div>
+  </section>
+
+</div>
+
+<script src="config.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+
+function escapeHtml(str){
+  const d = document.createElement("div");
+  d.textContent = str || "";
+  return d.innerHTML;
+}
+
+async function loadGallery(){
+  const mount = $("galleryMount");
+
+  if (!CONFIG.APPS_SCRIPT_URL) {
+    mount.innerHTML = '<div class="empty-state"><b>The reel is empty</b>Photos will show up here once the backend URL is configured. Add <code>APPS_SCRIPT_URL</code> in <code>config.js</code>.</div>';
+    $("frameCount").textContent = "— frames";
+    return;
+  }
+
+  mount.innerHTML = '<div class="loading-state">Loading the reel...</div>';
+
+  try {
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, { method: "GET" });
+    const data = await res.json();
+
+    if (!data.success) {
+      mount.innerHTML = '<div class="empty-state"><b>Couldn\'t load the reel</b>' + escapeHtml(data.message || "Something went wrong.") + '</div>';
+      return;
+    }
+
+    const files = data.files || [];
+    $("frameCount").textContent = files.length + (files.length === 1 ? " frame" : " frames");
+
+    if (files.length === 0) {
+      mount.innerHTML = '<div class="empty-state"><b>The reel is empty</b>Add your first photo from the Upload page to get started.</div>';
+      return;
+    }
+
+    // Duplicate the list so the loop feels seamless.
+    const doubled = files.concat(files);
+    const frameWidth = 318; // frame width + gap
+    const totalWidth = frameWidth * files.length;
+    const duration = Math.max(files.length * 5, 14); // slower reel for fewer frames
+
+    const sprocketCount = Math.ceil((totalWidth * 2) / 23);
+    const sprockets = '<span></span>'.repeat(sprocketCount);
+
+    const frameHtml = (f, i) => `
+      <div class="frame">
+        <div class="img-box">
+          <div class="num">#${String((i % files.length) + 1).padStart(3,"0")}</div>
+          <img src="${f.viewUrl}" alt="${escapeHtml(f.name)}" loading="lazy">
+        </div>
+        <div class="caption">
+          <div class="desc">${escapeHtml(f.description)}</div>
+          <a class="dl-btn" href="${f.downloadUrl}" download target="_blank" rel="noopener" aria-label="Download photo" title="Download">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13"/><path d="M6.5 11.5 12 17l5.5-5.5"/><path d="M4 20h16"/></svg>
+          </a>
+        </div>
+      </div>`;
+
+    mount.innerHTML = `
+      <div class="viewport">
+        <div class="sprockets">${sprockets}</div>
+        <div class="track" id="filmTrack" style="animation-duration:${duration}s;">
+          ${doubled.map(frameHtml).join("")}
+        </div>
+        <div class="sprockets">${sprockets}</div>
+      </div>`;
+  } catch (err) {
+    mount.innerHTML = '<div class="empty-state"><b>Couldn\'t load the reel</b>' + escapeHtml(err.message) + '</div>';
+  }
+}
+
+$("refreshBtn").addEventListener("click", loadGallery);
+loadGallery();
+</script>
+</body>
+</html>

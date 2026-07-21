@@ -1,1 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo Vault — Upload</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap narrow">
 
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span><span>Photo Vault</span></div>
+    <nav class="nav">
+      <a href="upload.html" class="active">Upload</a>
+      <a href="reel.html">Reel</a>
+    </nav>
+  </div>
+
+  <header class="top">
+    <div class="eyebrow">Google Drive · Connected Folder</div>
+    <h1>Add a new frame</h1>
+    <p>Upload a photo and write a description — it's saved to the vault and starts playing on the reel page right away.</p>
+  </header>
+
+  <section class="card">
+    <h2>Upload</h2>
+    <p class="sub">A photo won't save without the correct password.</p>
+
+    <div id="configWarning" class="config-warning" style="display:none;">
+      Backend URL isn't set yet. Add your Google Apps Script Web App URL to
+      <code>CONFIG.APPS_SCRIPT_URL</code> in <code>config.js</code>
+      (see <code>AppsScript-Code.gs</code> and the setup notes).
+    </div>
+
+    <form id="uploadForm">
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="•••••" maxlength="10" autocomplete="off" inputmode="numeric">
+        <div class="hint" id="passHint"></div>
+      </div>
+
+      <div class="field">
+        <label for="fileInput">Photo</label>
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="image/jpeg,image/png">
+          <div class="dz-label" id="dzLabel"><b>Click to browse</b> or drop a photo here · JPG/PNG · max 5MB</div>
+          <div class="preview-row" id="previewRow" style="display:none;">
+            <img id="previewImg" alt="">
+            <div>
+              <div class="fname" id="previewName"></div>
+              <div class="fsize" id="previewSize"></div>
+            </div>
+          </div>
+        </div>
+        <div class="hint err" id="fileHint"></div>
+      </div>
+
+      <div class="field">
+        <label for="description">Description</label>
+        <textarea id="description" placeholder="Write something about this photo..."></textarea>
+      </div>
+
+      <button type="submit" class="submit" id="submitBtn">Save to vault</button>
+      <div class="status" id="statusBox"></div>
+    </form>
+  </section>
+
+</div>
+
+<script src="config.js"></script>
+<script>
+/* ================= helpers ================= */
+const $ = (id) => document.getElementById(id);
+
+function humanSize(bytes){
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + " KB";
+  return (bytes/(1024*1024)).toFixed(2) + " MB";
+}
+
+function setStatus(msg, kind){
+  const box = $("statusBox");
+  box.textContent = msg;
+  box.className = "status show " + kind;
+}
+function clearStatus(){
+  $("statusBox").className = "status";
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ================= config warning ================= */
+if (!CONFIG.APPS_SCRIPT_URL) {
+  $("configWarning").style.display = "block";
+}
+
+/* ================= file picking + validation ================= */
+let selectedFile = null;
+
+$("fileInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  $("fileHint").textContent = "";
+  if (!file) { selectedFile = null; return; }
+
+  if (!CONFIG.ALLOWED_TYPES.includes(file.type)) {
+    $("fileHint").textContent = "Only JPG or PNG files are allowed.";
+    e.target.value = "";
+    selectedFile = null;
+    $("previewRow").style.display = "none";
+    $("dzLabel").style.display = "block";
+    return;
+  }
+  if (file.size > CONFIG.MAX_BYTES) {
+    $("fileHint").textContent = "File is larger than 5 MB (" + humanSize(file.size) + "). Choose a smaller photo.";
+    e.target.value = "";
+    selectedFile = null;
+    $("previewRow").style.display = "none";
+    $("dzLabel").style.display = "block";
+    return;
+  }
+
+  selectedFile = file;
+  $("previewName").textContent = file.name;
+  $("previewSize").textContent = humanSize(file.size);
+  $("previewImg").src = URL.createObjectURL(file);
+  $("previewRow").style.display = "flex";
+  $("dzLabel").style.display = "none";
+});
+
+["dragover","dragleave","drop"].forEach(evt => {
+  $("dropzone").addEventListener(evt, (e) => {
+    e.preventDefault();
+    $("dropzone").classList.toggle("drag", evt === "dragover");
+  });
+});
+
+/* ================= submit ================= */
+$("uploadForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  clearStatus();
+
+  const password = $("password").value.trim();
+  const description = $("description").value.trim();
+
+  if (!CONFIG.APPS_SCRIPT_URL) {
+    setStatus("Backend URL isn't configured — see the note above.", "bad");
+    return;
+  }
+  if (password !== "94976") {
+    setStatus("Incorrect password.", "bad");
+    return;
+  }
+  if (!selectedFile) {
+    setStatus("Choose a JPG or PNG photo first.", "bad");
+    return;
+  }
+
+  const btn = $("submitBtn");
+  btn.disabled = true;
+  setStatus("Uploading...", "busy");
+
+  try {
+    const base64 = await fileToBase64(selectedFile);
+    const payload = {
+      password,
+      description,
+      fileName: selectedFile.name,
+      mimeType: selectedFile.type,
+      fileData: base64
+    };
+
+    // Sending as text/plain avoids a CORS preflight OPTIONS request,
+    // which Apps Script web apps don't handle.
+    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      setStatus("Photo saved to the vault. Check the Reel page to see it.", "ok");
+      $("uploadForm").reset();
+      $("previewRow").style.display = "none";
+      $("dzLabel").style.display = "block";
+      selectedFile = null;
+    } else {
+      setStatus(data.message || "Something went wrong.", "bad");
+    }
+  } catch (err) {
+    setStatus("Upload failed: " + err.message, "bad");
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
