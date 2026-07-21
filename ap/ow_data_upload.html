@@ -350,6 +350,78 @@
     margin-top:26px;
     letter-spacing:0.3px;
   }
+  /* ---------- Password Modal ---------- */
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(2,8,16,0.75);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:999;
+    padding:18px;
+  }
+  .modal-overlay.show{ display:flex; }
+
+  .modal-box{
+    max-width:360px;
+    width:100%;
+    padding:26px 24px;
+    text-align:center;
+  }
+
+  .modal-title{
+    font-size:16px;
+    color:var(--cyan);
+    font-weight:700;
+    margin:0 0 6px;
+    letter-spacing:0.4px;
+  }
+
+  .modal-sub{
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin:0 0 18px;
+  }
+
+  .modal-box input[type="password"]{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(120,220,255,0.3);
+    color:var(--text-main);
+    font-size:16px;
+    letter-spacing:3px;
+    text-align:center;
+    margin-bottom:14px;
+    outline:none;
+  }
+  .modal-box input[type="password"]:focus{
+    border-color:var(--cyan);
+    box-shadow:0 0 10px rgba(34,229,255,0.35);
+  }
+
+  .modal-error{
+    color:var(--danger);
+    font-size:12.5px;
+    margin:-6px 0 12px;
+    min-height:16px;
+  }
+
+  .modal-btn-row{ display:flex; gap:10px; justify-content:center; }
+
+  .modal-btn-row button{
+    flex:1;
+    padding:10px 16px;
+  }
+
+  #modalCancelBtn{
+    background:rgba(255,255,255,0.08);
+    color:var(--text-main);
+    border:1px solid rgba(120,220,255,0.25);
+  }
+
 </style>
 </head>
 <body>
@@ -360,16 +432,6 @@
     <h1>Outward Data Uploader
       <span>Import FOIS RR-Base freight data into Google Sheets</span>
     </h1>
-    <div class="mode-group">
-      <label class="mode-option">
-        <input type="radio" name="saveMode" id="modePeriodical" value="periodical" checked>
-        Periodical
-      </label>
-      <label class="mode-option">
-        <input type="radio" name="saveMode" id="modeMonthly" value="monthly">
-        Monthly
-      </label>
-    </div>
   </header>
 
   <div class="glass steps-panel">
@@ -425,8 +487,7 @@
 
     <div class="btn-row">
       <button id="previewBtn" onclick="processCSV()">1. Data Preview</button>
-      <button id="saveBtnPeriodical" class="btn-save" onclick="saveToSheet('periodical')" disabled>2. Save to Google Sheet (<span class="hl">Periodical</span>)</button>
-      <button id="saveBtnMonthly" class="btn-save" onclick="saveToSheet('monthly')" disabled>3. Save to Google Sheet (<span class="hl">Monthly</span>)</button>
+      <button id="saveBtnPeriodical" class="btn-save" onclick="openPasswordModal()" disabled>2. Save to Google Sheet (<span class="hl">Periodical</span>)</button>
     </div>
 
     <div id="status"></div>
@@ -438,64 +499,31 @@
   </div>
 
   <footer>Cyan-Blue Dark Glass Interface · FOIS RR-Base Data Pipeline</footer>
+
+  <div class="modal-overlay" id="passwordModal">
+    <div class="glass modal-box">
+      <p class="modal-title">🔒 Password Required</p>
+      <p class="modal-sub">Enter password to save data to Google Sheet</p>
+      <input type="password" id="passwordInput" placeholder="•••••" maxlength="10" autocomplete="off" />
+      <div class="modal-error" id="passwordError"></div>
+      <div class="modal-btn-row">
+        <button id="modalCancelBtn" onclick="closePasswordModal()">Cancel</button>
+        <button id="modalSubmitBtn" class="btn-save" onclick="verifyPasswordAndSave()">Submit</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
     let globalPayload = null;
     let globalRecords = [];
 
-    const STORAGE_KEY = "fois_uploaded_record_signatures";
-
-    const modePeriodical = document.getElementById("modePeriodical");
-    const modeMonthly = document.getElementById("modeMonthly");
     const saveBtnPeriodical = document.getElementById("saveBtnPeriodical");
-    const saveBtnMonthly = document.getElementById("saveBtnMonthly");
 
     let dataReady = false;
 
-    function getSelectedMode() {
-        return modeMonthly.checked ? "monthly" : "periodical";
-    }
-
-    // Keeps the correct Save button enabled based on which radio is
-    // selected. Only takes effect once a file has been previewed successfully.
     function updateSaveButtons() {
-        if (!dataReady) {
-            saveBtnPeriodical.disabled = true;
-            saveBtnMonthly.disabled = true;
-            return;
-        }
-        const mode = getSelectedMode();
-        saveBtnPeriodical.disabled = (mode !== "periodical");
-        saveBtnMonthly.disabled = (mode !== "monthly");
-    }
-
-    modePeriodical.addEventListener("change", updateSaveButtons);
-    modeMonthly.addEventListener("change", updateSaveButtons);
-
-    function getStoredSignatures() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-            return [];
-        }
-    }
-
-    function saveStoredSignatures(signatures) {
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(signatures));
-        } catch (e) {
-            // Storage unavailable, ignore silently
-        }
-    }
-
-    function recordSignature(record) {
-        // Build a stable signature from all field values of the record
-        return Object.keys(record)
-            .sort()
-            .map(key => key + "=" + record[key])
-            .join("||");
+        saveBtnPeriodical.disabled = !dataReady;
     }
 
     function setStatus(message, type) {
@@ -563,26 +591,6 @@
                 return;
             }
 
-            // ---- Duplicate detection ----
-            const storedSignatures = getStoredSignatures();
-            const seenInFile = new Set();
-            const duplicatesWithinFile = [];
-            const duplicatesAlreadySaved = [];
-
-            jsonDataArray.forEach((record, idx) => {
-                const sig = recordSignature(record);
-                if (seenInFile.has(sig)) {
-                    duplicatesWithinFile.push(idx + 1);
-                } else {
-                    seenInFile.add(sig);
-                }
-                if (storedSignatures.includes(sig)) {
-                    duplicatesAlreadySaved.push(idx + 1);
-                }
-            });
-
-            const hasDuplicates = duplicatesWithinFile.length > 0 || duplicatesAlreadySaved.length > 0;
-
             globalPayload = {
                 fromDate: fromDate,
                 toDate: toDate,
@@ -600,73 +608,89 @@
             previewDiv.innerText = globalPayload.jsonData;
             previewDiv.style.display = "block";
 
-            if (hasDuplicates) {
-                let msg = "<strong>Duplicate Entry Detected.</strong> This file cannot be saved until duplicates are resolved.<br>";
-                if (duplicatesWithinFile.length > 0) {
-                    msg += "Duplicate rows within this file (row numbers): " + duplicatesWithinFile.join(", ") + "<br>";
-                }
-                if (duplicatesAlreadySaved.length > 0) {
-                    msg += "Rows already saved to Google Sheet previously (row numbers): " + duplicatesAlreadySaved.join(", ") + "<br>";
-                }
-                errorBox.innerHTML = msg;
-                errorBox.style.display = "block";
-                setStatus("Duplicate Entry. Please check the file and try again.", "error");
-                dataReady = false;
-                updateSaveButtons();
-            } else {
-                const mode = getSelectedMode();
-                setStatus("Data Preview is ready. Click Save to Google Sheet (" +
-                    (mode === "monthly" ? "Monthly" : "Periodical") +
-                    ") to upload the data.", "success");
-                dataReady = true;
-                updateSaveButtons();
-                // Lock the mode selection once a file has been loaded/previewed
-                modePeriodical.disabled = true;
-                modeMonthly.disabled = true;
-            }
+            setStatus("Data Preview is ready. Click Save to Google Sheet (Periodical) to upload the data.", "success");
+            dataReady = true;
+            updateSaveButtons();
         };
 
         reader.readAsText(file);
     }
 
-    function saveToSheet(mode) {
+    const SAVE_PASSWORD = "94976";
+
+    function openPasswordModal() {
+        const modal = document.getElementById("passwordModal");
+        const input = document.getElementById("passwordInput");
+        const errorDiv = document.getElementById("passwordError");
+        input.value = "";
+        errorDiv.innerText = "";
+        modal.classList.add("show");
+        setTimeout(function() { input.focus(); }, 50);
+    }
+
+    function closePasswordModal() {
+        document.getElementById("passwordModal").classList.remove("show");
+    }
+
+    function verifyPasswordAndSave() {
+        const input = document.getElementById("passwordInput");
+        const errorDiv = document.getElementById("passwordError");
+        if (input.value.trim() === SAVE_PASSWORD) {
+            closePasswordModal();
+            actuallySaveToSheet();
+        } else {
+            errorDiv.innerText = "Incorrect password. Please try again.";
+            input.value = "";
+            input.focus();
+        }
+    }
+
+    // Allow pressing Enter inside the password field to submit
+    document.addEventListener("DOMContentLoaded", function() {
+        const input = document.getElementById("passwordInput");
+        if (input) {
+            input.addEventListener("keyup", function(e) {
+                if (e.key === "Enter") verifyPasswordAndSave();
+            });
+        }
+    });
+
+    function actuallySaveToSheet() {
         if (!globalPayload) return;
 
-        const label = mode === "monthly" ? "Monthly" : "Periodical";
-        setStatus("Uploading data to Google Sheet (" + label + ")...", "progress");
-
+        setStatus("Uploading data to Google Sheet (Periodical)...", "progress");
         saveBtnPeriodical.disabled = true;
-        saveBtnMonthly.disabled = true;
 
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwrwr-A4veONfJJIb3ztDGjEthpnMrv7UAUcEdFq1e40JidnXbKyLgKFDRpGLrCykT1/exec";
-
-        // sheetTarget tells the Apps Script backend which sheet to write to:
-        // "Periodical" -> Sheet 1, "Monthly" -> Sheet 2.
-        // The doPost handler in Apps Script must read this field and route
-        // the write accordingly (not covered by the doGet script shared earlier,
-        // which is a separate read-only report endpoint).
-        const payloadToSend = Object.assign({}, globalPayload, { sheetTarget: label });
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxhIH2gXOLQBrAflKO32sURbmuvyRlKkn_ZVmReJ2SYri6vywQ2YoiRi9t8HcH569k/exec";
 
         fetch(WEB_APP_URL, {
             method: "POST",
-            mode: "no-cors",
             headers: {
                 "Content-Type": "text/plain"
             },
-            body: JSON.stringify(payloadToSend)
+            body: JSON.stringify(globalPayload)
         })
-        .then(() => {
-            // Record signatures locally so future uploads can be checked for duplicates
-            const storedSignatures = getStoredSignatures();
-            globalRecords.forEach(record => {
-                const sig = recordSignature(record);
-                if (!storedSignatures.includes(sig)) {
-                    storedSignatures.push(sig);
-                }
-            });
-            saveStoredSignatures(storedSignatures);
+        .then(response => response.json())
+        .then(result => {
+            const errorBox = document.getElementById("errorBox");
+            if (result.status === "duplicate") {
+                // From Date + To Date already exist in the Google Sheet
+                errorBox.innerHTML = "<strong>Data already exist.</strong> This From Date - To Date range is already saved in the Google Sheet.";
+                errorBox.style.display = "block";
+                setStatus("Data already exist. Refreshing...", "error");
+                setTimeout(function() {
+                    location.reload();
+                }, 1200);
+                return;
+            }
 
-            setStatus("Data successfully sent to Google Sheet (" + label + "). Refreshing...", "success");
+            if (result.status === "error") {
+                setStatus("Error: " + result.message, "error");
+                updateSaveButtons();
+                return;
+            }
+
+            setStatus("Data successfully sent to Google Sheet (Periodical). Refreshing...", "success");
             // Auto refresh the page once the data has been saved
             setTimeout(function() {
                 location.reload();
