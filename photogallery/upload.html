@@ -192,8 +192,8 @@
 
 <script>
   // ============================================================
-  // CONFIG -- yahan wahi Apps Script Web App URL daalein jo
-  // gallery page me diya hai
+  // CONFIG -- paste the same Apps Script Web App URL here
+  // that is used on the gallery page
   // ============================================================
   const CONFIG = {
     SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxt2Er5ruBQJKJaxUqnuBxl8GhX4hZsDRYEIGKnHlapTUZYr06IjvQeD_T8rS7-tTj-KQ/exec'
@@ -238,7 +238,7 @@
   uploadBtn.addEventListener('click', async () => {
     setMsg('');
     if (!isConfigured()){
-      setMsg('CONFIG.SCRIPT_URL set nahi hai.', 'err');
+      setMsg('CONFIG.SCRIPT_URL is not set.', 'err');
       return;
     }
     if (!selectedFile){

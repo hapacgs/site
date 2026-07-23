@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aperture — Glass Carousel</title>
+<title>Photo Gallery - HAPA GOODS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -207,10 +207,19 @@
     font-family:'Space Grotesk', sans-serif;
     font-weight:600;
     font-size:15px;
-    color:#fff;
+    display:flex;
+    justify-content:center;
+    text-align:center;
     opacity:0;
     transform: translateY(6px);
     transition: all .4s ease;
+  }
+  .card-caption .view{
+    background: var(--navy);
+    color: var(--cyan);
+    padding:8px 18px;
+    border-radius:10px;
+    border:1px solid var(--glass-border);
   }
   .card.pos-0 .card-caption{ opacity:1; transform:translateY(0); }
 
@@ -218,6 +227,7 @@
     display:none;
     flex-direction:column;
     gap:8px;
+    width:100%;
   }
   .caption-edit.active{ display:flex; }
   .caption-edit input{
@@ -298,12 +308,11 @@
 <div class="orb two"></div>
 
 <header>
-  <span class="eyebrow">Aperture Collection</span>
-  <h1>Frame by frame, in glass and cyan light</h1>
+  <span class="eyebrow">HAPA GOODS - RAJKOT DIVISION (W.R.)</span>
+  <h1>Photo Gallery</h1>
 </header>
 
 <div class="toolbar">
-  <a class="btn" href="upload.html">+ Upload Photo</a>
   <button class="btn ghost" id="refreshBtn">&#8635; Refresh</button>
 </div>
 
@@ -312,7 +321,7 @@
 <div class="stage">
   <div class="track" id="track"></div>
   <div class="empty-state" id="emptyState" style="display:none;">
-    Abhi koi photo nahi hai. "Upload Photo" par click karke apni pehli photo daalein.
+    No photos yet. Click "Upload Photo" to add your first photo.
   </div>
 </div>
 
@@ -325,8 +334,8 @@
 
 <script>
   // ============================================================
-  // CONFIG -- apna Google Apps Script Web App URL yahan daalein
-  // (upload.html me bhi yahi URL daalna hai)
+  // CONFIG -- paste your Google Apps Script Web App URL here
+  // (the same URL must also be used in upload.html)
   // ============================================================
   const CONFIG = {
     SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxt2Er5ruBQJKJaxUqnuBxl8GhX4hZsDRYEIGKnHlapTUZYr06IjvQeD_T8rS7-tTj-KQ/exec'
@@ -351,12 +360,12 @@
 
   async function loadPhotos(){
     if (!isConfigured()){
-      setStatus('CONFIG.SCRIPT_URL set nahi hai -- Apps Script deploy karke URL yahan daalein.', true);
+      setStatus('CONFIG.SCRIPT_URL is not set -- deploy your Apps Script and paste the URL here.', true);
       photos = [];
       build();
       return;
     }
-    setStatus('Photos load ho rahi hain...');
+    setStatus('Loading photos...');
     try{
       const res = await fetch(CONFIG.SCRIPT_URL + '?action=list');
       const data = await res.json();
@@ -366,7 +375,7 @@
       current = 0;
       build();
     }catch(err){
-      setStatus('Photos load nahi ho payi: ' + err.message, true);
+      setStatus('Could not load photos: ' + err.message, true);
       photos = [];
       build();
     }
@@ -448,7 +457,7 @@
     const errBox = card.querySelector('.edit-err');
     errBox.textContent = '';
     if (!password){
-      errBox.textContent = 'Password daalein.';
+      errBox.textContent = 'Please enter the password.';
       return;
     }
     saveBtn.textContent = 'Saving...';
