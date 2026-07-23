@@ -3,206 +3,297 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Photo Vault — Upload</title>
+<title>Aperture — Upload Photo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep: #060d1a;
+    --navy: #0b1a2e;
+    --cyan: #22d3ee;
+    --cyan-bright: #67e8f9;
+    --cyan-deep: #0891b2;
+    --glass: rgba(148, 209, 230, 0.08);
+    --glass-border: rgba(148, 224, 255, 0.2);
+    --ink: #eaf6fb;
+    --ink-dim: #93b3c7;
+    --danger: #f87171;
+    --ok: #6ee7b7;
+  }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  body{
+    font-family:'Inter', sans-serif;
+    background: radial-gradient(circle at 15% 10%, rgba(34,211,238,0.14), transparent 45%),
+                radial-gradient(circle at 85% 30%, rgba(8,145,178,0.16), transparent 50%),
+                radial-gradient(circle at 50% 95%, rgba(34,211,238,0.09), transparent 55%),
+                linear-gradient(180deg, var(--navy-deep), var(--navy) 45%, var(--navy-deep));
+    color: var(--ink);
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    overflow-x:hidden;
+    position:relative;
+    padding: 40px 20px;
+  }
+
+  .orb{ position:fixed; border-radius:50%; filter:blur(70px); pointer-events:none; opacity:.45; z-index:0; }
+  .orb.one{ width:420px; height:420px; background:radial-gradient(circle, rgba(34,211,238,.35), transparent 70%); top:-140px; left:-120px; }
+  .orb.two{ width:360px; height:360px; background:radial-gradient(circle, rgba(103,232,249,.25), transparent 70%); bottom:-120px; right:-100px; }
+
+  header{
+    text-align:center;
+    z-index:2;
+    margin-bottom: 30px;
+  }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--cyan-bright);
+    background:var(--glass); border:1px solid var(--glass-border);
+    backdrop-filter: blur(12px);
+    padding:6px 15px; border-radius:999px; margin-bottom:20px;
+  }
+  h1{
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:700;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    letter-spacing:-0.02em;
+    background: linear-gradient(120deg, #fff 10%, var(--cyan-bright) 55%, var(--cyan-deep) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+
+  .panel{
+    width:100%; max-width:440px;
+    background: linear-gradient(160deg, rgba(11,26,46,0.85), rgba(6,13,26,0.9));
+    border:1px solid var(--glass-border);
+    border-radius:22px;
+    padding:32px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    backdrop-filter: blur(14px);
+    z-index:2;
+  }
+
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:block; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
+    color: var(--cyan-bright); margin-bottom:7px;
+  }
+  .field input[type="text"], .field input[type="password"]{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:14px;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1px solid var(--glass-border);
+    background: rgba(148,224,255,0.06);
+    color:#fff;
+    outline:none;
+  }
+  .field input:focus{ border-color: var(--cyan-bright); }
+
+  .file-drop{
+    border:1.5px dashed var(--glass-border);
+    border-radius:14px;
+    padding:34px 14px;
+    text-align:center;
+    cursor:pointer;
+    color: var(--ink-dim);
+    font-size:13px;
+    transition: all .2s ease;
+    position:relative;
+  }
+  .file-drop:hover{ border-color: var(--cyan-bright); color: var(--ink); }
+  .file-drop input{ position:absolute; inset:0; opacity:0; cursor:pointer; }
+  .file-drop.has-file{ color: var(--cyan-bright); border-style:solid; }
+
+  .preview{
+    width:100%; max-height:200px; object-fit:contain;
+    border-radius:10px; margin-top:12px; display:none;
+  }
+
+  .btn{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-weight:500;
+    font-size:14px;
+    padding:13px 0;
+    border-radius:999px;
+    border:1px solid var(--glass-border);
+    background: linear-gradient(120deg, var(--cyan-bright), var(--cyan-deep));
+    color:#04222c;
+    cursor:pointer;
+    transition: all .2s ease;
+    margin-top:6px;
+  }
+  .btn:hover{ box-shadow: 0 0 26px rgba(34,211,238,.4); }
+  .btn:disabled{ opacity:.5; cursor:not-allowed; box-shadow:none; }
+
+  .msg{
+    font-size:12.5px;
+    margin-top:14px;
+    text-align:center;
+    min-height:16px;
+    color: var(--ink-dim);
+  }
+  .msg.err{ color: var(--danger); }
+  .msg.ok{ color: var(--ok); }
+
+  .back-link{
+    display:inline-block;
+    margin-top:22px;
+    font-size:13px;
+    color: var(--ink-dim);
+    text-decoration:none;
+    z-index:2;
+  }
+  .back-link:hover{ color: var(--cyan-bright); }
+</style>
 </head>
 <body>
-<div class="wrap narrow">
 
-  <div class="topbar">
-    <div class="brand"><span class="dot"></span><span>Photo Vault</span></div>
-    <nav class="nav">
-      <a href="upload.html" class="active">Upload</a>
-      <a href="reel.html">Reel</a>
-    </nav>
+<div class="orb one"></div>
+<div class="orb two"></div>
+
+<header>
+  <span class="eyebrow">Aperture Collection</span>
+  <h1>Upload a Photo</h1>
+</header>
+
+<div class="panel">
+  <div class="field">
+    <label>Photo</label>
+    <div class="file-drop" id="fileDrop">
+      <span id="fileDropLabel">Select Photo From Here</span>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+    <img id="previewImg" class="preview">
   </div>
 
-  <header class="top">
-    <div class="eyebrow">Google Drive · Connected Folder</div>
-    <h1>Add a new frame</h1>
-    <p>Upload a photo and write a description — it's saved to the vault and starts playing on the reel page right away.</p>
-  </header>
+  <div class="field">
+    <label>Caption</label>
+    <input type="text" id="captionInput" placeholder="e.g. Ridgeline at Dusk">
+  </div>
 
-  <section class="card">
-    <h2>Upload</h2>
-    <p class="sub">A photo won't save without the correct password.</p>
+  <div class="field">
+    <label>Password</label>
+    <input type="password" id="passwordInput" placeholder="Upload password">
+  </div>
 
-    <div id="configWarning" class="config-warning" style="display:none;">
-      Backend URL isn't set yet. Add your Google Apps Script Web App URL to
-      <code>CONFIG.APPS_SCRIPT_URL</code> in <code>config.js</code>
-      (see <code>AppsScript-Code.gs</code> and the setup notes).
-    </div>
-
-    <form id="uploadForm">
-      <div class="field">
-        <label for="password">Password</label>
-        <input type="password" id="password" placeholder="•••••" maxlength="10" autocomplete="off" inputmode="numeric">
-        <div class="hint" id="passHint"></div>
-      </div>
-
-      <div class="field">
-        <label for="fileInput">Photo</label>
-        <div class="dropzone" id="dropzone">
-          <input type="file" id="fileInput" accept="image/jpeg,image/png">
-          <div class="dz-label" id="dzLabel"><b>Click to browse</b> or drop a photo here · JPG/PNG · max 5MB</div>
-          <div class="preview-row" id="previewRow" style="display:none;">
-            <img id="previewImg" alt="">
-            <div>
-              <div class="fname" id="previewName"></div>
-              <div class="fsize" id="previewSize"></div>
-            </div>
-          </div>
-        </div>
-        <div class="hint err" id="fileHint"></div>
-      </div>
-
-      <div class="field">
-        <label for="description">Description</label>
-        <textarea id="description" placeholder="Write something about this photo..."></textarea>
-      </div>
-
-      <button type="submit" class="submit" id="submitBtn">Save to vault</button>
-      <div class="status" id="statusBox"></div>
-    </form>
-  </section>
-
+  <button class="btn" id="uploadBtn">Upload Photo</button>
+  <div class="msg" id="msg"></div>
 </div>
 
-<script src="config.js"></script>
+<a class="back-link" href="photo-gallery-carousel.html">&#8592; Back to Gallery</a>
+
 <script>
-/* ================= helpers ================= */
-const $ = (id) => document.getElementById(id);
+  // ============================================================
+  // CONFIG -- yahan wahi Apps Script Web App URL daalein jo
+  // gallery page me diya hai
+  // ============================================================
+  const CONFIG = {
+    SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxt2Er5ruBQJKJaxUqnuBxl8GhX4hZsDRYEIGKnHlapTUZYr06IjvQeD_T8rS7-tTj-KQ/exec'
+  };
 
-function humanSize(bytes){
-  if (bytes < 1024) return bytes + " B";
-  if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + " KB";
-  return (bytes/(1024*1024)).toFixed(2) + " MB";
-}
+  const fileInput = document.getElementById('fileInput');
+  const fileDrop = document.getElementById('fileDrop');
+  const fileDropLabel = document.getElementById('fileDropLabel');
+  const previewImg = document.getElementById('previewImg');
+  const captionInput = document.getElementById('captionInput');
+  const passwordInput = document.getElementById('passwordInput');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const msg = document.getElementById('msg');
 
-function setStatus(msg, kind){
-  const box = $("statusBox");
-  box.textContent = msg;
-  box.className = "status show " + kind;
-}
-function clearStatus(){
-  $("statusBox").className = "status";
-}
+  let selectedFile = null;
 
-function fileToBase64(file){
-  return new Promise((resolve, reject) => {
+  function setMsg(text, type){
+    msg.textContent = text || '';
+    msg.className = 'msg' + (type ? ' ' + type : '');
+  }
+
+  function isConfigured(){
+    return CONFIG.SCRIPT_URL && CONFIG.SCRIPT_URL.indexOf('PASTE_YOUR') === -1;
+  }
+
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    selectedFile = file;
+    fileDropLabel.textContent = file.name;
+    fileDrop.classList.add('has-file');
+    if (!captionInput.value) captionInput.value = file.name.replace(/\.[^.]+$/, '');
+
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(",")[1]);
-    reader.onerror = reject;
+    reader.onload = () => {
+      previewImg.src = reader.result;
+      previewImg.style.display = 'block';
+    };
     reader.readAsDataURL(file);
   });
-}
 
-/* ================= config warning ================= */
-if (!CONFIG.APPS_SCRIPT_URL) {
-  $("configWarning").style.display = "block";
-}
-
-/* ================= file picking + validation ================= */
-let selectedFile = null;
-
-$("fileInput").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  $("fileHint").textContent = "";
-  if (!file) { selectedFile = null; return; }
-
-  if (!CONFIG.ALLOWED_TYPES.includes(file.type)) {
-    $("fileHint").textContent = "Only JPG or PNG files are allowed.";
-    e.target.value = "";
-    selectedFile = null;
-    $("previewRow").style.display = "none";
-    $("dzLabel").style.display = "block";
-    return;
-  }
-  if (file.size > CONFIG.MAX_BYTES) {
-    $("fileHint").textContent = "File is larger than 5 MB (" + humanSize(file.size) + "). Choose a smaller photo.";
-    e.target.value = "";
-    selectedFile = null;
-    $("previewRow").style.display = "none";
-    $("dzLabel").style.display = "block";
-    return;
-  }
-
-  selectedFile = file;
-  $("previewName").textContent = file.name;
-  $("previewSize").textContent = humanSize(file.size);
-  $("previewImg").src = URL.createObjectURL(file);
-  $("previewRow").style.display = "flex";
-  $("dzLabel").style.display = "none";
-});
-
-["dragover","dragleave","drop"].forEach(evt => {
-  $("dropzone").addEventListener(evt, (e) => {
-    e.preventDefault();
-    $("dropzone").classList.toggle("drag", evt === "dragover");
-  });
-});
-
-/* ================= submit ================= */
-$("uploadForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  clearStatus();
-
-  const password = $("password").value.trim();
-  const description = $("description").value.trim();
-
-  if (!CONFIG.APPS_SCRIPT_URL) {
-    setStatus("Backend URL isn't configured — see the note above.", "bad");
-    return;
-  }
-  if (password !== "94976") {
-    setStatus("Incorrect password.", "bad");
-    return;
-  }
-  if (!selectedFile) {
-    setStatus("Choose a JPG or PNG photo first.", "bad");
-    return;
-  }
-
-  const btn = $("submitBtn");
-  btn.disabled = true;
-  setStatus("Uploading...", "busy");
-
-  try {
-    const base64 = await fileToBase64(selectedFile);
-    const payload = {
-      password,
-      description,
-      fileName: selectedFile.name,
-      mimeType: selectedFile.type,
-      fileData: base64
-    };
-
-    // Sending as text/plain avoids a CORS preflight OPTIONS request,
-    // which Apps Script web apps don't handle.
-    const res = await fetch(CONFIG.APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-
-    if (data.success) {
-      setStatus("Photo saved to the vault. Check the Reel page to see it.", "ok");
-      $("uploadForm").reset();
-      $("previewRow").style.display = "none";
-      $("dzLabel").style.display = "block";
-      selectedFile = null;
-    } else {
-      setStatus(data.message || "Something went wrong.", "bad");
+  uploadBtn.addEventListener('click', async () => {
+    setMsg('');
+    if (!isConfigured()){
+      setMsg('CONFIG.SCRIPT_URL set nahi hai.', 'err');
+      return;
     }
-  } catch (err) {
-    setStatus("Upload failed: " + err.message, "bad");
-  } finally {
-    btn.disabled = false;
+    if (!selectedFile){
+      setMsg('Select Your Photo...', 'err');
+      return;
+    }
+    if (!passwordInput.value){
+      setMsg('Please Enter Password.', 'err');
+      return;
+    }
+
+    uploadBtn.disabled = true;
+    setMsg('Uploading... Please Wait ');
+
+    try{
+      const base64 = await fileToBase64(selectedFile);
+      const res = await fetch(CONFIG.SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'upload',
+          data: base64,
+          mimeType: selectedFile.type,
+          fileName: selectedFile.name,
+          caption: captionInput.value.trim() || selectedFile.name,
+          password: passwordInput.value
+        })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      setMsg('Success !!! Photo Uploaded to Gallery...', 'ok');
+      selectedFile = null;
+      fileInput.value = '';
+      fileDropLabel.textContent = 'Click & Select Photo';
+      fileDrop.classList.remove('has-file');
+      previewImg.style.display = 'none';
+      captionInput.value = '';
+      passwordInput.value = '';
+    }catch(err){
+      setMsg('Upload fail: ' + err.message, 'err');
+    }finally{
+      uploadBtn.disabled = false;
+    }
+  });
+
+  function fileToBase64(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
-});
 </script>
+
 </body>
 </html>
