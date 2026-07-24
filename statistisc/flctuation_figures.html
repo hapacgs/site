@@ -1,1 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluctuation Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#04101f;
+    --bg-mid:#071b31;
+    --bg-top:#0a2540;
+    --glass:rgba(255,255,255,0.045);
+    --glass-strong:rgba(255,255,255,0.075);
+    --glass-border:rgba(255,255,255,0.12);
+    --ink:#eaf2fb;
+    --ink-soft:#93a8c2;
+    --ink-dim:#5f7793;
+    --rule:rgba(255,255,255,0.10);
+    --cyan:#22d3ee;
+    --cyan-soft:rgba(34,211,238,0.14);
+    --cyan-dim:rgba(34,211,238,0.35);
+    --signal-red:#ff6f61;
+    --signal-red-soft:rgba(255,111,97,0.14);
+    --last-fy:#6f89ac;
+    --current-fy:#22d3ee;
+    --up:#0b6b3a;
+    --down:#b3261e;
+    --radius:14px;
+    --radius-sm:9px;
+    --tbl-bg:#d4f7fc;
+    --tbl-bg-alt:#c1f1f9;
+    --tbl-header-bg:#9de8f2;
+    --tbl-font:#0a1f4d;
+    --tbl-border:rgba(10,31,77,0.18);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(circle at 12% 8%, rgba(34,211,238,0.16), transparent 42%),
+      radial-gradient(circle at 88% 4%, rgba(34,211,238,0.08), transparent 38%),
+      radial-gradient(circle at 90% 92%, rgba(59,130,246,0.20), transparent 45%),
+      radial-gradient(circle at 5% 85%, rgba(34,211,238,0.08), transparent 40%),
+      linear-gradient(160deg, var(--bg-deep) 0%, var(--bg-mid) 45%, var(--bg-top) 100%);
+    background-attachment:fixed;
+  }
+  .wrap{max-width:1320px;margin:0 auto;padding:18px 22px 24px;}
 
+  /* ---- Header ---- */
+  header{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    border-bottom:1px solid var(--rule);
+    padding-bottom:10px;margin-bottom:14px;flex-wrap:wrap;gap:10px;
+  }
+  header .title-block h1{
+    font-family:'Zilla Slab', serif;font-weight:700;
+    font-size:22px;letter-spacing:0.3px;margin:0 0 4px;
+    background:linear-gradient(90deg,#f2f8ff 0%, var(--cyan) 120%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  header .title-block p{
+    margin:0;color:var(--ink-soft);font-size:12.5px;
+    letter-spacing:1.4px;text-transform:uppercase;
+  }
+  header .stamp{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--ink-soft);
+    border:1px solid var(--glass-border);padding:7px 12px;border-radius:100px;
+    background:var(--glass);backdrop-filter:blur(14px);
+  }
+
+  /* ---- Glass panel base ---- */
+  .glass{
+    background:var(--glass);
+    border:1px solid var(--glass-border);
+    border-radius:var(--radius);
+    backdrop-filter:blur(18px) saturate(140%);
+    -webkit-backdrop-filter:blur(18px) saturate(140%);
+    box-shadow:0 8px 32px rgba(0,0,10,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+
+  /* ---- Filter panel ---- */
+  .panel{padding:12px 20px;margin-bottom:14px;}
+  .field-row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;}
+  .field{min-width:210px;}
+  label.field-label{
+    display:block;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;
+    color:var(--ink-soft);margin-bottom:5px;font-weight:600;
+  }
+  select{
+    width:100%;padding:7px 10px;font-size:13.5px;font-family:'IBM Plex Sans',sans-serif;
+    border:1px solid var(--glass-border);border-radius:var(--radius-sm);
+    background:rgba(6,20,38,0.6);color:var(--ink);
+    outline:none;
+  }
+  select:focus{border-color:var(--cyan-dim);box-shadow:0 0 0 3px var(--cyan-soft);}
+  option{background:#0a2540;color:var(--ink);}
+  .commodity-field{flex:1;min-width:320px;}
+  .commodity-list{
+    display:flex;flex-wrap:wrap;gap:7px;min-height:30px;
+  }
+  .pill{
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;
+    padding:6px 12px;border:1px solid var(--glass-border);border-radius:100px;
+    background:rgba(255,255,255,0.03);color:var(--ink-soft);cursor:pointer;user-select:none;
+    transition:background .15s, color .15s, border-color .15s, box-shadow .15s;
+  }
+  .pill:hover{border-color:var(--cyan-dim);color:var(--ink);}
+  .pill.active{
+    background:linear-gradient(135deg, var(--cyan) 0%, #0891b2 100%);
+    color:#052330;border-color:transparent;font-weight:600;
+    box-shadow:0 0 0 3px var(--cyan-soft);
+  }
+  .pill.rmc{border-style:dashed;border-color:rgba(255,111,97,0.45);}
+  .pill.rmc.active{background:linear-gradient(135deg, var(--signal-red) 0%, #b23a2e 100%);color:#2a0a06;box-shadow:0 0 0 3px var(--signal-red-soft);}
+  .pill.all-pill{
+    border-color:rgba(255,255,255,0.28);font-weight:600;letter-spacing:0.3px;
+  }
+  .pill.all-pill.active{
+    background:linear-gradient(135deg, #f2f8ff 0%, var(--cyan) 140%);
+    color:#052330;
+  }
+  .placeholder-text{color:var(--ink-dim);font-size:13px;font-style:italic;padding-top:8px;}
+
+  /* ---- View toggle (Monthwise / Cumulative) ---- */
+  .view-toggle{display:flex;gap:8px;}
+  .radio-pill{
+    display:flex;align-items:center;gap:6px;
+    font-family:'IBM Plex Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.3px;
+    padding:6px 14px;border:1px solid var(--glass-border);border-radius:100px;
+    background:rgba(255,255,255,0.03);color:var(--ink-soft);cursor:pointer;user-select:none;
+    transition:background .15s, color .15s, border-color .15s, box-shadow .15s;
+  }
+  .radio-pill input{accent-color:var(--cyan);margin:0;}
+  .radio-pill.active{
+    background:linear-gradient(135deg, var(--cyan) 0%, #0891b2 100%);
+    color:#052330;border-color:transparent;box-shadow:0 0 0 3px var(--cyan-soft);
+  }
+
+  /* ---- Results layout ---- */
+  .results-row{display:flex;flex-direction:column;gap:14px;}
+  .register-card{overflow:hidden;}
+
+  .table-title-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:14px 18px;border-bottom:1px solid var(--rule);
+  }
+  .table-title-row .spacer{flex:1;}
+  .table-title-row h2{
+    flex:2;text-align:center;margin:0;
+    font-family:'Zilla Slab', serif;font-size:16px;font-weight:700;letter-spacing:0.4px;
+    text-transform:uppercase;color:var(--cyan);white-space:nowrap;
+  }
+  .table-title-row .commodity-tag{
+    flex:1;text-align:right;font-family:'IBM Plex Mono', monospace;font-size:11.5px;
+    font-weight:600;letter-spacing:0.3px;color:var(--ink-soft);text-transform:uppercase;
+  }
+
+  .table-scroll{overflow-x:auto;}
+  table.reg-table{border-collapse:collapse;width:100%;min-width:920px;background:var(--tbl-bg);}
+
+  table.reg-table thead tr.fy-row th{
+    font-family:'Zilla Slab', serif;font-size:10.5px;font-weight:700;
+    text-align:center;padding:6px 8px;letter-spacing:0.3px;
+    border-bottom:1px solid var(--tbl-border);white-space:nowrap;
+    background:var(--tbl-header-bg);color:var(--tbl-font);
+  }
+  table.reg-table thead tr.fy-row th.variation{background:#7fdfea;color:var(--tbl-font);}
+  table.reg-table thead tr.col-row th{
+    font-size:10px;letter-spacing:0.3px;text-transform:uppercase;
+    color:var(--tbl-font);font-weight:700;padding:6px 8px;
+    border-bottom:2px solid var(--tbl-border);text-align:right;white-space:nowrap;
+    background:var(--tbl-header-bg);
+  }
+  table.reg-table thead tr.col-row th:first-child{text-align:left;}
+  table.reg-table tbody td, table.reg-table tfoot td{
+    font-family:'IBM Plex Mono', monospace;font-size:11px;
+    padding:5px 8px;text-align:right;white-space:nowrap;
+    border-bottom:1px solid var(--tbl-border);color:var(--tbl-font);
+  }
+  table.reg-table td.month-cell{
+    text-align:left;font-family:'IBM Plex Sans',sans-serif;font-weight:700;font-size:11px;color:var(--tbl-font);
+  }
+  table.reg-table tbody tr{background:var(--tbl-bg);}
+  table.reg-table tbody tr:nth-child(even){background:var(--tbl-bg-alt);}
+  table.reg-table tbody tr:hover{background:#a8ecfa;}
+  table.reg-table tfoot td{
+    font-family:'IBM Plex Mono', monospace;font-weight:800;font-size:11px;
+    padding:7px 8px;text-align:right;border-top:2px solid var(--tbl-font);
+    background:var(--tbl-font);
+    color:var(--cyan);
+  }
+  table.reg-table tfoot td.month-cell{text-align:left;font-family:'Zilla Slab',serif;font-size:12px;font-weight:800;color:var(--cyan);}
+
+  table.reg-table td.pct-cell{font-weight:700;}
+  table.reg-table td.pct-cell.up{color:var(--up);}
+  table.reg-table td.pct-cell.down{color:var(--down);}
+  table.reg-table td.pct-cell.flat{color:#4a5a78;}
+
+  /* ---- Destination (Station To) infographic ---- */
+  .dest-card{padding:18px 20px 22px;}
+  .dest-head{
+    display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:6px;
+    margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--rule);
+  }
+  .dest-head h3{
+    margin:0;font-family:'Zilla Slab', serif;font-size:15.5px;font-weight:700;
+    letter-spacing:0.4px;text-transform:uppercase;color:var(--cyan);
+  }
+  .dest-head .dest-sub{font-size:11px;color:var(--ink-soft);letter-spacing:0.3px;}
+  .dest-grid{display:flex;flex-wrap:wrap;gap:14px;}
+  .dest-tile{
+    flex:1 1 200px;min-width:190px;max-width:260px;
+    background:var(--tbl-bg);border-radius:12px;overflow:hidden;
+    border:1px solid rgba(10,31,77,0.12);
+    box-shadow:0 6px 18px rgba(0,0,10,0.25);
+  }
+  .dest-tile .dest-tile-top{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--tbl-font);color:var(--cyan);
+    padding:9px 14px;
+  }
+  .dest-tile .dest-rank{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;
+    background:var(--cyan);color:var(--tbl-font);border-radius:100px;
+    width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;
+  }
+  .dest-tile .dest-code{
+    font-family:'Zilla Slab', serif;font-size:18px;font-weight:700;letter-spacing:0.5px;
+  }
+  .dest-tile .dest-bar-track{height:4px;background:rgba(10,31,77,0.12);}
+  .dest-tile .dest-bar-fill{height:100%;background:linear-gradient(90deg,#0891b2,var(--cyan));}
+  .dest-tile .dest-stats{padding:10px 14px 12px;display:flex;flex-direction:column;gap:6px;}
+  .dest-tile .dest-stat-row{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .dest-tile .dest-stat-label{
+    font-size:9.5px;letter-spacing:0.6px;text-transform:uppercase;
+    color:#3d5580;font-weight:700;
+  }
+  .dest-tile .dest-stat-value{font-size:13px;font-weight:700;color:var(--tbl-font);}
+  .dest-empty{color:var(--ink-soft);font-size:12.5px;font-style:italic;padding:4px 2px;}
+
+  .empty-state{padding:64px 20px;text-align:center;color:var(--ink-soft);}
+  .empty-state .big{font-family:'Zilla Slab', serif;font-size:17px;color:var(--ink);margin-bottom:6px;}
+  .error-box{
+    background:rgba(255,111,97,0.10);border:1px solid var(--signal-red);color:#ffd7d0;
+    padding:14px 18px;border-radius:var(--radius-sm);margin-bottom:20px;font-size:13.5px;line-height:1.5;
+  }
+  .error-box code{background:rgba(0,0,0,0.3);padding:1px 5px;border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <h1>FLUCTUATION REGISTER</h1>
+      <p>Station-wise &amp; commodity-wise freight, year-on-year</p>
+    </div>
+    <div class="stamp" id="genStamp">loading data&hellip;</div>
+  </header>
+
+  <div id="errorArea"></div>
+
+  <div class="panel glass">
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label" for="stationSelect">Station From</label>
+        <select id="stationSelect">
+          <option value="">Select station&hellip;</option>
+        </select>
+      </div>
+      <div class="field commodity-field">
+        <label class="field-label">Commodity (CMDT Code)</label>
+        <div class="commodity-list" id="commodityList">
+          <span class="placeholder-text">Select a station to see its commodities</span>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">View</label>
+        <div class="view-toggle" id="viewToggle">
+          <label class="radio-pill active" id="pillMonthwise">
+            <input type="radio" name="viewMode" value="monthwise" checked> Monthwise
+          </label>
+          <label class="radio-pill" id="pillCumulative">
+            <input type="radio" name="viewMode" value="cumulative"> Cumulative
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="results-row">
+    <div class="register-card glass" id="registerCard">
+      <div class="empty-state">
+        <div class="big">No data to show yet</div>
+        <div>Choose a station and a commodity above to build the year comparison.</div>
+      </div>
+    </div>
+    <div class="dest-card glass" id="destCard" style="display:none;"></div>
+  </div>
+
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+// Paste your deployed Apps Script /exec URL here after deploying Code.gs as a Web App.
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8Esn-GZQmIoTjbeGLsu2PNfNgbgqw8TaXCuBGT_ImUgBwl-eNDp2MUKCwXE8V7kRn/exec";
+/* ================================= */
+
+const MONTH_ORDER = [4,5,6,7,8,9,10,11,12,1,2,3]; // Apr..Mar
+const DEFAULT_STATION = 'HAPA';
+const ALL_COMMODITIES_KEY = '__ALL__';
+let DASHBOARD = null;
+
+function fyMonthKeys(fyStartYear){
+  return MONTH_ORDER.map(m => {
+    const y = (m >= 4) ? fyStartYear : fyStartYear + 1;
+    return String(y) + '-' + String(m).padStart(2,'0');
+  });
+}
+function monthLabelFor(monthKey){
+  const [y,m] = monthKey.split('-');
+  const names = ['','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  return names[parseInt(m,10)] + '-' + y.slice(2);
+}
+function currentFYStartYear(){
+  const d = new Date();
+  const y = d.getFullYear(); const m = d.getMonth()+1;
+  return (m >= 4) ? y : y - 1;
+}
+function num(n){
+  const r = Math.round(n*100)/100;
+  return r.toString();
+}
+
+// Strips a leading numeric commodity code like "3742521- " from the display label.
+// The full original string is still used everywhere for lookups/matching.
+function displayCommodity(c){
+  if (c === ALL_COMMODITIES_KEY) return 'ALL Commodities';
+  return String(c).replace(/^\d+\s*-\s*/, '');
+}
+
+function formatPct(v){
+  if (v === null) return '&mdash;';
+  const sign = v > 0 ? '+' : '';
+  return sign + v.toFixed(1) + '%';
+}
+function pctClass(v){
+  if (v === null) return 'flat';
+  if (v > 0.05) return 'up';
+  if (v < -0.05) return 'down';
+  return 'flat';
+}
+function computePct(last, cur){
+  if (!last){ return (!cur) ? 0 : null; }
+  return ((cur - last) / last) * 100;
+}
+
+async function loadData(){
+  try{
+    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_YOUR') === 0){
+      showError('Apps Script URL not configured. Open index.html, find <code>APPS_SCRIPT_URL</code> near the bottom, and paste your deployed Web App /exec URL there.');
+      return;
+    }
+    const res = await fetch(APPS_SCRIPT_URL);
+    const json = await res.json();
+    if (json.error){ showError(json.error); return; }
+    DASHBOARD = json;
+    document.getElementById('genStamp').textContent =
+      'data as of ' + new Date(json.generatedAt).toLocaleString('en-IN');
+    populateStations();
+  }catch(err){
+    showError('Could not load data from the Apps Script backend. Check that it is deployed with access set to "Anyone with the link", and that the URL is correct.<br><br><code>' + err + '</code>');
+  }
+}
+
+function showError(html){
+  document.getElementById('errorArea').innerHTML =
+    '<div class="error-box">' + html + '</div>';
+}
+
+function populateStations(){
+  const sel = document.getElementById('stationSelect');
+  DASHBOARD.stations.forEach(st => {
+    const opt = document.createElement('option');
+    opt.value = st; opt.textContent = st;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', onStationChange);
+
+  if (DASHBOARD.stations.indexOf(DEFAULT_STATION) !== -1){
+    sel.value = DEFAULT_STATION;
+    onStationChange({ target: sel });
+  }
+}
+
+let selectedStation = null;
+let selectedCommodity = null;
+let viewMode = 'monthwise';
+
+document.querySelectorAll('#viewToggle input[name="viewMode"]').forEach(input => {
+  input.addEventListener('change', (e) => {
+    viewMode = e.target.value;
+    document.getElementById('pillMonthwise').classList.toggle('active', viewMode === 'monthwise');
+    document.getElementById('pillCumulative').classList.toggle('active', viewMode === 'cumulative');
+    renderTable();
+  });
+});
+
+function onStationChange(e){
+  selectedStation = e.target.value;
+  selectedCommodity = null;
+  renderCommodityList();
+}
+
+function renderCommodityList(){
+  const box = document.getElementById('commodityList');
+  box.innerHTML = '';
+  if (!selectedStation){
+    box.innerHTML = '<span class="placeholder-text">Select a station to see its commodities</span>';
+    renderTable();
+    return;
+  }
+  const list = DASHBOARD.stationCommodities[selectedStation] || [];
+  if (!list.length){
+    box.innerHTML = '<span class="placeholder-text">No commodities found for this station</span>';
+    renderTable();
+    return;
+  }
+
+  const allOptions = [ALL_COMMODITIES_KEY].concat(list);
+
+  allOptions.forEach(c => {
+    const pill = document.createElement('div');
+    let cls = 'pill';
+    if (c === ALL_COMMODITIES_KEY) cls += ' all-pill';
+    if (c === 'RMC') cls += ' rmc';
+    pill.className = cls;
+    pill.textContent = displayCommodity(c);
+    pill.title = (c === 'RMC') ? 'All records where CNSR CODE = RAIL' :
+                 (c === ALL_COMMODITIES_KEY ? 'Sum of every commodity for this station' : c);
+    pill.addEventListener('click', () => selectCommodity(c, pill, box));
+    box.appendChild(pill);
+  });
+
+  // default to "ALL Commodities" so a freshly-picked station shows data immediately
+  selectCommodity(ALL_COMMODITIES_KEY, box.children[0], box);
+}
+
+function selectCommodity(c, pillEl, box){
+  selectedCommodity = c;
+  [...box.children].forEach(ch => ch.classList.remove('active'));
+  if (pillEl) pillEl.classList.add('active');
+  renderTable();
+}
+
+function lookup(monthKey, station, commodity){
+  const monthEntry = DASHBOARD.months.find(m => m.monthKey === monthKey);
+  if (!monthEntry) return null;
+
+  if (commodity === ALL_COMMODITIES_KEY){
+    let agg = null;
+    Object.keys(monthEntry.data).forEach(key => {
+      const sep = key.indexOf('||');
+      const st = key.substring(0, sep);
+      if (st !== station) return;
+      const d = monthEntry.data[key];
+      if (!agg) agg = { wagon:0, weight:0, freight:0, gst:0, total:0 };
+      agg.wagon += d.wagon; agg.weight += d.weight; agg.freight += d.freight;
+      agg.gst += d.gst; agg.total += d.total;
+    });
+    return agg;
+  }
+
+  return monthEntry.data[station + '||' + commodity] || null;
+}
+
+// Aggregates destination-station (STATION TO) figures for one month, filtered
+// by fromStation and commodity ('__ALL__' sums across every commodity).
+// Requires the backend to expose monthEntry.toData keyed 'from||commodity||to'.
+function lookupToStations(monthKey, station, commodity){
+  const monthEntry = DASHBOARD.months.find(m => m.monthKey === monthKey);
+  const out = {};
+  if (!monthEntry || !monthEntry.toData) return out;
+
+  Object.keys(monthEntry.toData).forEach(key => {
+    const parts = key.split('||');
+    const st = parts[0], cmdt = parts[1], to = parts[2];
+    if (st !== station) return;
+    if (commodity !== ALL_COMMODITIES_KEY && cmdt !== commodity) return;
+    const d = monthEntry.toData[key];
+    if (!out[to]) out[to] = { wagon:0, weight:0, freight:0, gst:0, total:0 };
+    out[to].wagon += d.wagon; out[to].weight += d.weight; out[to].freight += d.freight;
+    out[to].gst += d.gst; out[to].total += d.total;
+  });
+  return out;
+}
+
+function zeroAgg(){ return {wagon:0,weight:0,freight:0,gst:0,total:0}; }
+function addAgg(a,b){
+  return {
+    wagon:a.wagon+b.wagon, weight:a.weight+b.weight, freight:a.freight+b.freight,
+    gst:a.gst+b.gst, total:a.total+b.total
+  };
+}
+function pct3(L,C){
+  return {
+    wagon: computePct(L.wagon, C.wagon),
+    weight: computePct(L.weight, C.weight),
+    freight: computePct(L.freight, C.freight)
+  };
+}
+
+// Builds one register table (either the monthly Fluctuation Register or the
+// Cumulative Figures table). `totals`, if provided, renders a bold TOTAL row
+// in tfoot; pass null to omit it (the cumulative table's last row already
+// equals the year total, so it doesn't get a separate TOTAL row).
+function registerTableHTML(rows, totals, lastFYLabel, curFYLabel){
+  let body = '';
+  rows.forEach(r=>{
+    const p = pct3(r.L, r.C);
+    body += '<tr>' +
+      `<td class="month-cell">${r.label}</td>` +
+      `<td>${num(r.L.wagon)}</td><td>${num(r.L.weight)}</td><td>${num(r.L.freight)}</td><td>${num(r.L.gst)}</td><td>${num(r.L.total)}</td>` +
+      `<td>${num(r.C.wagon)}</td><td>${num(r.C.weight)}</td><td>${num(r.C.freight)}</td><td>${num(r.C.gst)}</td><td>${num(r.C.total)}</td>` +
+      `<td class="pct-cell ${pctClass(p.wagon)}">${formatPct(p.wagon)}</td>` +
+      `<td class="pct-cell ${pctClass(p.weight)}">${formatPct(p.weight)}</td>` +
+      `<td class="pct-cell ${pctClass(p.freight)}">${formatPct(p.freight)}</td>` +
+      '</tr>';
+  });
+
+  let tfoot = '';
+  if (totals){
+    const pt = pct3(totals.last, totals.cur);
+    tfoot = `<tfoot><tr>
+      <td class="month-cell">TOTAL</td>
+      <td>${num(totals.last.wagon)}</td><td>${num(totals.last.weight)}</td><td>${num(totals.last.freight)}</td><td>${num(totals.last.gst)}</td><td>${num(totals.last.total)}</td>
+      <td>${num(totals.cur.wagon)}</td><td>${num(totals.cur.weight)}</td><td>${num(totals.cur.freight)}</td><td>${num(totals.cur.gst)}</td><td>${num(totals.cur.total)}</td>
+      <td class="pct-cell ${pctClass(pt.wagon)}">${formatPct(pt.wagon)}</td>
+      <td class="pct-cell ${pctClass(pt.weight)}">${formatPct(pt.weight)}</td>
+      <td class="pct-cell ${pctClass(pt.freight)}">${formatPct(pt.freight)}</td>
+    </tr></tfoot>`;
+  }
+
+  return `
+  <div class="table-scroll">
+  <table class="reg-table">
+    <thead>
+      <tr class="fy-row">
+        <th></th>
+        <th class="last" colspan="5">${lastFYLabel}</th>
+        <th class="current" colspan="5">${curFYLabel}</th>
+        <th class="variation" colspan="3">% VARIATION</th>
+      </tr>
+      <tr class="col-row">
+        <th>Month</th>
+        <th>Wgn.</th><th>Weight</th><th>Freight</th><th>G.S.T.</th><th>Total Freight</th>
+        <th>Wgn.</th><th>Weight</th><th>Freight</th><th>G.S.T.</th><th>Total Freight</th>
+        <th>Wgn.</th><th>Weight</th><th>Freight</th>
+      </tr>
+    </thead>
+    <tbody>${body}</tbody>
+    ${tfoot}
+  </table>
+  </div>`;
+}
+
+function renderTable(){
+  const card = document.getElementById('registerCard');
+  const destCard = document.getElementById('destCard');
+
+  if (!selectedStation || !selectedCommodity){
+    card.innerHTML = '<div class="empty-state"><div class="big">No data to show yet</div>' +
+      '<div>Choose a station and a commodity above to build the year comparison.</div></div>';
+    destCard.style.display = 'none';
+    return;
+  }
+
+  const curFYStart = currentFYStartYear();
+  const lastFYStart = curFYStart - 1;
+  const curKeys = fyMonthKeys(curFYStart);
+  const lastKeys = fyMonthKeys(lastFYStart);
+  const monthNames = ['APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC','JAN','FEB','MAR'];
+
+  const rows = [];
+  const totals = { last: zeroAgg(), cur: zeroAgg() };
+
+  for (let i=0;i<12;i++){
+    const L = lookup(lastKeys[i], selectedStation, selectedCommodity) || zeroAgg();
+    const C = lookup(curKeys[i], selectedStation, selectedCommodity) || zeroAgg();
+    rows.push({ label: monthNames[i], L, C });
+    totals.last = addAgg(totals.last, L);
+    totals.cur  = addAgg(totals.cur, C);
+  }
+
+  // Cumulative rows: running sum through the year. The final row equals `totals`,
+  // so the cumulative table doesn't need its own separate TOTAL row.
+  const cumRows = [];
+  let runL = zeroAgg(), runC = zeroAgg();
+  rows.forEach(r=>{
+    runL = addAgg(runL, r.L);
+    runC = addAgg(runC, r.C);
+    cumRows.push({ label: r.label, L: runL, C: runC });
+  });
+
+  const lastFYLabel = `${lastFYStart}-${String(lastFYStart+1).slice(2)} (LAST YEAR)`;
+  const curFYLabel = `${curFYStart}-${String(curFYStart+1).slice(2)} (CURRENT YEAR)`;
+  const label = displayCommodity(selectedCommodity);
+
+  const isMonthwise = (viewMode === 'monthwise');
+  const modeLabel = isMonthwise ? 'MONTHWISE' : 'CUMULATIVE';
+  const titleHTML = `FLUCTUATION FIGURES - ${selectedStation} (${modeLabel})`;
+  const tableHTML = isMonthwise
+    ? registerTableHTML(rows, totals, lastFYLabel, curFYLabel)
+    : registerTableHTML(cumRows, null, lastFYLabel, curFYLabel);
+
+  card.innerHTML = `
+    <div class="table-title-row">
+      <div class="spacer"></div>
+      <h2>${titleHTML}</h2>
+      <div class="commodity-tag">${label}</div>
+    </div>
+    ${tableHTML}
+  `;
+
+  renderDestinationInfographic(curFYStart, curKeys);
+}
+
+// Builds the "Station To" infographic cards for the current FY: sums wagon,
+// weight and freight (GST excluded, per spec) per destination station, for
+// the selected fromStation + commodity, then ranks tiles by freight desc.
+function renderDestinationInfographic(curFYStart, curKeys){
+  const destCard = document.getElementById('destCard');
+
+  const totals = {}; // toStation -> {wagon,weight,freight}
+  curKeys.forEach(mk => {
+    const monthTo = lookupToStations(mk, selectedStation, selectedCommodity);
+    Object.keys(monthTo).forEach(to => {
+      if (!totals[to]) totals[to] = { wagon:0, weight:0, freight:0 };
+      totals[to].wagon += monthTo[to].wagon;
+      totals[to].weight += monthTo[to].weight;
+      totals[to].freight += monthTo[to].freight;
+    });
+  });
+
+  const list = Object.keys(totals).map(to => ({ to, ...totals[to] }))
+    .sort((a,b) => b.freight - a.freight);
+
+  const fyLabel = `${curFYStart}-${String(curFYStart+1).slice(2)}`;
+  const label = displayCommodity(selectedCommodity);
+
+  if (!list.length){
+    destCard.style.display = '';
+    destCard.innerHTML = `
+      <div class="dest-head">
+        <h3>Station To &mdash; Current Year Breakup</h3>
+        <span class="dest-sub">${selectedStation} &middot; ${label} &middot; FY ${fyLabel}</span>
+      </div>
+      <div class="dest-empty">No destination-station figures found for this selection yet.</div>`;
+    return;
+  }
+
+  const maxFreight = list[0].freight || 1;
+
+  const tiles = list.map((s, i) => {
+    const pct = Math.max(4, Math.round((s.freight / maxFreight) * 100));
+    return `
+      <div class="dest-tile">
+        <div class="dest-tile-top">
+          <span class="dest-code">${s.to}</span>
+          <span class="dest-rank">${i+1}</span>
+        </div>
+        <div class="dest-bar-track"><div class="dest-bar-fill" style="width:${pct}%"></div></div>
+        <div class="dest-stats">
+          <div class="dest-stat-row"><span class="dest-stat-label">Wgn.</span><span class="dest-stat-value">${num(s.wagon)}</span></div>
+          <div class="dest-stat-row"><span class="dest-stat-label">Weight</span><span class="dest-stat-value">${num(s.weight)}</span></div>
+          <div class="dest-stat-row"><span class="dest-stat-label">Freight</span><span class="dest-stat-value">${num(s.freight)}</span></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  destCard.style.display = '';
+  destCard.innerHTML = `
+    <div class="dest-head">
+      <h3>Station To &mdash; Current Year Breakup</h3>
+      <span class="dest-sub">${selectedStation} &middot; ${label} &middot; FY ${fyLabel} &middot; Freight excl. GST</span>
+    </div>
+    <div class="dest-grid">${tiles}</div>
+  `;
+}
+
+loadData();
+</script>
+</body>
+</html>
