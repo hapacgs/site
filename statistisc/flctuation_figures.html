@@ -389,15 +389,23 @@ function showError(html){
 
 function populateStations(){
   const sel = document.getElementById('stationSelect');
-  DASHBOARD.stations.forEach(st => {
+
+  // Only HAPA data is available right now, so the "Station From" picker is
+  // locked to HAPA — any other stations returned by the sheet are ignored.
+  const stations = (DASHBOARD.stations || []).filter(
+    st => String(st).trim().toUpperCase() === DEFAULT_STATION
+  );
+
+  stations.forEach(st => {
     const opt = document.createElement('option');
     opt.value = st; opt.textContent = st;
     sel.appendChild(opt);
   });
   sel.addEventListener('change', onStationChange);
 
-  if (DASHBOARD.stations.indexOf(DEFAULT_STATION) !== -1){
-    sel.value = DEFAULT_STATION;
+  if (stations.length){
+    sel.value = stations[0];
+    sel.disabled = true; // only one station available — nothing to choose
     onStationChange({ target: sel });
   }
 }
