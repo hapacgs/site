@@ -1242,41 +1242,84 @@
     }, 0);
   }
 
-  // Builds one AP table row per distinct Commodity found in the SN-105
-  // sheet for the period — same text as SN-105's own Commodity column,
-  // not a fixed/hardcoded list.
-  //   No. of Wgn.      <- SN-105 sheet, summed by Commodity (same field
-  //                       used on the SN-105 tab)
-  //   Weight in Tonnes <- SN-105 sheet, summed by Commodity (same field
-  //                       used on the SN-105 tab)
-  //   Earnings in Rs.  <- only the RMC row's is wired up: it reuses the
-  //                       SN-105 API's `voucher.total`, i.e. TOTAL FRGT
-  //                       summed for every row where CNSR CODE = RAIL in
-  //                       the period (same figure the Voucher C.R. tab
-  //                       shows). Every other commodity's Earnings, and
-  //                       G.S.T. for all of them, have no source yet and
-  //                       stay 0.
-  // LAST YEAR has no source for any of these rows and stays 0.
-  function renderApFreightRows(groups, voucherTotal){
+  /* =====================================================================
+     LAST YEAR freight figures — archived monthly data.
+     Source: Sheet2 of the same OW_Database spreadsheet, columns FROM DATE,
+     TO DATE, OW_MONTHLY_DATA (a JSON array of raw RR-level records, same
+     shape as the live SN-105 sheet).
+
+     The spreadsheet itself is private, so it can't be read directly from
+     the browser (gviz) — only a Google Apps Script running as the sheet's
+     owner can open it. This calls a small Web App deployed for that sheet
+     (see LastYear_AppsScript.gs) which merges every Sheet2 row's JSON,
+     keeps only the records whose own RR DATE falls inside the requested
+     window, groups them by Commodity + Wagon Type, and returns
+     { found, groups, voucherTotal } — the same shape SN105_API_URL already
+     returns for the current period.
+
+     >>> Paste the deployed Web App's /exec URL below after deploying
+         LastYear_AppsScript.gs (Extensions > Apps Script > Deploy > New
+         deployment > Web app > Execute as: Me > Who has access: Anyone). <<<
+     ===================================================================== */
+
+  const SN105_LAST_YEAR_API_URL = "https://script.google.com/macros/s/AKfycbw0iS5C8-U0PG7F78fZhaiBD_9UjGqfNnnsh7b4E1-DVhZneupH3ktmJOHJJtuiZ3_a/exec";
+
+  async function fetchLastYearSn105Groups(prevFrom, prevTo){
+    if(!SN105_LAST_YEAR_API_URL || SN105_LAST_YEAR_API_URL.indexOf('PASTE_') === 0){
+      throw new Error('LAST YEAR Apps Script URL not configured yet');
+    }
+    const url = SN105_LAST_YEAR_API_URL +
+      '?from=' + encodeURIComponent(formatDMY(prevFrom)) +
+      '&to=' + encodeURIComponent(formatDMY(prevTo));
+    const res = await fetch(url, { cache: 'no-store' });
+    if(!res.ok){ throw new Error('HTTP ' + res.status); }
+    const data = await res.json();
+    if(data.error){ throw new Error(data.error); }
+    return data; // { found: boolean, groups: [...], voucherTotal: number }
+  }
+
+  // Builds one AP table row per distinct Commodity found in either the
+  // current-period SN-105 sheet or the LAST YEAR archive — same text as
+  // SN-105's own Commodity column, not a fixed/hardcoded list.
+  //   No. of Wgn. / Weight in Tonnes <- summed by Commodity, Current Period
+  //                       from the live SN-105 sheet, LAST YEAR from the
+  //                       archived Sheet2 JSON (see block above).
+  //   Earnings in Rs.  <- only the RMC row's is wired up: Current Period
+  //                       reuses the SN-105 API's `voucher.total`; LAST YEAR
+  //                       reuses the archive's own RAIL-CNSR TOTAL FRGT sum
+  //                       (same figure logic as the Voucher C.R. tab).
+  //                       Every other commodity's Earnings, and G.S.T. for
+  //                       all of them (both periods), have no source yet
+  //                       and stay 0.
+  function renderApFreightRows(groups, voucherTotal, lastYearGroups, lastYearVoucherTotal){
     const totalRow = document.getElementById('apFreightTotalRow');
     const tbody = totalRow.closest('tbody');
     tbody.querySelectorAll('tr.ap-freight-row').forEach(tr => tr.remove());
 
-    const byCommodity = {}; // normalized commodity -> { label, wagons, weight }
+    const byCommodity = {}; // normalized commodity -> { label, wagons, weight, prevWagons, prevWeight }
     const order = [];
     (groups || []).forEach(g => {
       const label = (g.commodity || '').toString().trim();
       if(!label) return;
       const key = normCommodity(label);
-      if(!byCommodity[key]){ byCommodity[key] = { label, wagons: 0, weight: 0 }; order.push(key); }
+      if(!byCommodity[key]){ byCommodity[key] = { label, wagons: 0, weight: 0, prevWagons: 0, prevWeight: 0 }; order.push(key); }
       byCommodity[key].wagons += toNum(g.wagons);
       byCommodity[key].weight += toNum(g.weight);
+    });
+    (lastYearGroups || []).forEach(g => {
+      const label = (g.commodity || '').toString().trim();
+      if(!label) return;
+      const key = normCommodity(label);
+      if(!byCommodity[key]){ byCommodity[key] = { label, wagons: 0, weight: 0, prevWagons: 0, prevWeight: 0 }; order.push(key); }
+      byCommodity[key].prevWagons += toNum(g.wagons);
+      byCommodity[key].prevWeight += toNum(g.weight);
     });
 
     let rowsHtml = '';
     order.forEach(key => {
       const d = byCommodity[key];
       const earn = (key === 'RMC') ? (voucherTotal || 0) : 0;
+      const prevEarn = (key === 'RMC') ? (lastYearVoucherTotal || 0) : 0;
       rowsHtml +=
         '<tr class="ap-freight-row" data-item="' + escapeHtml(key) + '">' +
         '<td class="cat-name">' + escapeHtml(d.label) + '</td>' +
@@ -1284,7 +1327,10 @@
         '<td class="cur-weight">' + formatIndianNumber(d.weight) + '</td>' +
         '<td class="cur-earn">' + formatIndianNumber(earn) + '</td>' +
         '<td class="cur-gst">0</td>' +
-        '<td class="prev-wgn">0</td><td class="prev-weight">0</td><td class="prev-earn">0</td><td class="prev-gst">0</td>' +
+        '<td class="prev-wgn">' + formatIndianNumber(d.prevWagons) + '</td>' +
+        '<td class="prev-weight">' + formatIndianNumber(d.prevWeight) + '</td>' +
+        '<td class="prev-earn">' + formatIndianNumber(prevEarn) + '</td>' +
+        '<td class="prev-gst">0</td>' +
         '</tr>';
     });
     if(!rowsHtml){
@@ -1372,19 +1418,34 @@
     document.getElementById('apCurrentPeriodHeader').innerHTML = 'Current Period<br>' + formatDMY(periodFrom) + ' to ' + formatDMY(periodTo);
     document.getElementById('apPreviousPeriodHeader').innerHTML = 'LAST YEAR<br>' + formatDMY(prevFrom) + ' to ' + formatDMY(prevTo);
 
+    let lastYearErrorMsg = null;
     try{
-      const [rows, sn105Data] = await Promise.all([
+      const [rows, sn105Data, lastYearData] = await Promise.all([
         fetchCategoryWiseRows(),
-        fetchSn105Groups(periodFrom, periodTo).catch(() => ({ found: false, groups: [] }))
+        fetchSn105Groups(periodFrom, periodTo).catch(() => ({ found: false, groups: [] })),
+        fetchLastYearSn105Groups(prevFrom, prevTo).catch(err => {
+          lastYearErrorMsg = err.message;
+          console.error('LAST YEAR (Sheet2) fetch failed:', err);
+          return { groups: [], voucherTotal: 0 };
+        })
       ]);
       const curComputed = computeCategoryTotals(rows, periodFrom, periodTo);
       const prevComputed = computeCategoryTotals(rows, prevFrom, prevTo);
       renderApChargeRows(curComputed, prevComputed);
-      renderApFreightRows(sn105Data.groups || [], (sn105Data.voucher && sn105Data.voucher.total) || 0);
+      renderApFreightRows(
+        sn105Data.groups || [], (sn105Data.voucher && sn105Data.voucher.total) || 0,
+        lastYearData.groups || [], lastYearData.voucherTotal || 0
+      );
       updateApTotals();
-      statusEl.textContent = '';
-      statusEl.className = 'fetch-status success';
-      statusEl.style.display = 'none';
+      if(lastYearErrorMsg){
+        statusEl.textContent = 'LAST YEAR freight figures could not be fetched from Sheet2 (' + lastYearErrorMsg + '). Current Period is showing correctly; check the sheet sharing/name and try again.';
+        statusEl.className = 'fetch-status error';
+        statusEl.style.display = '';
+      } else {
+        statusEl.textContent = '';
+        statusEl.className = 'fetch-status success';
+        statusEl.style.display = 'none';
+      }
     }catch(err){
       resetApTable();
       statusEl.textContent = 'Could not fetch data from Apps Script (' + err.message + '). Please check the deployment is set to "Anyone" access and try again.';
