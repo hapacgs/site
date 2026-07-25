@@ -345,9 +345,28 @@
         <div id="periodInfoBar" class="period-info-bar">
             <div>
                 📅 <b>Selected Period Range:</b> <span id="lblPeriodDates" style="color: #dc2626; font-weight: 700;">Calculating...</span>
+                <span id="btnEditPeriod" onclick="togglePeriodEditPanel()" title="Click here to change the date range" style="cursor:pointer; margin-left:8px; display:inline-flex; align-items:center; gap:4px; background:#fff; border:1px solid #93c5fd; color:#1d4ed8; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:700;">✏️ Edit Period</span>
             </div>
             <div>
                 <span class="period-badge" id="lblPeriodName">Auto Period</span>
+            </div>
+        </div>
+
+        <!-- CUSTOM DATE RANGE PANEL FOR OUTSTANDING SUMMARY (PERIOD LEDGER) -->
+        <div id="periodCustomFilterPanel" class="payment-filter-panel">
+            <div class="filter-field">
+                <label>From Date:</label>
+                <input type="date" id="txtPeriodFromDate">
+            </div>
+            <div class="filter-field">
+                <label>To Date:</label>
+                <input type="date" id="txtPeriodToDate">
+            </div>
+            <div>
+                <button type="button" class="btn-filter-submit" onclick="applyCustomPeriod()">🔍 Apply Custom Range</button>
+            </div>
+            <div>
+                <button type="button" class="btn-filter-submit" style="background-color:#475569;" onclick="resetToAutoPeriod()">↺ Reset to Current Period</button>
             </div>
         </div>
 
@@ -460,12 +479,17 @@
         let customerList = [{code: "IFFC", name: "INDIAN FARMERS FERTILISER COOPERATIVE LTD."}, {code: "FCI", name: "FOOD CORPORATION OF INDIA LTD."}, {code: "GSFC", name: "GUJARAT STATE FERTILIZER CO."}, {code: "DLI", name: "DISTRIBUTION LOGISTICS INFRASTRUCTURE PVT. LTD"}, {code: "KRIB", name: "KRISHAK BHARATI COOPERATIVE LIMITED"}, {code: "MCDS", name: "MALCHAND DINDAYAL SALTS PVT. LTD."}, {code: "JK", name: "J K CEMENT LTD."}];
 
         let rawSheetData = [];
-        let activeView = "charges"; 
+        let activeView = "period"; 
 
         let calculatedFromDate = null;
         let calculatedToDate = null;
         let formattedFromStr = "";
         let formattedToStr = "";
+
+        // Auto (current) period stored separately so we can Reset back to it
+        let autoFromDate = null;
+        let autoToDate = null;
+        let isCustomPeriod = false;
 
         window.onload = function() { 
             setupFilterDropdowns();
@@ -515,6 +539,11 @@
             calculatedFromDate = new Date(targetYear, targetMonth, pStart, 0, 0, 0);
             calculatedToDate = new Date(targetYear, targetMonth, pEnd, 23, 59, 59, 999);
 
+            // Remember this as the "auto" period so Reset can restore it later
+            autoFromDate = calculatedFromDate;
+            autoToDate = calculatedToDate;
+            isCustomPeriod = false;
+
             formattedFromStr = calculatedFromDate.toLocaleDateString('en-GB').replace(/\//g, '-');
             formattedToStr = calculatedToDate.toLocaleDateString('en-GB').replace(/\//g, '-');
 
@@ -527,6 +556,82 @@
             
             document.getElementById('txtFilterFromDate').value = inputFrom;
             document.getElementById('txtFilterToDate').value = inputTo;
+
+            // Prefill the custom Outstanding Summary date pickers with the current auto period too
+            document.getElementById('txtPeriodFromDate').value = inputFrom;
+            document.getElementById('txtPeriodToDate').value = inputTo;
+        }
+
+        // --- CUSTOM PERIOD RANGE FOR OUTSTANDING SUMMARY (PERIOD LEDGER) ---
+        function togglePeriodEditPanel() {
+            let panel = document.getElementById('periodCustomFilterPanel');
+            let btn = document.getElementById('btnEditPeriod');
+            if (panel.style.display === "flex") {
+                panel.style.display = "none";
+                btn.innerHTML = "✏️ Edit Period";
+            } else {
+                panel.style.display = "flex";
+                btn.innerHTML = "✖️ Close";
+            }
+        }
+
+        function applyCustomPeriod() {
+            let fromStr = document.getElementById('txtPeriodFromDate').value;
+            let toStr = document.getElementById('txtPeriodToDate').value;
+
+            if (!fromStr || !toStr) {
+                alert("Kripya From aur To, dono dates select karein.");
+                return;
+            }
+
+            let newFrom = new Date(fromStr + "T00:00:00");
+            let newTo = new Date(toStr + "T23:59:59.999");
+
+            if (newFrom > newTo) {
+                alert("From Date, To Date se pehle honi chahiye.");
+                return;
+            }
+
+            calculatedFromDate = newFrom;
+            calculatedToDate = newTo;
+            isCustomPeriod = true;
+
+            let fFrom = calculatedFromDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+            let fTo = calculatedToDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+
+            document.getElementById('lblPeriodDates').innerText = `${fFrom} to ${fTo}`;
+            document.getElementById('lblPeriodName').innerText = "Custom Period (Manual)";
+            document.getElementById('btnLatestPeriodDisplay').innerText = `${fFrom} to ${fTo}`;
+
+            generatePeriodLedgerSummary();
+
+            document.getElementById('periodCustomFilterPanel').style.display = "none";
+            document.getElementById('btnEditPeriod').innerHTML = "✏️ Edit Period";
+        }
+
+        function resetToAutoPeriod() {
+            calculatedFromDate = autoFromDate;
+            calculatedToDate = autoToDate;
+            isCustomPeriod = false;
+
+            let fFrom = calculatedFromDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+            let fTo = calculatedToDate.toLocaleDateString('en-GB').replace(/\//g, '-');
+
+            document.getElementById('lblPeriodDates').innerText = `${fFrom} to ${fTo}`;
+            document.getElementById('lblPeriodName').innerText = "Auto Period";
+            document.getElementById('btnLatestPeriodDisplay').innerText = `${fFrom} to ${fTo}`;
+
+            document.getElementById('txtPeriodFromDate').value = fromStrForInput(autoFromDate);
+            document.getElementById('txtPeriodToDate').value = fromStrForInput(autoToDate);
+
+            generatePeriodLedgerSummary();
+
+            document.getElementById('periodCustomFilterPanel').style.display = "none";
+            document.getElementById('btnEditPeriod').innerHTML = "✏️ Edit Period";
+        }
+
+        function fromStrForInput(d) {
+            return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, '0') + "-" + String(d.getDate()).padStart(2, '0');
         }
 
         function fetchData() {
@@ -546,8 +651,10 @@
             
             if (type === 'ledger') {
                 document.getElementById('periodInfoBar').style.display = "flex";
+                document.getElementById('periodCustomFilterPanel').style.display = "none";
             } else {
                 document.getElementById('periodInfoBar').style.display = "none";
+                document.getElementById('periodCustomFilterPanel').style.display = "none";
             }
 
             if (type === 'payment_details') {
