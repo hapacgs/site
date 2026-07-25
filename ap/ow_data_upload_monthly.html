@@ -429,7 +429,7 @@
 <div class="wrap">
 
   <header class="glass">
-    <h1>Outward Data Uploader
+    <h1>Outward Data Uploader (Monthly)
       <span>Import FOIS RR-Base freight data into Google Sheets</span>
     </h1>
   </header>
@@ -487,7 +487,7 @@
 
     <div class="btn-row">
       <button id="previewBtn" onclick="processCSV()">1. Data Preview</button>
-      <button id="saveBtnPeriodical" class="btn-save" onclick="openPasswordModal()" disabled>2. Save to Google Sheet (<span class="hl">Periodical</span>)</button>
+      <button id="saveBtnPeriodical" class="btn-save" onclick="openPasswordModal()" disabled>2. Save to Google Sheet (<span class="hl">Monthly</span>)</button>
     </div>
 
     <div id="status"></div>
@@ -608,7 +608,7 @@
             previewDiv.innerText = globalPayload.jsonData;
             previewDiv.style.display = "block";
 
-            setStatus("Data Preview is ready. Click Save to Google Sheet (Periodical) to upload the data.", "success");
+            setStatus("Data Preview is ready. Click Save to Google Sheet (Monthly) to upload the data.", "success");
             dataReady = true;
             updateSaveButtons();
         };
@@ -658,7 +658,7 @@
     function actuallySaveToSheet() {
         if (!globalPayload) return;
 
-        setStatus("Uploading data to Google Sheet (Periodical)...", "progress");
+        setStatus("Uploading data to Google Sheet (Monthly)...", "progress");
         saveBtnPeriodical.disabled = true;
 
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxPK1PWep_HXLm-Cx2Tq1L-ti6PfTRyDKDrwsDxs3NbCQV6Z6TtQHcO5NGs3bJE2-BA/exec";
@@ -696,7 +696,7 @@
                 return;
             }
 
-            setStatus("Data successfully sent to Google Sheet (Periodical). Refreshing...", "success");
+            setStatus("Data successfully sent to Google Sheet (Monthly). Refreshing...", "success");
             // Auto refresh the page once the data has been saved
             setTimeout(function() {
                 location.reload();
