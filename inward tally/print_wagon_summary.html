@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> PRINT WAGON SUMMARY - HAPA Goods Shed</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+    :root{
+        --navy-900:#03192e;
+        --navy-800:#062a4a;
+        --navy-700:#0a3a63;
+        --cyan-300:#7fe9fb;
+        --cyan-400:#22d3ee;
+        --text:#dcf2f9;
+        --muted:#8fb4c7;
+        --border:rgba(34,211,238,0.25);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: radial-gradient(1200px 600px at 50% -10%, var(--navy-700) 0%, var(--navy-900) 60%);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 18px;
+    }
+
+    .page-title{
+        text-align:center; text-transform: uppercase; letter-spacing: 2px;
+        font-size: 26px; font-weight: 700; color: var(--cyan-300);
+        text-shadow: 0 0 18px rgba(34,211,238,0.35); margin: 6px 0 20px;
+    }
+
+    .card{
+        max-width: 1000px; margin: 0 auto 18px;
+        background: rgba(6, 26, 46, 0.85); border: 1px solid var(--border);
+        border-radius: 12px; padding: 16px 18px; backdrop-filter: blur(10px);
+    }
+    #resultsCard{ max-width: 1180px; }
+
+    .filter-grid{
+        display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px; align-items:end;
+    }
+    .field{ display:flex; flex-direction:column; gap:5px; font-size:12px; }
+    .field label{ font-weight:700; color: var(--cyan-300); }
+    input, select, button{
+        background: var(--navy-800); color: var(--text); border: 1px solid var(--border);
+        border-radius: 8px; padding: 9px 12px; font-size: 13px; outline: none; width: 100%;
+    }
+    button{
+        cursor: pointer;
+        background: linear-gradient(100deg, var(--navy-700) 0%, var(--navy-800) 100%);
+        color: var(--cyan-300); font-weight: 600; border-color: rgba(34,211,238,0.4);
+        transition: background 0.2s ease;
+    }
+    button:hover{ background: var(--navy-700); }
+    #submitBtn{ width:auto; padding: 8px 22px; font-size: 13px; align-self:flex-start; }
+    button:disabled{ opacity: 0.5; cursor: not-allowed; }
+
+    .status-msg{ max-width: 1000px; margin: 0 auto 12px; font-size: 13px; color: var(--muted); text-align:center; }
+    .status-msg.error{ color: #ff9b9b; }
+
+    .table-wrap{ overflow-x:auto; }
+    table.results-table{ width:100%; border-collapse: collapse; font-size:10.5px; table-layout: fixed; }
+    table.results-table th, table.results-table td{
+        border: 1px solid var(--border); padding: 5px 4px; text-align:center; word-wrap: break-word;
+    }
+    table.results-table th{ background: rgba(34,211,238,0.1); color: var(--cyan-300); line-height:1.3; }
+    table.results-table tr:hover td{ background: rgba(34,211,238,0.06); }
+    table.results-table th.col-wgn, table.results-table td.col-wgn{ width: 42px; }
+    table.results-table th.col-pdf, table.results-table td.col-pdf{ width: 44px; }
+    table.results-table th.col-sr{ width: 34px; }
+
+    .gen-row-btn{
+        width: 26px; height: 26px; padding: 0; display:inline-flex;
+        align-items:center; justify-content:center; border-radius: 6px;
+    }
+    .gen-row-btn svg{ pointer-events:none; width:14px; height:14px; }
+
+    /* ===== A4 landscape wagon-list sheet — plain black-on-white print look ===== */
+    #statementWrap{ display:none; }
+    .a4-actions{ max-width: 297mm; margin: 0 auto 12px; text-align:center; }
+    .a4-actions button{ width:auto; display:inline-block; padding: 9px 20px; }
+
+    .a4-page{
+        width: 297mm; min-height: 210mm; margin: 0 auto 24px;
+        background: #ffffff; color: #000000; padding: 8mm 8mm;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        font-family: Calibri, Arial, sans-serif;
+    }
+
+    .sections-row{ display:flex; gap: 0; width: 100%; align-items: stretch; }
+    .section{ flex: 1 1 0; min-width: 0; }
+
+    /* Dashed cut-line with a scissors mark, centered in the gap between the 3 printed copies. */
+    .cut-mark{
+        flex: 0 0 10mm; width: 10mm; position: relative;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .cut-mark .cut-line{ position: absolute; top: 0; bottom: 0; left: 50%; border-left: 1px dashed #000; }
+    .cut-mark .scissor{
+        position: relative; z-index: 2; background: #fff; font-size: 13px; padding: 1px 2px; color:#000;
+    }
+
+    .summary-title{
+        grid-column: 1 / -1; font-weight: 800; font-size: 10px; text-align: center;
+        letter-spacing: 1px; text-decoration: underline; margin: 2px 0 1px;
+    }
+    .val-highlight{
+        background: #fff59d; padding: 1px 6px; border-radius: 3px; border: 1px solid #000;
+    }
+
+    table.wagon-table{ width: 100%; border-collapse: collapse; table-layout: fixed; }
+    table.wagon-table th, table.wagon-table td{
+        border: 1px solid #000; text-align: center; padding: 2px 3px;
+        font-size: 9px; font-weight: 700; line-height: 1.35; overflow: hidden; white-space: nowrap;
+    }
+    table.wagon-table thead th{ font-weight: 800; background: #f2f2f2; font-size: 9px; }
+    table.wagon-table td.blank{ color: transparent; }
+
+    /* ===== Summary block — modern boxed label/value cards, not a bordered table ===== */
+    .summary-block{
+        margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr;
+        gap: 3px 6px; font-size: 9px;
+    }
+    .summary-item, .summary-full{
+        display: flex; align-items: center; justify-content: space-between; gap: 6px;
+        background: #f6f7f8; border: 1px solid #d5d5d5; border-radius: 4px;
+        padding: 2px 7px; min-width: 0;
+    }
+    .summary-full{ grid-column: 1 / -1; }
+    .summary-item .lbl, .summary-full .lbl{ font-weight: 800; color: #333; white-space: nowrap; }
+    .summary-item .val, .summary-full .val{
+        font-weight: 700; color: #000; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .station-box .val{ font-size: 11px; font-weight: 800; }
+    .freight-row{ justify-content: center; gap: 16px; text-align: center; }
+    .caption-row{ font-weight: 800; text-align: center; font-size: 9.5px; padding: 6px 2px 2px; border-top: 1px solid #000; margin-top: 5px; }
+
+    /* R.R / O.R — manual-entry dropdown: highlighted on screen, plain text on print */
+    select.rrOrSelect{
+        font-size: 9px; font-weight: 700; font-family: inherit; color: #000;
+        background: #fff59d; border: 1px solid #000; border-radius: 3px; padding: 1px 3px;
+    }
+    @media print{
+        select.rrOrSelect{
+            background: transparent !important; border: none !important; -webkit-appearance: none; appearance: none;
+            padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        }
+    }
+
+    @media print{
+        body{ background:#fff !important; padding:0; }
+        .page-title, .card, .status-msg, .a4-actions{ display:none !important; }
+        #statementWrap{ display:block !important; }
+        .a4-page{ box-shadow:none; margin:0; width:297mm; min-height:210mm; }
+    }
+    @page{ size: A4 landscape; margin: 0; }
+</style>
+</head>
+<body>
+
+<div class="page-title">Inward Tally / Delivery Book / No Taker</div>
+
+<!-- ===== Search / Filter (same pattern as Demmurage Bill) ===== -->
+<div class="card" id="filterCard">
+    <div class="filter-grid">
+        <div class="field">
+            <label for="stationFrom">Station From</label>
+            <input list="stationList" id="stationFrom" placeholder="Type or select station">
+            <datalist id="stationList"></datalist>
+        </div>
+        <div class="field">
+            <label for="consigneeCode">Consignee</label>
+            <input list="consigneeList" id="consigneeCode" placeholder="Type or select consignee">
+            <datalist id="consigneeList"></datalist>
+        </div>
+        <div class="field">
+            <label for="fromDate">RR Date (From)</label>
+            <input type="text" id="fromDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric">
+        </div>
+        <div class="field">
+            <label for="toDate">RR Date (To)</label>
+            <input type="text" id="toDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric">
+        </div>
+        <div class="field">
+            <label>&nbsp;</label>
+            <button id="submitBtn" disabled>Submit</button>
+        </div>
+    </div>
+</div>
+
+<div class="status-msg" id="statusMsg">Data is Loading... Please Wait</div>
+
+<!-- ===== Results ===== -->
+<div class="card" id="resultsCard" style="display:none;">
+    <div class="table-wrap">
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th class="col-sr">SR. NO.</th>
+                    <th>FROM</th>
+                    <th>TO</th>
+                    <th class="col-wgn">WGN.</th>
+                    <th>RR NUMBER</th>
+                    <th>RR DATE</th>
+                    <th>INV.</th>
+                    <th>CONSIGNER</th>
+                    <th>CONSIGNEE</th>
+                    <th class="col-pdf"></th>
+                </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ===== A4 Landscape Wagon List (3 copies: Tally / Delivery Book / No Taker) ===== -->
+<div id="statementWrap">
+    <div class="a4-actions">
+        <button id="printBtn">Print</button>
+    </div>
+    <div class="a4-page">
+        <div class="sections-row" id="sectionsRow"></div>
+    </div>
+</div>
+
+<script>
+    // Live rake feed (Google Apps Script) — single call, response is the array of rake rows.
+    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby5b05yvawHXKJ0elzgncRsnViStSsZMgoH1ZBa1leM1sfneS8sibkoRKM8zBlrpqmmsw/exec";
+
+    var statusMsg = document.getElementById('statusMsg');
+    var resultsCard = document.getElementById('resultsCard');
+    var resultsBody = document.getElementById('resultsBody');
+    var stationList = document.getElementById('stationList');
+    var consigneeList = document.getElementById('consigneeList');
+    var statementWrap = document.getElementById('statementWrap');
+
+    var allRecords = []; // { id, data }
+    var filteredRecords = [];
+
+    function setStatus(msg, isError){
+        statusMsg.textContent = msg || "";
+        statusMsg.className = "status-msg" + (isError ? " error" : "");
+    }
+
+    function pad2(n){ return n < 10 ? "0" + n : "" + n; }
+
+    // Sheet dates/times come through like "2026-07-19 00:00:00" (date) and
+    // "1899-12-30 06:00:00" (Excel time-only serial) -- parse/format both.
+    function parseSheetDate(raw){
+        if (!raw) return null;
+        var m = String(raw).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!m) return null;
+        return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+    }
+    function formatSheetDate(raw){
+        var d = parseSheetDate(raw);
+        return d ? (pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear()) : "-";
+    }
+    function formatSheetTime(raw){
+        if (!raw) return "-";
+        var m = String(raw).match(/(\d{2}):(\d{2}):\d{2}\s*$/);
+        return m ? (m[1] + ":" + m[2]) : "-";
+    }
+    function parseSheetDateTime(dateRaw, timeRaw){
+        var d = parseSheetDate(dateRaw);
+        if (!d) return null;
+        var tm = String(timeRaw || "").match(/(\d{2}):(\d{2}):\d{2}\s*$/);
+        d.setHours(tm ? parseInt(tm[1], 10) : 0, tm ? parseInt(tm[2], 10) : 0, 0, 0);
+        return d;
+    }
+
+    // Accepts a bare array, a {data:[...]}/{records:[...]}/{rows:[...]}/{result:[...]} wrapper,
+    // or a single rake object -- normalizes to an array either way.
+    function extractArray(json){
+        if (Array.isArray(json)) return json;
+        if (json && Array.isArray(json.data)) return json.data;
+        if (json && Array.isArray(json.records)) return json.records;
+        if (json && Array.isArray(json.rows)) return json.rows;
+        if (json && Array.isArray(json.result)) return json.result;
+        if (json && typeof json === "object" && Object.prototype.hasOwnProperty.call(json, "RAKE ID")) return [json];
+        return [];
+    }
+
+    // All rakes are loaded on page load -- no STATUS filtering of any kind.
+    function fetchAllRecords(){
+        return fetch(APPS_SCRIPT_URL).then(function(r){ return r.json(); }).then(function(json){
+            var arr = extractArray(json);
+            return arr.map(function(d, i){ return { id: (d["RAKE ID"] || d["RR NUMBER"] || ("rake_" + i)), data: d }; });
+        });
+    }
+
+    function populateStationList(){
+        var seen = {};
+        stationList.innerHTML = "";
+        allRecords.forEach(function(rec){
+            var s = rec.data["FROM"];
+            if (s && !seen[s]){ seen[s] = true; var opt = document.createElement('option'); opt.value = s; stationList.appendChild(opt); }
+        });
+    }
+    function populateConsigneeList(){
+        var seen = {};
+        consigneeList.innerHTML = "";
+        allRecords.forEach(function(rec){
+            var c = rec.data["CONSIGNEE"];
+            if (c && !seen[c]){ seen[c] = true; var opt = document.createElement('option'); opt.value = c; consigneeList.appendChild(opt); }
+        });
+    }
+
+    function parseInputDMY(str){
+        if (!str) return null;
+        str = str.trim();
+        var parts = str.split(/[\/\-\.]/);
+        if (parts.length !== 3) return null;
+        var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (!d || !m || !y) return null;
+        return new Date(y, m - 1, d);
+    }
+    function formatDMY(dt){ return pad2(dt.getDate()) + "/" + pad2(dt.getMonth() + 1) + "/" + dt.getFullYear(); }
+
+    function init(){
+        setStatus("Data is Loading... Please Wait");
+        var submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        fetchAllRecords().then(function(records){
+            allRecords = records;
+            populateStationList();
+            populateConsigneeList();
+            if (records.length === 0){
+                setStatus("No rakes found.", true);
+            } else {
+                setStatus("Data loaded -- showing all rakes.");
+                submitFilter();
+            }
+            submitBtn.disabled = false;
+        }).catch(function(err){
+            setStatus("Error loading data: " + err.message, true);
+            submitBtn.disabled = false;
+        });
+    }
+
+    function renderResults(records){
+        resultsBody.innerHTML = "";
+        if (records.length === 0){
+            resultsCard.style.display = "block";
+            resultsBody.innerHTML = '<tr><td colspan="10">No matching rakes found.</td></tr>';
+            return;
+        }
+        var pdfIconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+            '<path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#e53935"/>' +
+            '<path d="M14 2v4a1 1 0 0 0 1 1h4" fill="#ff8a80"/>' +
+            '<text x="12" y="16.5" text-anchor="middle" font-size="6.5" font-family="Arial, sans-serif" font-weight="700" fill="#fff">PDF</text>' +
+            '</svg>';
+        records.forEach(function(rec, idx){
+            var d = rec.data;
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td class="col-sr">' + (idx + 1) + '</td>' +
+                '<td>' + (d["FROM"] || "-") + '</td>' +
+                '<td>' + (d["TO"] || "-") + '</td>' +
+                '<td class="col-wgn">' + (d["WGN."] || "-") + '</td>' +
+                '<td>' + (d["RR NUMBER"] || "-") + '</td>' +
+                '<td>' + formatSheetDate(d["RR DATE"]) + '</td>' +
+                '<td>' + (d["INV."] || "-") + '</td>' +
+                '<td>' + (d["CONSIGNER"] || "-") + '</td>' +
+                '<td>' + (d["CONSIGNEE"] || "-") + '</td>' +
+                '<td class="col-pdf"><button type="button" class="gen-row-btn" data-idx="' + idx + '" title="Generate &amp; Download PDF">' + pdfIconSvg + '</button></td>';
+            resultsBody.appendChild(tr);
+        });
+        resultsCard.style.display = "block";
+
+        document.querySelectorAll('.gen-row-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var idx = parseInt(btn.getAttribute('data-idx'), 10);
+                var rec = filteredRecords[idx];
+                generateStatement(rec, idx);
+                setTimeout(function(){ downloadStatementPdf(rec); }, 60);
+            });
+        });
+    }
+
+    function submitFilter(){
+        var station = document.getElementById('stationFrom').value.trim().toLowerCase();
+        var consignee = document.getElementById('consigneeCode').value.trim().toLowerCase();
+        var fromD = parseInputDMY(document.getElementById('fromDate').value);
+        var toD = parseInputDMY(document.getElementById('toDate').value);
+
+        filteredRecords = allRecords.filter(function(rec){
+            var d = rec.data;
+            if (station && (!d["FROM"] || String(d["FROM"]).toLowerCase().indexOf(station) === -1)) return false;
+            if (consignee && (!d["CONSIGNEE"] || String(d["CONSIGNEE"]).toLowerCase().indexOf(consignee) === -1)) return false;
+            // Only apply the RR DATE range when a date exists on the record so rows
+            // without an RR DATE aren't hidden unless the user has actually filtered.
+            if ((fromD || toD) && d["RR DATE"]){
+                var rDate = parseSheetDate(d["RR DATE"]);
+                if (rDate){
+                    if (fromD && rDate < fromD) return false;
+                    if (toD && rDate > toD) return false;
+                }
+            }
+            return true;
+        });
+
+        // Latest RR DATE first, oldest last.
+        filteredRecords.sort(function(a, b){
+            var da = parseSheetDate(a.data["RR DATE"]);
+            var db = parseSheetDate(b.data["RR DATE"]);
+            if (!da && !db) return 0;
+            if (!da) return 1;
+            if (!db) return -1;
+            return db - da;
+        });
+
+        var count = filteredRecords.length;
+        setStatus("Record Found : " + (count < 10 ? "0" + count : count) + " Rake" + (count === 1 ? "" : "s"));
+        renderResults(filteredRecords);
+        statementWrap.style.display = "none";
+    }
+
+    // Long wagon numbers (e.g. 11-digit) are trimmed to the last 6 digits, right side,
+    // so they fit the printed column without wrapping or overflowing.
+    function shortNo(no){
+        if (!no || no === "-") return "-";
+        var s = String(no);
+        return s.length > 6 ? s.slice(-6) : s;
+    }
+
+    function buildSectionHTML(caption, wagonRows, summary){
+        // Only as many rows as there are wagons (split across the two halves) --
+        // no fixed 30-row block, so a short rake leaves the rest of the sheet for the summary.
+        var rowCount = Math.max(1, Math.ceil(wagonRows.length / 2));
+
+        var html = '<table class="wagon-table">';
+        html += '<colgroup>' +
+            '<col style="width:6%"><col style="width:10%"><col style="width:15%"><col style="width:19%">' +
+            '<col style="width:6%"><col style="width:10%"><col style="width:15%"><col style="width:19%">' +
+            '</colgroup>';
+        html += '<thead><tr>' +
+            '<th>SR.</th><th>RLY</th><th>TYPE</th><th>NO.</th>' +
+            '<th>SR.</th><th>RLY</th><th>TYPE</th><th>NO.</th>' +
+            '</tr></thead>';
+        html += '<tbody>';
+        for (var i = 0; i < rowCount; i++){
+            var left = wagonRows[i];
+            var right = wagonRows[i + rowCount];
+            html += '<tr>' +
+                '<td>' + (left ? (i + 1) : '') + '</td>' +
+                '<td class="' + (left ? '' : 'blank') + '">' + (left ? left.rly : '-') + '</td>' +
+                '<td class="' + (left ? '' : 'blank') + '">' + (left ? left.type : '-') + '</td>' +
+                '<td class="' + (left ? '' : 'blank') + '">' + (left ? shortNo(left.no) : '-') + '</td>' +
+                '<td>' + (right ? (i + rowCount + 1) : '') + '</td>' +
+                '<td class="' + (right ? '' : 'blank') + '">' + (right ? right.rly : '-') + '</td>' +
+                '<td class="' + (right ? '' : 'blank') + '">' + (right ? right.type : '-') + '</td>' +
+                '<td class="' + (right ? '' : 'blank') + '">' + (right ? shortNo(right.no) : '-') + '</td>' +
+                '</tr>';
+        }
+        html += '</tbody></table>';
+
+        // Summary -- first line is plain readable text (no box), rest are modern
+        // boxed label/value cards, plus a manual RISK TYPE stamp selector at the end.
+        html += '<div class="summary-block">';
+        html += '<div class="summary-title">SUMMARY</div>';
+        html += '<div class="summary-item station-box"><span class="lbl">STATION :</span><span class="val">' +
+            summary.from + ' TO ' + summary.to + '</span></div>';
+        html += '<div class="summary-item"><span class="lbl">NO. OF WAGONS :</span><span class="val">' + summary.wgn + '</span></div>';
+        html += sRow(['INV. NO.', summary.ivNo], ['INVOICE DATE', summary.ivDate]);
+        html += sRow(['RR NUMBER', summary.rNo], ['RR DATE', summary.rDt]);
+        html += sRow(['CWT', summary.cwt], ['AWT', summary.awt]);
+        html += sRow(['CONSIGNER', summary.cnsr], ['CONSIGNEE', summary.cnsg]);
+        html += sRow(['COMMODITY', summary.omm], ['CLASS', summary.cls]);
+        html += '<div class="summary-full freight-row">' +
+            '<span><span class="lbl">FREIGHT :</span> <span class="val">' + money(summary.freight) + '</span></span>' +
+            '<span><span class="lbl">GST :</span> <span class="val">' + money(summary.gst) + '</span></span>' +
+            '<span><span class="lbl">TOTAL FREIGHT :</span> <span class="val val-highlight">' + money(summary.totalFreight) + '</span></span>' +
+            '</div>';
+        html += '<div class="summary-item"><span class="lbl">DELIVERY NO. :</span><span class="val">' +
+            summary.delNo + '</span></div>';
+        html += '<div class="summary-item"><span class="lbl">RISK TYPE :</span>' +
+            '<select class="rrOrSelect"><option value="OR" selected>OR</option><option value="RR">RR</option></select></div>';
+        html += '</div>';
+        html += '<div class="caption-row">' + caption + '</div>';
+        return html;
+    }
+
+    // Builds one or two label/value cards for a summary row.
+    function sRow(pair1, pair2){
+        var out = '<div class="summary-item"><span class="lbl">' + pair1[0] + ' :</span><span class="val">' + (pair1[1] || "-") + '</span></div>';
+        if (pair2){
+            out += '<div class="summary-item"><span class="lbl">' + pair2[0] + ' :</span><span class="val">' + (pair2[1] || "-") + '</span></div>';
+        }
+        return out;
+    }
+
+    // Prefixes an amount with "Rs." -- leaves blank/"-" values untouched.
+    function money(val){
+        if (!val || val === "-") return "-";
+        return "Rs. " + val;
+    }
+
+    function generateStatement(rec, idx){
+        if (!rec) return;
+        var d = rec.data;
+
+        // "WGN SUMMARY" holds a JSON string like [{"RLY":"SE","TYPE":"BCNAM1","NO":"..."}].
+        var wagonList = d["WGN SUMMARY"];
+        if (typeof wagonList === "string"){
+            try { wagonList = JSON.parse(wagonList); } catch (e){ wagonList = []; }
+        }
+        if (!Array.isArray(wagonList)) wagonList = [];
+        var wagonRows = wagonList.map(function(w){
+            return {
+                rly: (w && (w.RLY || w.rly)) || "-",
+                type: (w && (w.TYPE || w.type)) || "-",
+                no: (w && (w.NO || w.no)) || "-"
+            };
+        });
+
+        var lf = d["L/F"] || "-";
+        var delNoRaw = d["DELIVERY NO."] || "-";
+        var delNoFormatted = (lf !== "-" || delNoRaw !== "-") ? (lf + "/01/" + delNoRaw) : "-";
+
+        var summary = {
+            from: d["FROM"] || "-",
+            to: d["TO"] || "-",
+            wgn: d["WGN."] || "-",
+            ivNo: d["INV."] || "-",
+            ivDate: formatSheetDate(d["INV. DATE"]),
+            awt: d["AWT"] || "-",
+            cnsr: d["CONSIGNER"] || "-",
+            cnsg: d["CONSIGNEE"] || "-",
+            omm: d["COMMODITY CODE"] || "-",
+            rNo: d["RR NUMBER"] || "-",
+            rDt: formatSheetDate(d["RR DATE"]),
+            cwt: d["CWT"] || "-",
+            freight: d["FREIGHT"] || "-",
+            gst: d["GST"] || "-",
+            totalFreight: d["TOTAL FT."] || "-",
+            lf: lf,
+            delNo: delNoFormatted,
+            cls: d["CLASS"] || "-"
+        };
+
+        var captions = [
+            "INWARD NO. TAKER - COPY",
+            "INWARD TALLY BOOK - COPY",
+            "DELIVERY BOOK - COPY"
+        ];
+
+        var row = document.getElementById('sectionsRow');
+        var html = '';
+        captions.forEach(function(cap, i){
+            if (i > 0){ html += '<div class="cut-mark"><span class="cut-line"></span><span class="scissor">&#9986;</span></div>'; }
+            html += '<div class="section">' + buildSectionHTML(cap, wagonRows, summary) + '</div>';
+        });
+        row.innerHTML = html;
+
+        statementWrap.style.display = "block";
+        statementWrap.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function downloadStatementPdf(rec){
+        var page = document.querySelector('.a4-page');
+        if (!page || typeof html2pdf === 'undefined') return;
+        var rrNo = (rec && rec.data && rec.data["RR NUMBER"]) ? String(rec.data["RR NUMBER"]).replace(/[^a-zA-Z0-9]+/g, '_') : 'wagon_list';
+        var opt = {
+            margin: 0,
+            filename: 'IW_Tally_DelBook_NoTaker_' + rrNo + '.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 3, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+        };
+        html2pdf().set(opt).from(page).save();
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', submitFilter);
+    document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+
+    // Datalist inputs (Station From / Consignee) natively filter their option list
+    // to only what's already typed -- so once a value is picked, reopening the list
+    // shows just that one match. Clearing the field on focus keeps the full option
+    // list available every time, and also lets the user blank the field out entirely
+    // to remove the filter and see all data again.
+    function enableFullDatalist(inputEl){
+        inputEl.addEventListener('focus', function(){
+            inputEl.value = "";
+        });
+    }
+    enableFullDatalist(document.getElementById('stationFrom'));
+    enableFullDatalist(document.getElementById('consigneeCode'));
+
+    init();
+</script>
+</body>
+</html>
