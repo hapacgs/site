@@ -411,6 +411,142 @@
   table.mcdo-table th.year-previous{ background:#DFF3F6; color:var(--rail-navy); }
   table.mcdo-table td.cat-name{ min-width:170px; }
 
+  /* ===== Lumpsum Deposit Statement (manual entry) ===== */
+  table.lumpsum-table{ font-size:11.5px; }
+  table.lumpsum-table th{ font-size:10.5px; line-height:1.3; }
+  table.statement-table td.editable-cell{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    color:var(--ink);
+    cursor:text;
+    min-width:70px;
+    transition:background .12s ease, box-shadow .12s ease;
+  }
+  table.statement-table td.editable-cell:empty::before{
+    content:"—";
+    color:#B7CBD3;
+  }
+  td.editable-cell:hover{ background:#F1FAFB; }
+  td.editable-cell:focus{
+    outline:none;
+    background:#E3F7FB;
+    box-shadow:inset 0 0 0 1.5px var(--cyan-deep);
+  }
+  .table-row-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin:8px 0 4px;
+  }
+  .btn-add-row{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    font-size:12px;
+    color:var(--rail-navy);
+    background:#DFF3F6;
+    border:1.5px solid var(--border);
+    border-radius:5px;
+    padding:6px 14px;
+    cursor:pointer;
+    transition:filter .12s ease;
+  }
+  .btn-add-row:hover{ filter:brightness(0.96); }
+  .row-remove-btn{
+    font-size:15px;
+    line-height:1;
+    color:#B3261E;
+    background:none;
+    border:none;
+    cursor:pointer;
+    padding:2px 6px;
+  }
+  .row-remove-btn:hover{ color:#7A1912; }
+  table.statement-table td.no-print{ border:none; padding:2px; background:transparent; }
+  .lumpsum-summary-title{
+    text-align:center;
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size:14.5px;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+    color:var(--ink);
+    margin:20px 0 10px;
+  }
+  table.lumpsum-summary-table th{ font-size:11px; }
+  table.lumpsum-summary-table td.editable-cell{ text-align:center; }
+
+  /* ===== Marketing M.C.D.O. — multi-section commodity/scheme tables ===== */
+  .mkt-section{ margin:0 0 22px; }
+  .mkt-section:first-child{ margin-top:2px; }
+  .mkt-section-title{
+    background:linear-gradient(180deg, var(--rail-navy), var(--rail-navy-dark));
+    color:var(--white);
+    text-align:center;
+    font-family:'Oswald', sans-serif;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:0.8px;
+    text-transform:uppercase;
+    padding:7px 10px;
+    border-radius:5px 5px 0 0;
+    margin:0;
+  }
+  .mkt-section .statement-table{ margin:0; }
+  .mkt-section .statement-table th,
+  .mkt-section .statement-table td{ font-size:11.5px; }
+  table.mkt-table td.mkt-name{
+    text-align:left;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:500;
+    color:#1D4E9B;
+  }
+  table.mkt-table td.mkt-sr{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
+  /* All entered/loaded details on the Marketing M.C.D.O. tab are shown
+     in capital letters — class-based (not scoped to the on-screen tab)
+     so this also applies inside the cloned PDF page markup. */
+  table.mkt-table td,
+  table.mkt-kv-table td{ text-transform:uppercase; }
+  .mkt-info-columns{
+    display:flex;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  .mkt-info-columns .mkt-info-col{ flex:1 1 260px; min-width:220px; }
+  .mkt-info-col-title{
+    text-align:center;
+    font-family:'Oswald', sans-serif;
+    font-weight:600;
+    font-size:12px;
+    letter-spacing:0.6px;
+    text-transform:uppercase;
+    color:var(--rail-navy);
+    background:#DFF3F6;
+    border:1px solid var(--border);
+    border-bottom:none;
+    padding:6px;
+  }
+  table.mkt-kv-table{ width:100%; border-collapse:collapse; font-size:11.5px; }
+  table.mkt-kv-table td{
+    border:1px solid var(--border);
+    padding:6px 8px;
+  }
+  table.mkt-kv-table td.mkt-kv-label{
+    text-align:left;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-weight:500;
+    color:var(--ink);
+    width:60%;
+  }
+  table.mkt-kv-table td.mkt-kv-value{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    text-align:center;
+  }
+  .manual-entry-note{
+    background:#FFF8E1;
+    border-color:#F0C846;
+    color:#7A5B00;
+  }
+
   .statement-footer{
     display:flex;
     justify-content:space-between;
@@ -518,7 +654,7 @@
   @media print{
     @page{ size:A4 portrait; margin:12mm; }
     body{ background:none; padding:0; }
-    .masthead, .filter-card, .tab-row, .footer-note, .fetch-status, .pdf-root{ display:none !important; }
+    .masthead, .filter-card, .tab-row, .footer-note, .fetch-status, .pdf-root, .no-print{ display:none !important; }
     .container{ max-width:none; padding:0; margin:0; }
     .panel{ box-shadow:none; border:none; }
     .panel-body{ padding:0; }
@@ -558,6 +694,7 @@
     position:relative;
     padding:32px 46px 26px;
   }
+  .pdf-page .no-print{ display:none !important; }
   .pdf-page .statement-footer{ align-items:flex-start; }
   .pdf-page .statement-signature{
     margin:64px 0 0;
@@ -587,6 +724,12 @@
   .pdf-page *{
     color:#000000 !important;
     border-color:#000000 !important;
+  }
+  /* Marketing M.C.D.O. section headings keep their white text on the
+     navy band even in the printed PDF — the blanket black override
+     above would otherwise make them unreadable. */
+  .pdf-page .mkt-section-title{
+    color:#FFFFFF !important;
   }
   .pdf-blank-page{
     height:100%;
@@ -866,9 +1009,240 @@
             <p class="statement-subtitle">HAPA GOODS SHED - (HAPA)</p>
             <div class="statement-rule"></div>
 
-            <div class="coming-soon" style="padding:46px 0 54px;">
-              <span class="icon">&#128679;</span>
-              <span>Under Progress</span>
+            <div class="table-scroll">
+
+            <div class="mkt-section">
+              <h3 class="mkt-section-title">Outward Traffic :: Commodity Wise Loading</h3>
+              <table class="statement-table mkt-table" id="mktOutwardTable">
+                <thead>
+                  <tr>
+                    <th style="width:42px;">No.</th>
+                    <th>Commodity</th>
+                    <th>Wgn.</th>
+                    <th>CWT</th>
+                    <th>Freight Rs.</th>
+                  </tr>
+                </thead>
+                <tbody id="mktOutwardBody">
+                  <tr><td colspan="5" style="text-align:center; color:var(--ink-soft);">Commodity-wise figures will be pulled from the M.C.D.O. tab</td></tr>
+                </tbody>
+                <tfoot>
+                  <tr class="total-row" id="mktOutwardTotalsRow">
+                    <td colspan="2">Total</td>
+                    <td class="mo-wgn">0</td>
+                    <td class="mo-cwt">0</td>
+                    <td class="mo-freight">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="mkt-section">
+              <h3 class="mkt-section-title">Loading Under Freight Incentive Scheme</h3>
+              <table class="statement-table mkt-table" id="mktIncentiveTable">
+                <thead>
+                  <tr>
+                    <th style="width:42px;">No.</th>
+                    <th>Name of Initiative</th>
+                    <th>Wgn.</th>
+                    <th>Wt. Tonne</th>
+                    <th>Earnings (In Cr.)</th>
+                  </tr>
+                </thead>
+                <tbody id="mktIncentiveBody">
+                  <tr>
+                    <td class="mkt-sr">1</td>
+                    <td class="mkt-name">Traditional Empty Flow Direction</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">2</td>
+                    <td class="mkt-name">Two / Multi Point Rakes</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">3</td>
+                    <td class="mkt-name">Mini Rakes</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">4</td>
+                    <td class="mkt-name">Train Load Benefit in BCNHL up to 42 Wagons</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">5</td>
+                    <td class="mkt-name">Loading of Bagged Consignment in Open and Flat Wagons</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">6</td>
+                    <td class="mkt-name">Incentive Scheme for Freight Forwarders</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">7</td>
+                    <td class="mkt-name">Long Lead Concession for Coal Traffic above 1400 Kms.</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">8</td>
+                    <td class="mkt-name">Short Lead Traffic Concession up to 90 Kms.</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">9</td>
+                    <td class="mkt-name">PCC Lowering in Pet Coke</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">10</td>
+                    <td class="mkt-name">Revision in Classification of Industrial Salt</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                  </tr>
+                  <tr>
+                    <td class="mkt-sr">11</td>
+                    <td class="mkt-name">Container Traffic</td>
+                    <td class="editable-cell" contenteditable="true" id="mktContainerWgn">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true" id="mktContainerEarnings">0</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="total-row" id="mktIncentiveTotalsRow">
+                    <td colspan="2">Total</td>
+                    <td class="mf-wgn">0</td>
+                    <td class="mf-wt">0</td>
+                    <td class="mf-earnings">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="mkt-section">
+              <h3 class="mkt-section-title">5% Weighment of O/W Rakes Booked in Standard Bags</h3>
+              <table class="statement-table mkt-table" id="mktWeighmentTable">
+                <thead>
+                  <tr>
+                    <th style="width:42px;">No.</th>
+                    <th>Name of Commodities</th>
+                    <th>Wgn.</th>
+                    <th>Wt. Tonne</th>
+                    <th>Earnings (In Cr.)</th>
+                    <th class="no-print"></th>
+                  </tr>
+                </thead>
+                <tbody id="mktWeighmentBody">
+                  <tr>
+                    <td class="mkt-sr">1</td>
+                    <td class="editable-cell mkt-name" contenteditable="true"></td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="no-print"><button type="button" class="row-remove-btn mkt-row-remove" title="Remove row">&times;</button></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="total-row" id="mktWeighmentTotalsRow">
+                    <td colspan="2">Total</td>
+                    <td class="mw-wgn">0</td>
+                    <td class="mw-wt">0</td>
+                    <td class="mw-earnings">0</td>
+                    <td class="no-print"></td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div class="table-row-actions no-print">
+                <button type="button" class="btn-add-row" id="mktWeighmentAddRowBtn">&#43; Add Row</button>
+              </div>
+            </div>
+
+            <div class="mkt-section">
+              <h3 class="mkt-section-title">Inward Traffic :: Commodity Wise Loading</h3>
+              <table class="statement-table mkt-table" id="mktInwardTable">
+                <thead>
+                  <tr>
+                    <th style="width:42px;">No.</th>
+                    <th>Name of Commodities</th>
+                    <th>Wgn.</th>
+                    <th>Wt. Tonne</th>
+                    <th>Earnings (In Cr.)</th>
+                    <th class="no-print"></th>
+                  </tr>
+                </thead>
+                <tbody id="mktInwardBody">
+                  <tr>
+                    <td class="mkt-sr">1</td>
+                    <td class="editable-cell mkt-name" contenteditable="true"></td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="editable-cell" contenteditable="true">0</td>
+                    <td class="no-print"><button type="button" class="row-remove-btn mkt-row-remove" title="Remove row">&times;</button></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="total-row" id="mktInwardTotalsRow">
+                    <td colspan="2">Total</td>
+                    <td class="mi-wgn">0</td>
+                    <td class="mi-wt">0</td>
+                    <td class="mi-earnings">0</td>
+                    <td class="no-print"></td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div class="table-row-actions no-print">
+                <button type="button" class="btn-add-row" id="mktInwardAddRowBtn">&#43; Add Row</button>
+              </div>
+            </div>
+
+            <div class="mkt-section">
+              <h3 class="mkt-section-title">Other Information for New Traffic</h3>
+              <div class="mkt-info-columns">
+                <div class="mkt-info-col">
+                  <div class="mkt-info-col-title">New Destination</div>
+                  <table class="mkt-kv-table">
+                    <tbody>
+                      <tr><td class="mkt-kv-label">Name of Destination</td><td class="mkt-kv-value editable-cell" contenteditable="true">—</td></tr>
+                      <tr><td class="mkt-kv-label">No. Of Rakes</td><td class="mkt-kv-value editable-cell" contenteditable="true">0</td></tr>
+                      <tr><td class="mkt-kv-label">Weight in Tonnes</td><td class="mkt-kv-value editable-cell" contenteditable="true">0</td></tr>
+                      <tr><td class="mkt-kv-label">Earnings (In Cr.)</td><td class="mkt-kv-value editable-cell" contenteditable="true">0</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="mkt-info-col">
+                  <div class="mkt-info-col-title">New Commodity</div>
+                  <table class="mkt-kv-table">
+                    <tbody>
+                      <tr><td class="mkt-kv-label">Name of Commodity</td><td class="mkt-kv-value editable-cell" contenteditable="true">—</td></tr>
+                      <tr><td class="mkt-kv-label">No. Of Rakes</td><td class="mkt-kv-value editable-cell" contenteditable="true">0</td></tr>
+                      <tr><td class="mkt-kv-label">Weight in Tonnes</td><td class="mkt-kv-value editable-cell" contenteditable="true">0</td></tr>
+                      <tr><td class="mkt-kv-label">Earnings (In Cr.)</td><td class="mkt-kv-value editable-cell" contenteditable="true">0</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
             </div>
 
             <div class="statement-footer footer-align-end">
@@ -892,9 +1266,71 @@
             <p class="statement-subtitle">HAPA GOODS SHED - (HAPA)</p>
             <div class="statement-rule"></div>
 
-            <div class="coming-soon" style="padding:46px 0 54px;">
-              <span class="icon">&#128679;</span>
-              <span>Under Progress</span>
+            <div class="table-scroll">
+            <table class="statement-table lumpsum-table" id="lumpsumStatementTable">
+              <thead>
+                <tr>
+                  <th>WRF<br>No.</th>
+                  <th>Date</th>
+                  <th>Name of<br>Party</th>
+                  <th>Commodity</th>
+                  <th>To<br>Stn.</th>
+                  <th>No. of<br>Wgn.</th>
+                  <th>Lump sum<br>Deposit Amount</th>
+                  <th>Adjustment or<br>Refund Amount</th>
+                  <th>Adjustment or<br>Refund In<br>Goods Earnings</th>
+                  <th>Date of<br>Refund or<br>Adjustment</th>
+                  <th>Refund or<br>Adjustment<br>WRF No.</th>
+                  <th>Remarks /<br>Refund or<br>Adjustment CR No.</th>
+                  <th class="no-print"></th>
+                </tr>
+              </thead>
+              <tbody id="lumpsumStatementBody">
+                <tr>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="no-print"><button type="button" class="row-remove-btn lumpsum-row-remove" title="Remove row">&times;</button></td>
+                </tr>
+              </tbody>
+            </table>
+            </div>
+
+            <div class="table-row-actions no-print">
+              <button type="button" class="btn-add-row" id="lumpsumAddRowBtn">&#43; Add Row</button>
+            </div>
+
+            <h3 class="lumpsum-summary-title">SUMMARY OF LUMP SUM DEPOSIT - HAPA GOODS SHED</h3>
+            <div class="table-scroll">
+            <table class="statement-table lumpsum-summary-table" id="lumpsumSummaryTable">
+              <thead>
+                <tr>
+                  <th>Opening<br>Balance</th>
+                  <th>Fresh<br>Deposit Recd.</th>
+                  <th>Forfeited<br>Amount Rs.</th>
+                  <th>Adjusted / Refund<br>Amount Rs.</th>
+                  <th>Outstanding<br>Lump Sum Deposit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                  <td class="editable-cell" contenteditable="true">0</td>
+                </tr>
+              </tbody>
+            </table>
             </div>
 
             <div class="statement-footer footer-align-end">
@@ -1311,6 +1747,22 @@
     totalRow.querySelector('.m-freight-p').textContent = formatIndianNumber(t.freightP);
     totalRow.querySelector('.m-gst-p').textContent = formatIndianNumber(t.gstP);
     totalRow.querySelector('.m-tft-p').textContent = formatIndianNumber(t.freightP + t.gstP);
+
+    // Marketing M.C.D.O. :: Outward Traffic — Commodity, Wgn., CWT and
+    // Freight Rs. are carried over as-is from this table's own Commodity
+    // column and its CURRENT YEAR Wgn./CWT/Freight Rs. columns (G.S.T. and
+    // Total FT. are not part of that table). A Total row is appended
+    // automatically by renderMktOutwardTable itself.
+    if(typeof renderMktOutwardTable === 'function'){
+      const mktRows = [];
+      order.forEach(commodity => {
+        const c = curMap.get(commodity);
+        if(c){
+          mktRows.push({ commodity: commodity, wgn: c.wagon, cwt: c.cwt, freight: c.freight });
+        }
+      });
+      renderMktOutwardTable(mktRows);
+    }
   }
 
   function resetMcdoTable(message){
@@ -1321,6 +1773,9 @@
       const td = totalRow.querySelector('.' + cls);
       if(td){ td.textContent = '0'; }
     });
+    if(typeof renderMktOutwardTable === 'function'){
+      renderMktOutwardTable([]);
+    }
   }
 
   async function fetchAndRenderMcdo(period){
@@ -1386,14 +1841,14 @@
     return html.replace(/\sid="[^"]*"/g, '');
   }
 
-  const PDF_LANDSCAPE_KEYS = ["mcdo"];
+  const PDF_LANDSCAPE_KEYS = ["mcdo", "lumpsum"];
 
   function buildPdfPages(){
     const keys = ["outward", "mcdo", "demurrage", "wharfage", "mktmcdo", "lumpsum"];
     return keys.map(key => {
       const sheetHTML = stripIds(document.querySelector('#tab-' + key + ' .statement-sheet').outerHTML);
       const landscapeClass = PDF_LANDSCAPE_KEYS.indexOf(key) !== -1 ? ' landscape' : '';
-      return `<div class="pdf-page${landscapeClass}">${sheetHTML}</div>`;
+      return `<div class="pdf-page${landscapeClass} pdf-page-${key}">${sheetHTML}</div>`;
     }).join('');
   }
 
@@ -1415,6 +1870,8 @@
       if(!sheet) return;
 
       sheet.style.transform = 'none';
+      sheet.style.marginTop = '0';
+      sheet.style.marginLeft = '0';
       const prevHeight = sheet.style.height;
       sheet.style.height = 'auto';
       const naturalH = sheet.scrollHeight;
@@ -1425,10 +1882,23 @@
       const maxH = page.clientHeight;
       if(naturalH <= 0 || naturalW <= 0) return;
 
-      const scale = Math.min(1, maxW / naturalW, maxH / naturalH);
-      if(scale < 1){
+      const isMktMcdo = page.classList.contains('pdf-page-mktmcdo');
+
+      if(isMktMcdo){
+        // Marketing M.C.D.O. page: fit-to-page — stretch (or shrink)
+        // width and height independently so the sheet fills the A4 page
+        // edge-to-edge, instead of leaving blank space on the right when
+        // height was the binding constraint on a uniform scale.
+        const scaleX = maxW / naturalW;
+        const scaleY = maxH / naturalH;
         sheet.style.transformOrigin = 'top left';
-        sheet.style.transform = `scale(${scale})`;
+        sheet.style.transform = `scale(${scaleX}, ${scaleY})`;
+      } else {
+        const scale = Math.min(1, maxW / naturalW, maxH / naturalH);
+        if(scale < 1){
+          sheet.style.transformOrigin = 'top left';
+          sheet.style.transform = `scale(${scale})`;
+        }
       }
     });
   }
@@ -1492,6 +1962,222 @@
         generateApBtn.innerHTML = originalLabel;
       }
     });
+  }
+
+  /* =====================================================================
+     LUMPSUM DEPOSIT STATEMENT — purely manual entry.
+     No fetch, no auto-calculation: the user types every cell themselves,
+     and rows can be added/removed with the buttons below the table. The
+     PDF export picks up whatever is currently in the cells as-is.
+     ===================================================================== */
+  const LUMPSUM_COLS = 12;
+  const lumpsumBody = document.getElementById('lumpsumStatementBody');
+  const lumpsumAddRowBtn = document.getElementById('lumpsumAddRowBtn');
+
+  function buildLumpsumRow(){
+    const tr = document.createElement('tr');
+    let cellsHtml = '';
+    for(let i = 0; i < LUMPSUM_COLS; i++){
+      cellsHtml += '<td class="editable-cell" contenteditable="true">0</td>';
+    }
+    cellsHtml += '<td class="no-print"><button type="button" class="row-remove-btn lumpsum-row-remove" title="Remove row">&times;</button></td>';
+    tr.innerHTML = cellsHtml;
+    return tr;
+  }
+
+  if(lumpsumAddRowBtn && lumpsumBody){
+    lumpsumAddRowBtn.addEventListener('click', () => {
+      lumpsumBody.appendChild(buildLumpsumRow());
+    });
+    lumpsumBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.lumpsum-row-remove');
+      if(!btn) return;
+      // Always leave at least one row in the table.
+      if(lumpsumBody.querySelectorAll('tr').length > 1){
+        btn.closest('tr').remove();
+      }
+    });
+  }
+
+  /* =====================================================================
+     MARKETING M.C.D.O. — five sections.
+     "Outward Traffic" auto-populates from the M.C.D.O. tab: renderMcdoTable()
+     calls renderMktOutwardTable(rows) below with each row's Commodity,
+     Wgn., CWT and Freight Rs. carried over as-is from that tab's CURRENT
+     YEAR columns. The other four sections are filled in by hand.
+     ===================================================================== */
+  function renumberMktRows(tbody){
+    Array.from(tbody.querySelectorAll('tr')).forEach((tr, idx) => {
+      const srCell = tr.querySelector('.mkt-sr');
+      if(srCell) srCell.textContent = idx + 1;
+    });
+  }
+
+  function parseMktNumber(text){
+    const n = parseFloat(String(text).replace(/[^0-9.\-]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function buildMktRow(){
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td class="mkt-sr"></td>' +
+      '<td class="editable-cell mkt-name" contenteditable="true"></td>' +
+      '<td class="editable-cell" contenteditable="true">0</td>' +
+      '<td class="editable-cell" contenteditable="true">0</td>' +
+      '<td class="editable-cell" contenteditable="true">0</td>' +
+      '<td class="no-print"><button type="button" class="row-remove-btn mkt-row-remove" title="Remove row">&times;</button></td>';
+    return tr;
+  }
+
+  function wireMktAddRemove(tbodyId, addBtnId, onChange){
+    const tbody = document.getElementById(tbodyId);
+    const addBtn = document.getElementById(addBtnId);
+    if(!tbody) return;
+    if(addBtn){
+      addBtn.addEventListener('click', () => {
+        tbody.appendChild(buildMktRow());
+        renumberMktRows(tbody);
+        if(onChange) onChange();
+      });
+    }
+    tbody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.mkt-row-remove');
+      if(!btn) return;
+      if(tbody.querySelectorAll('tr').length > 1){
+        btn.closest('tr').remove();
+        renumberMktRows(tbody);
+        if(onChange) onChange();
+      }
+    });
+    if(onChange){
+      tbody.addEventListener('input', onChange);
+    }
+  }
+
+  function updateMktInwardTotals(){
+    const tbody = document.getElementById('mktInwardBody');
+    const totalsRow = document.getElementById('mktInwardTotalsRow');
+    if(!tbody || !totalsRow) return;
+    let wgn = 0, wt = 0, earnings = 0;
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cells = tr.querySelectorAll('td.editable-cell');
+      if(cells.length < 4) return;
+      wgn += parseMktNumber(cells[1].textContent);
+      wt += parseMktNumber(cells[2].textContent);
+      earnings += parseMktNumber(cells[3].textContent);
+    });
+    totalsRow.querySelector('.mi-wgn').textContent = formatIndianNumber(wgn);
+    totalsRow.querySelector('.mi-wt').textContent = formatIndianNumber(wt);
+    totalsRow.querySelector('.mi-earnings').textContent = formatIndianNumber(earnings);
+  }
+
+  function updateMktWeighmentTotals(){
+    const tbody = document.getElementById('mktWeighmentBody');
+    const totalsRow = document.getElementById('mktWeighmentTotalsRow');
+    if(!tbody || !totalsRow) return;
+    let wgn = 0, wt = 0, earnings = 0;
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cells = tr.querySelectorAll('td.editable-cell');
+      if(cells.length < 4) return;
+      wgn += parseMktNumber(cells[1].textContent);
+      wt += parseMktNumber(cells[2].textContent);
+      earnings += parseMktNumber(cells[3].textContent);
+    });
+    totalsRow.querySelector('.mw-wgn').textContent = formatIndianNumber(wgn);
+    totalsRow.querySelector('.mw-wt').textContent = formatIndianNumber(wt);
+    totalsRow.querySelector('.mw-earnings').textContent = formatIndianNumber(earnings);
+  }
+
+  wireMktAddRemove('mktWeighmentBody', 'mktWeighmentAddRowBtn', updateMktWeighmentTotals);
+  wireMktAddRemove('mktInwardBody', 'mktInwardAddRowBtn', updateMktInwardTotals);
+  updateMktWeighmentTotals();
+  updateMktInwardTotals();
+
+  // Loading Under Freight Incentive Scheme — fixed 11-row table (no
+  // add/remove), so its Total just sums the Wgn./Wt. Tonne/Earnings
+  // columns across all rows whenever a cell is edited or Container
+  // Traffic auto-syncs below.
+  function updateMktIncentiveTotals(){
+    const tbody = document.getElementById('mktIncentiveBody');
+    const totalsRow = document.getElementById('mktIncentiveTotalsRow');
+    if(!tbody || !totalsRow) return;
+    let wgn = 0, wt = 0, earnings = 0;
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cells = tr.querySelectorAll('td.editable-cell');
+      if(cells.length < 3) return;
+      wgn += parseMktNumber(cells[0].textContent);
+      wt += parseMktNumber(cells[1].textContent);
+      earnings += parseMktNumber(cells[2].textContent);
+    });
+    totalsRow.querySelector('.mf-wgn').textContent = formatIndianNumber(wgn);
+    totalsRow.querySelector('.mf-wt').textContent = formatIndianNumber(wt);
+    totalsRow.querySelector('.mf-earnings').textContent = formatIndianNumber(earnings);
+  }
+
+  const mktIncentiveBodyEl = document.getElementById('mktIncentiveBody');
+  if(mktIncentiveBodyEl){
+    mktIncentiveBodyEl.addEventListener('input', updateMktIncentiveTotals);
+  }
+  updateMktIncentiveTotals();
+
+  // Container Traffic (last row of the Freight Incentive Scheme table)
+  // auto-syncs Wgn./Earnings from any Outward Traffic commodity whose
+  // name contains "container" — the user can still overwrite it by hand.
+  function syncMktContainerRow(){
+    const outwardBody = document.getElementById('mktOutwardBody');
+    const wgnCell = document.getElementById('mktContainerWgn');
+    const earningsCell = document.getElementById('mktContainerEarnings');
+    if(!outwardBody || !wgnCell || !earningsCell) return;
+    let wgn = 0, freight = 0, matched = false;
+    outwardBody.querySelectorAll('tr').forEach(tr => {
+      const cells = tr.querySelectorAll('td');
+      if(cells.length < 5) return;
+      if(/container/i.test(cells[1].textContent)){
+        matched = true;
+        wgn += parseMktNumber(cells[2].textContent);
+        freight += parseMktNumber(cells[4].textContent);
+      }
+    });
+    if(matched){
+      wgnCell.textContent = formatIndianNumber(wgn);
+      earningsCell.textContent = formatIndianNumber(freight);
+    }
+    updateMktIncentiveTotals();
+  }
+
+  // Renders the Outward Traffic :: Commodity Wise Loading table from
+  // M.C.D.O. data — rows: [{ commodity, wgn, cwt, freight }, ...].
+  // Called from renderMcdoTable()/resetMcdoTable() above every time the
+  // M.C.D.O. tab's data (re)loads.
+  function renderMktOutwardTable(rows){
+    const tbody = document.getElementById('mktOutwardBody');
+    const totalsRow = document.getElementById('mktOutwardTotalsRow');
+    if(!tbody || !totalsRow) return;
+    tbody.innerHTML = '';
+    if(!rows || !rows.length){
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--ink-soft);">Commodity-wise figures will be pulled from the M.C.D.O. tab</td></tr>';
+      totalsRow.querySelector('.mo-wgn').textContent = '0';
+      totalsRow.querySelector('.mo-cwt').textContent = '0';
+      totalsRow.querySelector('.mo-freight').textContent = '0';
+    } else {
+      let tWgn = 0, tCwt = 0, tFreight = 0;
+      rows.forEach((r, idx) => {
+        tWgn += r.wgn; tCwt += r.cwt; tFreight += r.freight;
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          `<td class="mkt-sr">${idx + 1}</td>` +
+          `<td class="mkt-name">${escapeHtml(r.commodity)}</td>` +
+          `<td>${formatIndianNumber(r.wgn)}</td>` +
+          `<td>${formatIndianNumber(r.cwt)}</td>` +
+          `<td>${formatIndianNumber(r.freight)}</td>`;
+        tbody.appendChild(tr);
+      });
+      totalsRow.querySelector('.mo-wgn').textContent = formatIndianNumber(tWgn);
+      totalsRow.querySelector('.mo-cwt').textContent = formatIndianNumber(tCwt);
+      totalsRow.querySelector('.mo-freight').textContent = formatIndianNumber(tFreight);
+    }
+    syncMktContainerRow();
   }
 
   // Runs last, once every function/const above (including OUTWARD_API_URL
