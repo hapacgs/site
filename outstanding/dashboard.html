@@ -137,40 +137,51 @@
         
         /* BUTTON DASHBOARD GROUP */
         .button-group-wrapper {
-            overflow-x: auto;
-            white-space: nowrap;
             margin-bottom: 15px;
             padding: 8px 4px 12px 4px;
-            -webkit-overflow-scrolling: touch;
         }
         .button-group { 
-            display: inline-flex; 
-            gap: 14px; 
+            display: flex; 
+            gap: 8px; 
             width: 100%;
         }
         .button-group button {
             flex: 1;
-            min-width: 180px;
-            padding: 14px 18px;
+            min-width: 0;
+            padding: 10px 6px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             text-align: center;
+            text-transform: uppercase;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 3px;
             border: 1px solid transparent;
+            white-space: normal;
+            line-height: 1.25;
         }
+        .button-group button span,
+        .button-group button .btn-sub-period-text { text-transform: uppercase; }
         
         .button-group button:active {
             transform: scale(0.96) translateY(0) !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+
+        .btn-view-outstanding-data {
+            background: linear-gradient(135deg, #ecfeff, #cffafe);
+            color: #0e7490;
+            border: 1px solid #67e8f9 !important;
+        }
+        .btn-view-outstanding-data:hover, .btn-view-outstanding-data.active {
+            transform: translateY(-4px); background: #e0fdff; box-shadow: 0 10px 20px -3px rgba(6, 182, 212, 0.35);
         }
 
         .btn-view-charges-summary { 
@@ -260,6 +271,29 @@
             border-left: 5px solid var(--primary);
         }
 
+        /* OUTSTANDING DATA - 3 PART HEADING BADGES */
+        .od-heading-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+        .od-badge {
+            padding: 5px 14px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .od-badge-customer { background: #ecfdf5; color: #15803d; border: 1px solid #a7f3d0; }
+        .od-badge-date { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .od-badge-charge { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        @media (max-width: 768px) {
+            .od-badge { font-size: 11px; padding: 4px 10px; }
+        }
+
         /* TABLES */
         .table-wrapper { 
             overflow-x: auto; 
@@ -318,7 +352,8 @@
             /* Inputs and Buttons on Mobile */
             .payment-filter-panel { flex-direction: column; align-items: stretch; padding: 10px; gap: 10px; }
             .filter-field input, .filter-field select { min-width: 100%; box-sizing: border-box; }
-            .button-group button { min-width: 150px; padding: 10px 12px; font-size: 13px; }
+            .button-group { gap: 4px; }
+            .button-group button { min-width: 0; padding: 7px 3px; font-size: 10px; gap: 2px; }
             
             /* Responsive Footnotes */
             .footnote-row { flex-direction: column; gap: 4px; }
@@ -393,9 +428,35 @@
             </div>
         </div>
 
-        <!-- 5 CUSTOM ACTION BUTTONS GROUP -->
+        <!-- DYNAMIC PANEL FOR OUTSTANDING DATA FILTER -->
+        <div id="outstandingDataFilterPanel" class="payment-filter-panel">
+            <div class="filter-field">
+                <label>From Date:</label>
+                <input type="date" id="txtODFromDate">
+            </div>
+            <div class="filter-field">
+                <label>To Date:</label>
+                <input type="date" id="txtODToDate">
+            </div>
+            <div class="filter-field">
+                <label>Customer Wise:</label>
+                <select id="ddlODCustomer"><option value="ALL">-- ALL CUSTOMERS --</option></select>
+            </div>
+            <div class="filter-field">
+                <label>Type of Charge:</label>
+                <select id="ddlODCharges"><option value="ALL">-- ALL CHARGES --</option></select>
+            </div>
+            <div>
+                <button type="button" class="btn-filter-submit" onclick="executeOutstandingDataQuery(true)">🔍 Submit Filter</button>
+            </div>
+        </div>
+
+        <!-- 6 CUSTOM ACTION BUTTONS GROUP -->
         <div class="button-group-wrapper">
             <div class="button-group">
+                <button id="btnOutstandingData" onclick="switchMode('outstanding_data')" class="btn-view-outstanding-data">
+                    <span>🧾 Outstanding Data</span>
+                </button>
                 <button id="btnCharges" onclick="switchMode('charges')" class="btn-view-charges-summary">
                     <span>📈 Charges Wise</span>
                 </button>
@@ -507,6 +568,17 @@
             chargeList.forEach(c => {
                 let opt = document.createElement('option'); opt.value = c; opt.innerText = c;
                 ddlChg.appendChild(opt);
+            });
+
+            let ddlODCust = document.getElementById('ddlODCustomer');
+            customerList.forEach(c => {
+                let opt = document.createElement('option'); opt.value = c.code; opt.innerText = c.code + " - " + c.name;
+                ddlODCust.appendChild(opt);
+            });
+            let ddlODChg = document.getElementById('ddlODCharges');
+            chargeList.forEach(c => {
+                let opt = document.createElement('option'); opt.value = c; opt.innerText = c;
+                ddlODChg.appendChild(opt);
             });
         }
 
@@ -662,7 +734,14 @@
             } else {
                 document.getElementById('paymentFilterPanel').style.display = "none";
             }
+
+            if (type === 'outstanding_data') {
+                document.getElementById('outstandingDataFilterPanel').style.display = "flex";
+            } else {
+                document.getElementById('outstandingDataFilterPanel').style.display = "none";
+            }
             
+            document.getElementById('btnOutstandingData').classList.remove('active');
             document.getElementById('btnCharges').classList.remove('active');
             document.getElementById('btnCustomer').classList.remove('active');
             document.getElementById('btnOutstanding').classList.remove('active');
@@ -671,7 +750,7 @@
 
             if(type === 'charges-summary' || type === 'cust-summary') {
                 document.getElementById('mainTable').className = "summary-table";
-            } else if (type === 'ledger' || type === 'payment_details' || type === 'normal') {
+            } else if (type === 'ledger' || type === 'payment_details' || type === 'normal' || type === 'outstanding_data') {
                 document.getElementById('mainTable').className = "ledger-table";
             }
         }
@@ -694,6 +773,8 @@
                 generatePeriodLedgerSummary();
             } else if (activeView === "payment_details") {
                 executePaymentDetailsQuery(false); 
+            } else if (activeView === "outstanding_data") {
+                executeOutstandingDataQuery(false);
             }
         }
 
@@ -1124,6 +1205,129 @@
                     <td class="align-right" style="color:var(--warning);">₹ ${totalWaiver.toFixed(2)}</td>
                     <td class="align-right" style="color:var(--info);">₹ ${totalGst.toFixed(2)}</td>
                     <td colspan="2"></td>
+                `;
+                tbody.appendChild(totalTr);
+            }
+        }
+
+        // --- 6. OUTSTANDING DATA (NEW FIRST TAB WITH 4 FILTERS) ---
+        function executeOutstandingDataQuery(isSubmitted = false) {
+            setTableLayout('outstanding_data');
+            document.getElementById('btnOutstandingData').classList.add('active');
+
+            const head = document.getElementById('tableHeader');
+            head.innerHTML = `
+                <tr>
+                    <th>Type of Charges</th><th>Cust. Code</th><th>Accrual Date</th>
+                    <th>Accrual Amt.</th><th>Hrs./Day</th><th>Payment Date</th>
+                    <th>Paid Amount</th><th>Waiver / Credit</th><th>G.S.T. Paid</th>
+                    <th>C.R. No.</th><th>O/S Amount</th><th>Remarks</th>
+                </tr>`;
+
+            const tbody = document.getElementById('dashboardBody');
+
+            // Don't show any data until the user actually presses Submit
+            if (!isSubmitted) {
+                document.getElementById('exportBtnWrapper').style.display = "none";
+                document.getElementById('dynamicTableTitleHeader').innerText = "Outstanding Data (Select Filters & Click Submit To View Data)";
+                tbody.innerHTML = "<tr><td colspan='12' style='text-align:center; color:#777;'> Please select your filters above and click 'Submit Filter' to view data... </td></tr>";
+                return;
+            }
+
+            document.getElementById('exportBtnWrapper').style.display = "block";
+
+            let fromStr = document.getElementById('txtODFromDate').value;
+            let toStr = document.getElementById('txtODToDate').value;
+            let custFilter = document.getElementById('ddlODCustomer').value;
+            let chargeFilter = document.getElementById('ddlODCharges').value;
+
+            let filterFromDate = fromStr ? new Date(fromStr + "T00:00:00") : null;
+            let filterToDate = toStr ? new Date(toStr + "T23:59:59") : null;
+
+            // Work out the actual oldest / latest accrual dates present in the data,
+            // so when From/To isn't chosen we show real dates instead of "All"
+            let allAccrualDates = rawSheetData
+                .map(r => r.accrualDate ? new Date(r.accrualDate) : null)
+                .filter(d => d && !isNaN(d));
+            let oldestDate = allAccrualDates.length ? new Date(Math.min(...allAccrualDates)) : null;
+            let latestDate = allAccrualDates.length ? new Date(Math.max(...allAccrualDates)) : null;
+
+            let headingFrom = fromStr ? new Date(fromStr).toLocaleDateString('en-GB') : (oldestDate ? oldestDate.toLocaleDateString('en-GB') : 'N/A');
+            let headingTo = toStr ? new Date(toStr).toLocaleDateString('en-GB') : (latestDate ? latestDate.toLocaleDateString('en-GB') : 'N/A');
+
+            let headingHTML = '<div class="od-heading-wrap">';
+            if (custFilter !== "ALL") {
+                headingHTML += `<span class="od-badge od-badge-customer">👤 ${custFilter.toUpperCase()}</span>`;
+            }
+            headingHTML += `<span class="od-badge od-badge-date">📅 OUTSTANDING DATE : ${headingFrom} TO ${headingTo}</span>`;
+            if (chargeFilter !== "ALL") {
+                headingHTML += `<span class="od-badge od-badge-charge">📌 ${chargeFilter.toUpperCase()}</span>`;
+            }
+            headingHTML += '</div>';
+
+            document.getElementById('dynamicTableTitleHeader').innerHTML = headingHTML;
+
+            tbody.innerHTML = "";
+
+            let totalAccrual = 0, totalPaid = 0, totalWaiver = 0, totalGst = 0, totalOS = 0;
+
+            let matchedRecords = [];
+            rawSheetData.forEach(row => {
+                let aDate = row.accrualDate ? new Date(row.accrualDate) : null;
+
+                if(filterFromDate && (!aDate || aDate < filterFromDate)) return;
+                if(filterToDate && (!aDate || aDate > filterToDate)) return;
+                if(custFilter !== "ALL" && row.custCode !== custFilter) return;
+                if(chargeFilter !== "ALL" && row.typeOfCharges !== chargeFilter) return;
+
+                matchedRecords.push({ dateObject: aDate, rowData: row });
+            });
+
+            matchedRecords.sort((a, b) => {
+                if(!a.dateObject) return 1;
+                if(!b.dateObject) return -1;
+                return b.dateObject - a.dateObject;
+            });
+
+            matchedRecords.forEach(item => {
+                let row = item.rowData;
+                let accAmt = parseFloat(row.accrualAmt || 0);
+                let paidAmt = parseFloat(row.paidAmount || 0);
+                let waiverAmt = parseFloat(row.waiverCredit || 0);
+                let gstAmt = parseFloat(row.gstPaid || 0);
+                let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
+
+                totalAccrual += accAmt; totalPaid += paidAmt; totalWaiver += waiverAmt; totalGst += gstAmt; totalOS += osVal;
+
+                let accDate = row.accrualDate ? new Date(row.accrualDate).toLocaleDateString('en-GB') : '';
+                let payDate = row.paymentDate ? new Date(row.paymentDate).toLocaleDateString('en-GB') : '';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="align-left">${row.typeOfCharges || ''}</td><td class="align-left">${row.custCode || ''}</td><td class="align-left">${accDate}</td>
+                    <td class="align-right">₹ ${accAmt.toFixed(2)}</td><td class="align-left">${row.hrsDays || ''}</td>
+                    <td class="align-left">${payDate}</td><td class="align-right">₹ ${paidAmt.toFixed(2)}</td><td class="align-right">₹ ${waiverAmt.toFixed(2)}</td><td class="align-right">₹ ${gstAmt.toFixed(2)}</td>
+                    <td class="align-left">${row.crNo || ''}</td><td class="align-right" style="${osVal > 0 ? 'color: red; font-weight: bold;' : ''}">₹ ${osVal.toFixed(2)}</td><td class="align-left">${row.remarks || ''}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            if(tbody.innerHTML === "") {
+                tbody.innerHTML = "<tr><td colspan='12' style='text-align:center; color:#777;'> No Data Found... </td></tr>";
+            } else {
+                const totalTr = document.createElement('tr');
+                totalTr.className = "total-row";
+                totalTr.innerHTML = `
+                    <td colspan="3" class="align-right" style="text-align:right !important;">💰 GRAND TOTAL:</td>
+                    <td class="align-right">₹ ${totalAccrual.toFixed(2)}</td>
+                    <td></td>
+                    <td></td>
+                    <td class="align-right">₹ ${totalPaid.toFixed(2)}</td>
+                    <td class="align-right">₹ ${totalWaiver.toFixed(2)}</td>
+                    <td class="align-right">₹ ${totalGst.toFixed(2)}</td>
+                    <td></td>
+                    <td class="align-right" style="color:var(--danger);">₹ ${totalOS.toFixed(2)}</td>
+                    <td></td>
                 `;
                 tbody.appendChild(totalTr);
             }
