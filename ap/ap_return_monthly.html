@@ -2142,6 +2142,9 @@
     if(matched){
       wgnCell.textContent = formatIndianNumber(wgn);
       earningsCell.textContent = formatIndianNumber(freight);
+    } else {
+      wgnCell.textContent = '0';
+      earningsCell.textContent = '0';
     }
     updateMktIncentiveTotals();
   }
