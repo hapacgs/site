@@ -391,6 +391,26 @@
   }
   table.statement-table .total-row td:first-child{ text-align:left; }
 
+  .statement-subdate{
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:0 0 8px;
+  }
+
+  /* ===== M.C.D.O. — Current Year vs Previous Year (landscape) table ===== */
+  .table-scroll{ overflow-x:auto; }
+  table.mcdo-table{ font-size:11.5px; }
+  table.mcdo-table th.year-group{
+    font-family:'Oswald', sans-serif;
+    font-size:12px;
+    letter-spacing:1px;
+  }
+  table.mcdo-table th.year-current,
+  table.mcdo-table th.year-previous{ background:#DFF3F6; color:var(--rail-navy); }
+  table.mcdo-table td.cat-name{ min-width:170px; }
+
   .statement-footer{
     display:flex;
     justify-content:space-between;
@@ -522,6 +542,13 @@
     height:1122px;
     background:var(--white);
     overflow:hidden;
+  }
+  /* Landscape A4 page (used for the M.C.D.O. sheet, which is wider than a
+     portrait page can comfortably hold with 11 columns). Same physical A4
+     size, width/height swapped. */
+  .pdf-page.landscape{
+    width:1122px;
+    height:793px;
   }
   .pdf-page .statement-sheet{
     height:100%;
@@ -726,12 +753,44 @@
           <div class="statement-sheet">
             <h2 class="statement-title">The Statement of M.C.D.O.</h2>
             <p class="statement-date" id="mcdoStatementDate">Period : — select From Date and click Submit —</p>
+            <p class="statement-subdate" id="mcdoPrevPeriodLabel">Previous Year Period : —</p>
             <p class="statement-subtitle">HAPA GOODS SHED - (HAPA)</p>
             <div class="statement-rule"></div>
 
-            <div class="coming-soon" style="padding:46px 0 54px;">
-              <span class="icon">&#128679;</span>
-              <span>Under Progress</span>
+            <p class="fetch-status" id="mcdoFetchStatus">Select a date and click Submit to fetch live data from the Google Sheet</p>
+
+            <div class="table-scroll">
+            <table class="statement-table mcdo-table" id="mcdoStatementTable">
+              <thead>
+                <tr>
+                  <th rowspan="2">Commodity</th>
+                  <th colspan="5" class="year-group year-current" id="mcdoCurYearHead">CURRENT YEAR</th>
+                  <th colspan="5" class="year-group year-previous" id="mcdoPrevYearHead">PREVIOUS YEAR</th>
+                </tr>
+                <tr>
+                  <th>Wgn.</th>
+                  <th>CWT</th>
+                  <th>Freight<br>Rs.</th>
+                  <th>G.S.T.<br>Rs.</th>
+                  <th>Total FT.<br>Rs.</th>
+                  <th>Wgn.</th>
+                  <th>CWT</th>
+                  <th>Freight<br>Rs.</th>
+                  <th>G.S.T.<br>Rs.</th>
+                  <th>Total FT.<br>Rs.</th>
+                </tr>
+              </thead>
+              <tbody id="mcdoStatementBody">
+                <tr><td colspan="11" style="text-align:center; color:var(--ink-soft);">Select a date and click Submit to fetch live data from the Google Sheet</td></tr>
+              </tbody>
+              <tfoot>
+                <tr class="total-row" id="mcdoTotalsRow">
+                  <td>Total</td>
+                  <td class="m-wgn-c">0</td><td class="m-cwt-c">0</td><td class="m-freight-c">0</td><td class="m-gst-c">0</td><td class="m-tft-c">0</td>
+                  <td class="m-wgn-p">0</td><td class="m-cwt-p">0</td><td class="m-freight-p">0</td><td class="m-gst-p">0</td><td class="m-tft-p">0</td>
+                </tr>
+              </tfoot>
+            </table>
             </div>
 
             <div class="statement-footer footer-align-end">
@@ -859,7 +918,8 @@
   <!-- Offscreen container used only at "Generate AP" time to render the multi-page PDF -->
   <div class="pdf-root" id="pdfRoot" aria-hidden="true"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
   const fromDateEl = document.getElementById('fromDate');
   const toDateEl   = document.getElementById('toDate');
@@ -877,6 +937,11 @@
 
   function formatDMY(d){
     return `${pad(d.getDate())}-${pad(d.getMonth()+1)}-${d.getFullYear()}`;
+  }
+
+  const MONTH_NAMES_UP = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+  function formatMonthYearUpper(d){
+    return `${MONTH_NAMES_UP[d.getMonth()]}-${d.getFullYear()}`;
   }
 
   // The native <input type="date"> shows the device/browser locale format
@@ -984,7 +1049,8 @@
     if(!period) return;
     applyPeriodToStatements(period);
     fetchAndRenderOutward(period.fromDate, period.toDate);
-    // Data fetching for the other 5 statements will be wired up later;
+    fetchAndRenderMcdo(period);
+    // Data fetching for the remaining 4 statements will be wired up later;
     // for now those sheets simply display "Under Progress".
   });
 
@@ -1010,6 +1076,7 @@
     periodHint.textContent = `Period: ${formatDMY(period.fromDate)} to ${formatDMY(period.toDate)}`;
     applyPeriodToStatements(period);
     fetchAndRenderOutward(period.fromDate, period.toDate);
+    fetchAndRenderMcdo(period);
   }
 
   /* =====================================================================
@@ -1100,11 +1167,10 @@
     return Array.isArray(data) ? data : (data.rows || []);
   }
 
-  function renderOutwardTable(rows, periodFrom, periodTo){
-    const tbody = document.getElementById('outwardStatementBody');
-    tbody.innerHTML = '';
-
-    const filtered = rows
+  // Shared by Outward Figures AND M.C.D.O. — both read the same live sheet,
+  // filtered to HAPA-origin RRs within a given period.
+  function filterAndMapRows(rows, periodFrom, periodTo){
+    return rows
       .filter(r => (getOutwardField(r, OUTWARD_FIELD_CANDIDATES.stationFrom) || '').toString().trim().toUpperCase() === 'HAPA')
       .map(r => ({
         rrNumber: getOutwardField(r, OUTWARD_FIELD_CANDIDATES.rrNumber),
@@ -1120,6 +1186,13 @@
       .map(r => ({ ...r, rrDate: parseDMY(r.rrDateRaw) || (r.rrDateRaw ? new Date(r.rrDateRaw) : null) }))
       .filter(r => r.rrDate && r.rrDate >= periodFrom && r.rrDate <= periodTo)
       .sort((a, b) => a.rrDate - b.rrDate);
+  }
+
+  function renderOutwardTable(rows, periodFrom, periodTo){
+    const tbody = document.getElementById('outwardStatementBody');
+    tbody.innerHTML = '';
+
+    const filtered = filterAndMapRows(rows, periodFrom, periodTo);
 
     if(filtered.length === 0){
       tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--ink-soft);">No records found for this period.</td></tr>';
@@ -1162,6 +1235,127 @@
     });
   }
 
+  /* =====================================================================
+     M.C.D.O. — commodity-wise Current Year vs Previous Year, built from
+     the same Outward Figures sheet (no separate data source). Rows for
+     the selected period and for the same month a year earlier are both
+     fetched, then each is aggregated (summed) by Commodity.
+     ===================================================================== */
+
+  function computePrevYearPeriod(period){
+    const y = period.fromDate.getFullYear() - 1;
+    const m = period.fromDate.getMonth();
+    return { fromDate: new Date(y, m, 1), toDate: lastDateOfMonth(y, m) };
+  }
+
+  function aggregateByCommodity(filteredRows){
+    const map = new Map();
+    filteredRows.forEach(r => {
+      const key = r.commodity || '—';
+      if(!map.has(key)){ map.set(key, { commodity: key, wagon: 0, cwt: 0, freight: 0, gst: 0 }); }
+      const agg = map.get(key);
+      agg.wagon += r.wagon; agg.cwt += r.cwt; agg.freight += r.freight; agg.gst += r.gst;
+    });
+    return map;
+  }
+
+  function renderMcdoTable(curFiltered, prevFiltered){
+    const tbody = document.getElementById('mcdoStatementBody');
+    tbody.innerHTML = '';
+
+    const curMap = aggregateByCommodity(curFiltered);
+    const prevMap = aggregateByCommodity(prevFiltered);
+
+    // Union of commodities: current-year ones first (in the order they were
+    // first seen), then any commodity that only appears in the previous year.
+    const order = [];
+    curMap.forEach((v, k) => order.push(k));
+    prevMap.forEach((v, k) => { if(!curMap.has(k)) order.push(k); });
+
+    if(order.length === 0){
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; color:var(--ink-soft);">No records found for this period.</td></tr>';
+    } else {
+      const blank = { wagon: 0, cwt: 0, freight: 0, gst: 0 };
+      order.forEach(commodity => {
+        const c = curMap.get(commodity) || blank;
+        const p = prevMap.get(commodity) || blank;
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+          `<td class="cat-name">${escapeHtml(commodity)}</td>` +
+          `<td>${formatIndianNumber(c.wagon)}</td>` +
+          `<td>${formatIndianNumber(c.cwt)}</td>` +
+          `<td>${formatIndianNumber(c.freight)}</td>` +
+          `<td>${formatIndianNumber(c.gst)}</td>` +
+          `<td>${formatIndianNumber(c.freight + c.gst)}</td>` +
+          `<td>${formatIndianNumber(p.wagon)}</td>` +
+          `<td>${formatIndianNumber(p.cwt)}</td>` +
+          `<td>${formatIndianNumber(p.freight)}</td>` +
+          `<td>${formatIndianNumber(p.gst)}</td>` +
+          `<td>${formatIndianNumber(p.freight + p.gst)}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+
+    const t = { wagonC:0, cwtC:0, freightC:0, gstC:0, wagonP:0, cwtP:0, freightP:0, gstP:0 };
+    curMap.forEach(v => { t.wagonC += v.wagon; t.cwtC += v.cwt; t.freightC += v.freight; t.gstC += v.gst; });
+    prevMap.forEach(v => { t.wagonP += v.wagon; t.cwtP += v.cwt; t.freightP += v.freight; t.gstP += v.gst; });
+
+    const totalRow = document.getElementById('mcdoTotalsRow');
+    totalRow.querySelector('.m-wgn-c').textContent = formatIndianNumber(t.wagonC);
+    totalRow.querySelector('.m-cwt-c').textContent = formatIndianNumber(t.cwtC);
+    totalRow.querySelector('.m-freight-c').textContent = formatIndianNumber(t.freightC);
+    totalRow.querySelector('.m-gst-c').textContent = formatIndianNumber(t.gstC);
+    totalRow.querySelector('.m-tft-c').textContent = formatIndianNumber(t.freightC + t.gstC);
+    totalRow.querySelector('.m-wgn-p').textContent = formatIndianNumber(t.wagonP);
+    totalRow.querySelector('.m-cwt-p').textContent = formatIndianNumber(t.cwtP);
+    totalRow.querySelector('.m-freight-p').textContent = formatIndianNumber(t.freightP);
+    totalRow.querySelector('.m-gst-p').textContent = formatIndianNumber(t.gstP);
+    totalRow.querySelector('.m-tft-p').textContent = formatIndianNumber(t.freightP + t.gstP);
+  }
+
+  function resetMcdoTable(message){
+    document.getElementById('mcdoStatementBody').innerHTML =
+      `<tr><td colspan="11" style="text-align:center; color:var(--ink-soft);">${escapeHtml(message)}</td></tr>`;
+    const totalRow = document.getElementById('mcdoTotalsRow');
+    ['m-wgn-c','m-cwt-c','m-freight-c','m-gst-c','m-tft-c','m-wgn-p','m-cwt-p','m-freight-p','m-gst-p','m-tft-p'].forEach(cls => {
+      const td = totalRow.querySelector('.' + cls);
+      if(td){ td.textContent = '0'; }
+    });
+  }
+
+  async function fetchAndRenderMcdo(period){
+    const statusEl = document.getElementById('mcdoFetchStatus');
+    const prevPeriod = computePrevYearPeriod(period);
+    const prevLabelEl = document.getElementById('mcdoPrevPeriodLabel');
+    if(prevLabelEl){
+      prevLabelEl.textContent = `Previous Year Period : ${formatDMY(prevPeriod.fromDate)} to ${formatDMY(prevPeriod.toDate)}`;
+    }
+    const curYearHeadEl = document.getElementById('mcdoCurYearHead');
+    if(curYearHeadEl){ curYearHeadEl.textContent = formatMonthYearUpper(period.fromDate); }
+    const prevYearHeadEl = document.getElementById('mcdoPrevYearHead');
+    if(prevYearHeadEl){ prevYearHeadEl.textContent = formatMonthYearUpper(prevPeriod.fromDate); }
+    statusEl.className = 'fetch-status loading';
+    statusEl.textContent = 'Fetching live data…';
+    statusEl.style.display = '';
+    try{
+      const [curRows, prevRows] = await Promise.all([
+        fetchOutwardRows(period.fromDate, period.toDate),
+        fetchOutwardRows(prevPeriod.fromDate, prevPeriod.toDate)
+      ]);
+      const curFiltered = filterAndMapRows(curRows, period.fromDate, period.toDate);
+      const prevFiltered = filterAndMapRows(prevRows, prevPeriod.fromDate, prevPeriod.toDate);
+      renderMcdoTable(curFiltered, prevFiltered);
+      statusEl.textContent = '';
+      statusEl.className = 'fetch-status success';
+      statusEl.style.display = 'none';
+    }catch(err){
+      resetMcdoTable('Could not fetch data.');
+      statusEl.textContent = 'Could not fetch data from the Google Sheet (' + err.message + '). Please try again.';
+      statusEl.className = 'fetch-status error';
+      statusEl.style.display = '';
+    }
+  }
+
   async function fetchAndRenderOutward(periodFrom, periodTo){
     const statusEl = document.getElementById('outwardFetchStatus');
     statusEl.className = 'fetch-status loading';
@@ -1192,11 +1386,14 @@
     return html.replace(/\sid="[^"]*"/g, '');
   }
 
+  const PDF_LANDSCAPE_KEYS = ["mcdo"];
+
   function buildPdfPages(){
     const keys = ["outward", "mcdo", "demurrage", "wharfage", "mktmcdo", "lumpsum"];
     return keys.map(key => {
       const sheetHTML = stripIds(document.querySelector('#tab-' + key + ' .statement-sheet').outerHTML);
-      return `<div class="pdf-page">${sheetHTML}</div>`;
+      const landscapeClass = PDF_LANDSCAPE_KEYS.indexOf(key) !== -1 ? ' landscape' : '';
+      return `<div class="pdf-page${landscapeClass}">${sheetHTML}</div>`;
     }).join('');
   }
 
@@ -1261,17 +1458,32 @@
       fitPdfPagesToA4();
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-      const opt = {
-        margin: 0,
-        filename: `AP_Return_HAPA_Monthly_${pdfFileDateStamp()}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css'] }
-      };
-
       try{
-        await window.html2pdf().set(opt).from(pdfRoot).save();
+        // html2pdf.js's own portrait/landscape setting applies to the whole
+        // document at once, so a page-by-page jsPDF build is used instead —
+        // this lets the M.C.D.O. page render landscape while every other
+        // page stays portrait, all in one PDF.
+        if(!window.jspdf || !window.jspdf.jsPDF || typeof window.html2canvas !== 'function'){
+          throw new Error('PDF library abhi load nahi hui — internet connection check karke page reload karein.');
+        }
+        const { jsPDF } = window.jspdf;
+        const pageEls = Array.from(pdfRoot.querySelectorAll('.pdf-page'));
+        let pdf = null;
+        for(const pageEl of pageEls){
+          const isLandscape = pageEl.classList.contains('landscape');
+          const orientation = isLandscape ? 'landscape' : 'portrait';
+          const canvas = await window.html2canvas(pageEl, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+          const imgData = canvas.toDataURL('image/jpeg', 0.98);
+          const pageWmm = isLandscape ? 297 : 210;
+          const pageHmm = isLandscape ? 210 : 297;
+          if(!pdf){
+            pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation });
+          } else {
+            pdf.addPage('a4', orientation);
+          }
+          pdf.addImage(imgData, 'JPEG', 0, 0, pageWmm, pageHmm);
+        }
+        pdf.save(`AP_Return_HAPA_Monthly_${pdfFileDateStamp()}.pdf`);
       }catch(err){
         alert('PDF generate karte samay error aayi: ' + err.message);
       }finally{
