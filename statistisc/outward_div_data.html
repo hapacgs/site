@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outward Freight Register - Premium Dark Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: radial-gradient(circle at top, #0a1a2f 0%, #050d1a 55%, #030812 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0a1626;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #155e75;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #0e7490;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+
+        .railway-news-ticker {
+            background: linear-gradient(90deg, #050d1a, #0e2a44, #050d1a);
+            border: 1px solid #0e3a52;
+            color: #e0fdff;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .ticker-label {
+            background: #06b6d4;
+            color: #04121c;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 16px;
+            white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+        }
+
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+        }
+
+        .ticker-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: custom-marquee 120s linear infinite;
+        }
+
+        .ticker-content:hover {
+            animation-play-state: paused;
+            cursor: pointer;
+        }
+
+        @keyframes custom-marquee {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
+        .ticker-item {
+            display: inline-block;
+            padding: 0 25px;
+        }
+        
+        .ticker-item .badge-hnd {
+            background: #dc2626;
+            color: #ffffff;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 9px;
+            margin-right: 6px;
+            font-weight: 800;
+        }
+
+        .ticker-item .badge-eng {
+            background: #2563eb;
+            color: #ffffff;
+            padding: 1px 5px;
+            border-radius: 4px;
+            font-size: 9px;
+            margin-right: 6px;
+            font-weight: 800;
+        }
+    </style>
+</head>
+<body class="p-3 md:p-6 text-slate-100 min-h-screen antialiased selection:bg-cyan-600 selection:text-white">
+
+    <div class="max-w-[1600px] mx-auto space-y-4">
+        
+        <div class="bg-gradient-to-b from-slate-900 to-slate-950 p-4 md:p-5 rounded-xl border border-slate-800 shadow-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📊</span>
+                    <h1 class="text-lg md:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                        Outward Freight Register <span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 uppercase tracking-widest">RR Based</span>
+                    </h1>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5 pl-1 flex items-center gap-1">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Designed & Developed by <span class="text-slate-200 font-medium">Gaurang Thakker, CGS-HAPA</span>
+                </p>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+                <button id="loadDataBtn" onclick="loadFreightData()" class="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-5 py-2 rounded-xl transition-all cursor-pointer text-xs tracking-wide shadow-lg shadow-cyan-600/10 hover:shadow-cyan-600/20 flex items-center justify-center gap-2 active:scale-98">
+                    🔄 Load / Refresh Data
+                </button>
+                <button id="exportBtn" onclick="exportToExcel()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2 rounded-xl transition-all cursor-pointer text-xs tracking-wide shadow-lg shadow-emerald-600/10 hover:shadow-emerald-600/20 hidden flex items-center justify-center gap-2 active:scale-98">
+                    <span>🟢</span> Export Filtered
+                </button>
+            </div>
+        </div>
+
+        <div class="railway-news-ticker">
+            <div class="ticker-label" id="tickerBadge">💼 RAIL UPDATE</div>
+            <div class="ticker-wrap">
+                <div class="ticker-content" id="marqueeContainer">
+                    <span class="ticker-item"><span class="badge-hnd">मालभाड़ा</span> सुरक्षित लोडिंग और त्वरित माल परिवहन, भारतीय रेल का मुख्य संकल्प...</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="filterPanel" class="bg-slate-950 p-3 rounded-xl border border-slate-800 shadow-2xl hidden flex flex-col gap-3">
+            <div class="flex items-center gap-3 min-w-[1450px] w-full py-1 overflow-x-auto custom-scrollbar">
+                
+                <div class="relative rounded-xl p-1.5 bg-emerald-950/20 border border-emerald-500/30 flex flex-col justify-center min-w-[140px]">
+                    <label for="stationFromFilter" class="text-[9px] font-black uppercase tracking-widest text-emerald-400 pl-1 mb-1">
+                        ⭐ STATION FROM ⭐ 
+                    </label>
+                    <select id="stationFromFilter" onchange="filterFreightTable()" 
+                            class="w-full bg-slate-900 border border-emerald-500 rounded-lg px-2 py-1.5 text-xs text-emerald-400 font-black focus:outline-none cursor-pointer tracking-wider text-center">
+                        <option value="">ALL</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-1.5 border-l border-slate-800 pl-3">
+                    <button id="btnSortDate" onclick="sortTableBy('date')" class="bg-cyan-600 border border-cyan-500 text-white font-semibold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1 active:scale-95 whitespace-nowrap">
+                        📅 Date Wise
+                    </button>
+                    <button id="btnSortCmdt" onclick="sortTableBy('commodity')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-semibold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1 active:scale-95 whitespace-nowrap">
+                        🌾 Commodity Wise
+                    </button>
+                    <button id="btnSortToStn" onclick="sortTableBy('toStn')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-semibold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1 active:scale-95 whitespace-nowrap">
+                        📍 To Station Wise
+                    </button>
+                </div>
+
+                <div class="flex flex-col justify-center border-l border-slate-800 pl-3 min-w-[130px]">
+                    <label for="fromDateFilter" class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1 pl-1">From Date:</label>
+                    <input type="date" id="fromDateFilter" min="2026-04-01" onchange="handleFromDateChange()" 
+                           class="bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500 cursor-pointer w-full" />
+                </div>
+
+                <div class="flex flex-col justify-center min-w-[130px]">
+                    <label for="toDateFilter" class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1 pl-1">To Date:</label>
+                    <input type="date" id="toDateFilter" onchange="filterFreightTable()" 
+                           class="bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-100 font-mono focus:outline-none focus:border-cyan-500 cursor-pointer w-full" />
+                </div>
+
+                <div class="flex flex-col justify-center border-l border-slate-800 pl-3 w-64 min-w-[240px]">
+                    <label for="tableSearchInput" class="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1">🔍 Search Filter:</label>
+                    <input type="text" id="tableSearchInput" onkeyup="filterFreightTable()" placeholder="Search instantly..." 
+                           class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-all shadow-inner" />
+                </div>
+
+                <div class="flex items-center gap-2 border-l border-slate-800 pl-3 self-end py-0.5">
+                    <button id="btnViewRebate" onclick="toggleDynamicComponent('rebate')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 font-bold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md active:scale-95 whitespace-nowrap flex items-center gap-1">
+                        💰 Rebate Data
+                    </button>
+                    <button id="btnViewCharges" onclick="toggleDynamicComponent('charges')" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-rose-400 font-bold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md active:scale-95 whitespace-nowrap flex items-center gap-1">
+                        ⚡ Other Charges Data
+                    </button>
+                </div>
+
+            </div>
+
+            <div id="dynamicRadioSubPanel" class="hidden border-t border-slate-900 pt-2 pb-1 px-2 bg-slate-950 rounded-lg border border-slate-850">
+                <div class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span> 
+                    Select Header Filter (<span id="dynamicPanelTitle">Data</span>):
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <div id="radioButtonsContainer" class="flex flex-wrap gap-3 text-xs text-slate-300">
+                        <!-- Dynamic inputs inject instantly here -->
+                    </div>
+                    <button id="btnClearDynamicFilter" onclick="clearDynamicRadioFilter()" class="hidden bg-red-950/60 text-red-400 border border-red-900/50 hover:bg-red-900 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1">
+                        ❌ Clear Filter
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tableContainer" class="bg-slate-950 rounded-xl border border-slate-800 shadow-2xl overflow-hidden hidden flex flex-col">
+            
+            <div class="p-3 border-b border-slate-850 bg-slate-900/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="flex h-2 w-2 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+                    </span>
+                    <span class="font-bold text-slate-200 text-xs tracking-wide">
+                        📋 Records Monitor: <span id="liveRowCount" class="text-cyan-400 font-mono text-sm ml-1">0</span> Rows Found
+                    </span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto max-h-[580px] custom-scrollbar">
+                <table class="w-full text-left border-collapse min-w-[1000px]" id="freightTable">
+                    <thead id="freightTableHead"></thead>
+                    <tbody class="divide-y divide-slate-900 text-xs text-slate-300" id="freightTableBody"></tbody>
+                    <tfoot class="bg-slate-900 font-bold border-t-2 border-slate-800 text-slate-100 sticky bottom-0 z-10 shadow-[0_-4px_10px_rgba(0,0,0,0.3)]" id="freightTableFoot"></tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="dateWarningModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div class="w-full max-w-sm bg-gradient-to-b from-slate-900 to-slate-950 border border-cyan-500/30 rounded-2xl shadow-2xl shadow-cyan-950/50 p-6 text-center">
+            <div class="mx-auto w-12 h-12 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-2xl mb-4">
+                ⚠️
+            </div>
+            <h2 class="text-sm font-extrabold uppercase tracking-widest text-cyan-400 mb-2">Notice</h2>
+            <p class="text-sm text-slate-200 leading-relaxed mb-5">Data is available from 01-04-2026 only.</p>
+            <button onclick="closeDateWarningModal()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-4 py-2 rounded-xl transition-all cursor-pointer text-xs tracking-wide shadow-lg shadow-cyan-600/20 active:scale-98">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let globalProcessedData = []; 
+        let currentSortField = 'date';
+
+        // Actual data is only available from 01-04-2026 onward.
+        const MIN_DATA_DATE_STR = '2026-04-01';
+        const MIN_DATA_DATE_OBJ = new Date(2026, 3, 1); // month is 0-indexed
+
+        function showDateWarningModal() {
+            document.getElementById('dateWarningModal').classList.remove('hidden');
+        }
+
+        function closeDateWarningModal() {
+            document.getElementById('dateWarningModal').classList.add('hidden');
+        }
+
+        // Called whenever the user changes the From Date filter. If they pick
+        // a date earlier than the minimum available data date, the field is
+        // reset and a themed warning popup is shown instead of the browser's
+        // native alert.
+        function handleFromDateChange() {
+            const input = document.getElementById('fromDateFilter');
+            if (input.value && input.value < MIN_DATA_DATE_STR) {
+                input.value = MIN_DATA_DATE_STR;
+                showDateWarningModal();
+            }
+            filterFreightTable();
+        }
+        
+        let rebateHeadersMap = [];
+        let chargesHeadersMap = [];
+        let activeDynamicFilterMode = null; 
+        let selectedDynamicColumnName = null;
+
+        const rlyTickerSlogans = [
+            { type: 'hnd', text: "त्वरित लोडिंग और अनलोडिंग सुनिश्चित करें - वैगन डिटेंशन को शून्य पर लाएं! 📦" },
+            { type: 'eng', text: "Maximize Throughput, Minimize Detention: Keep the wheels of freight rakes moving efficiently. ⚡" },
+            { type: 'hnd', text: "माल शेड में सुरक्षित और सही स्टैकिंग - माल की सुरक्षा, भारतीय रेल की प्रतिष्ठा। 🌾" },
+            { type: 'eng', text: "Prevent Demurrage & Wharfage: Plan logistics dynamically to enhance warehouse turnaround times! 📈" },
+            { type: 'hnd', text: "वैगनों की पूरी क्षमता का सही उपयोग करें, राष्ट्रीय अर्थव्यवस्था को गति प्रदान करें। 🚚" },
+            { type: 'eng', text: "Secure Lashing & Safe Packing: Zero compromise on structural safety during outward transit. 🛤️" },
+            { type: 'hnd', text: "पारदर्शिता और शुद्धता - हर माल रसीद (RR) का सही और समय पर वित्तीय मिलान आवश्यक है। 📊" },
+            { type: 'eng', text: "Every Wagon Counts! Speed up industrial logistics ecosystem across all divisions. 🚉" }
+        ];
+
+        async function initializeTickerData() {
+            const container = document.getElementById('marqueeContainer');
+            let builtHtml = "";
+            let shuffledSlogans = [...rlyTickerSlogans].sort(() => 0.5 - Math.random());
+            shuffledSlogans.forEach(slogan => {
+                const bClass = slogan.type === 'hnd' ? 'badge-hnd' : 'badge-eng';
+                const bLabel = slogan.type === 'hnd' ? 'मालभाड़ा संदेश' : 'FREIGHT LOGISTICS';
+                builtHtml += `<span class="ticker-item"><span class="${bClass}">${bLabel}</span> ${slogan.text}</span>`;
+            });
+            container.innerHTML = builtHtml + builtHtml;
+        }
+
+        initializeTickerData();
+        setInterval(initializeTickerData, 240000);
+
+        // Your deployed Google Apps Script Web App URL goes here.
+        // The Apps Script (doGet) should return either a JSON array of RR-level
+        // records, or a full CSV text string (2 title rows, 3rd row headers,
+        // followed by data rows) for backward compatibility.
+        const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6xdeYuinKqsBYT3XX_5MHPHw0tmvJpkGrE7NtnNHKSwwZmMbbXQbAznzgUc72aLR-/exec";
+
+        async function loadFreightData() {
+            const btn = document.getElementById('loadDataBtn');
+            const originalBtnHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Loading...';
+
+            try {
+                const response = await fetch(APPSCRIPT_URL, { method: 'GET', redirect: 'follow' });
+                if (!response.ok) {
+                    throw new Error(`Server returned an HTTP ${response.status} error.`);
+                }
+                const responseText = await response.text();
+                const trimmed = responseText.trim();
+
+                let records = null;
+                let csvText = null;
+
+                // Apps Script ka doGet() ab ek JSON array of RR-level record
+                // objects (JSON.stringify(allRecords)).
+                // The older version returned a CSV string instead, so both
+                // formats are handled here for backward compatibility.
+                if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+                    const parsed = JSON.parse(trimmed); // if parsing fails here it falls straight into the catch block — that's fine, since text starting with "{"/"[" should be valid JSON
+                    if (Array.isArray(parsed)) {
+                        records = parsed;
+                    } else if (typeof parsed === 'string') {
+                        csvText = parsed;
+                    } else if (parsed && typeof parsed.csv === 'string') {
+                        csvText = parsed.csv;
+                    } else if (parsed && typeof parsed.data === 'string') {
+                        csvText = parsed.data;
+                    } else if (parsed && Array.isArray(parsed.data)) {
+                        records = parsed.data;
+                    } else {
+                        throw new Error('The JSON response from Apps Script is neither a records array nor CSV text. Please check the doGet() output format.');
+                    }
+                } else {
+                    csvText = responseText;
+                }
+
+                if (records) {
+                    parseAndRenderRecords(records);
+                } else {
+                    parseAndRenderCSV(csvText);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Error while fetching data: ' + err.message + '\n\nPlease check:\n1. The Apps Script deployment has "Anyone" access.\n2. The URL is correct — try opening it directly in the browser to test.\n3. The doGet() response is either a JSON records array or CSV text.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
+            }
+        }
+
+        // Data is fetched automatically as soon as the page loads.
+        document.getElementById('fromDateFilter').value = MIN_DATA_DATE_STR;
+        loadFreightData();
+
+        function safeSplitCSV(line) {
+            let result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                let char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        function parseDateString(dateStr) {
+            if (!dateStr) return new Date(0);
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            }
+            return new Date(dateStr);
+        }
+
+        function cleanCommodityName(cmdtStr) {
+            if (!cmdtStr) return '';
+            return cmdtStr.replace(/^[0-9\s\-–—]+/, '').trim().toUpperCase();
+        }
+
+        // If "RAIL" appears anywhere in CNSR CODE or CNSG CODE, the commodity
+        // is always treated as "RMC" — regardless of what CMDT CODE-CODE says.
+        function resolveCommodity(originalCmdt, cnsrCodeVal, cnsgCodeVal) {
+            const cnsr = (cnsrCodeVal != null ? String(cnsrCodeVal) : '').toUpperCase();
+            const cnsg = (cnsgCodeVal != null ? String(cnsgCodeVal) : '').toUpperCase();
+            if (cnsr.indexOf('RAIL') > -1 || cnsg.indexOf('RAIL') > -1) {
+                return 'RMC';
+            }
+            return originalCmdt;
+        }
+
+        function parseAndRenderCSV(csvText) {
+            const lines = csvText.split(/\r?\n/);
+            if (lines.length < 4) return;
+
+            const headers = safeSplitCSV(lines[2]);
+            
+            rebateHeadersMap = [];
+            chargesHeadersMap = [];
+            clearDynamicRadioFilter();
+
+            headers.forEach((hdr, idx) => {
+                let upperHdr = hdr.toUpperCase().trim();
+                if(upperHdr.startsWith("REBATE")) {
+                    rebateHeadersMap.push({ name: hdr, index: idx });
+                } else if(upperHdr.startsWith("OTHER CHARGE") || upperHdr.includes("CHARGE")) {
+                    chargesHeadersMap.push({ name: hdr, index: idx });
+                }
+            });
+            
+            const toIdx = headers.indexOf('STATION TO');
+            const rrIdx = headers.indexOf('RR NUMBER');
+            const dateIdx = headers.indexOf('RR DATE');
+            const lfIdx = headers.indexOf('F/L/I FLAG');
+            const invNoIdx = headers.indexOf('INVOICE NO.');
+            const wgnIdx = headers.indexOf('8-WHLR');
+            const cwtIdx = headers.indexOf('WEIGHT CHRG');
+            const basicIdx = headers.indexOf('TOTAL FRGT'); 
+            const gstIdx = headers.indexOf('GST DETAILS TOTL GST');
+            const cmdtIdx = headers.indexOf('CMDT CODE-CODE');
+            const fromIdx = headers.indexOf('STATION FROM');
+            const cnsrIdx = headers.indexOf('CNSR CODE');
+            const cnsgIdx = headers.indexOf('CNSG CODE');
+
+            let tempRawRows = [];
+            let uniqueStationsFrom = new Set();
+
+            for (let i = 3; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+
+                const row = safeSplitCSV(lines[i]);
+                const stnFromVal = row[fromIdx] ? row[fromIdx].trim() : '';
+
+                if (stnFromVal.toUpperCase() === 'TOTAL' || row[0] === '' || !row[rrIdx]) continue;
+
+                if (stnFromVal) {
+                    uniqueStationsFrom.add(stnFromVal);
+                }
+
+                const rrDateStr = row[dateIdx] || '';
+                const originalCmdt = resolveCommodity(
+                    row[cmdtIdx] ? row[cmdtIdx].replace(/"/g, '').trim() : '',
+                    cnsrIdx > -1 ? row[cnsrIdx] : '',
+                    cnsgIdx > -1 ? row[cnsgIdx] : ''
+                );
+
+                let dynamicValues = {};
+                headers.forEach((hdr, idx) => {
+                    dynamicValues[hdr] = parseFloat(row[idx]) || 0;
+                });
+
+                tempRawRows.push({
+                    fromStn: stnFromVal,
+                    toStn: row[toIdx] || '',
+                    rrNum: row[rrIdx] || '',
+                    rrDate: rrDateStr,
+                    dateObj: parseDateString(rrDateStr),
+                    lfFlag: row[lfIdx] || '',
+                    invNo: row[invNoIdx] || '', 
+                    wgn: parseInt(row[wgnIdx]) || 0, 
+                    cwt: parseFloat(row[cwtIdx]) || 0,
+                    basicFreight: parseFloat(row[basicIdx]) || 0,
+                    gstAmt: parseFloat(row[gstIdx]) || 0,
+                    commodity: cleanCommodityName(originalCmdt),
+                    dynamicPayload: dynamicValues
+                });
+            }
+
+            finalizeLoadedData(tempRawRows, uniqueStationsFrom);
+        }
+
+        // Used when Apps Script returns a JSON array of record objects directly —
+        // no CSV round-trip needed; each record's keys are treated as the
+        // column headers (e.g. "STATION FROM", "RR NUMBER").
+        function parseAndRenderRecords(records) {
+            rebateHeadersMap = [];
+            chargesHeadersMap = [];
+            clearDynamicRadioFilter();
+
+            if (!Array.isArray(records) || records.length === 0) {
+                finalizeLoadedData([], new Set());
+                return;
+            }
+
+            // Build the full header set by merging every record's keys, since
+            // different rows may carry different REBATE/CHARGE columns.
+            const headerSet = new Set();
+            records.forEach(rec => Object.keys(rec).forEach(k => headerSet.add(k)));
+            const headers = Array.from(headerSet);
+
+            headers.forEach(hdr => {
+                let upperHdr = hdr.toUpperCase().trim();
+                if (upperHdr.startsWith("REBATE")) {
+                    rebateHeadersMap.push({ name: hdr, index: hdr });
+                } else if (upperHdr.startsWith("OTHER CHARGE") || upperHdr.includes("CHARGE")) {
+                    chargesHeadersMap.push({ name: hdr, index: hdr });
+                }
+            });
+
+            let tempRawRows = [];
+            let uniqueStationsFrom = new Set();
+
+            records.forEach(rec => {
+                const stnFromVal = (rec['STATION FROM'] != null ? String(rec['STATION FROM']) : '').trim();
+                const rrNumRaw = rec['RR NUMBER'];
+
+                if (stnFromVal.toUpperCase() === 'TOTAL' || !stnFromVal || rrNumRaw === undefined || rrNumRaw === null || rrNumRaw === '') return;
+
+                uniqueStationsFrom.add(stnFromVal);
+
+                const rrDateStr = rec['RR DATE'] != null ? String(rec['RR DATE']) : '';
+                const originalCmdt = resolveCommodity(
+                    rec['CMDT CODE-CODE'] != null ? String(rec['CMDT CODE-CODE']).replace(/"/g, '').trim() : '',
+                    rec['CNSR CODE'],
+                    rec['CNSG CODE']
+                );
+
+                let dynamicValues = {};
+                headers.forEach(hdr => {
+                    dynamicValues[hdr] = parseFloat(rec[hdr]) || 0;
+                });
+
+                tempRawRows.push({
+                    fromStn: stnFromVal,
+                    toStn: rec['STATION TO'] != null ? String(rec['STATION TO']) : '',
+                    rrNum: String(rrNumRaw),
+                    rrDate: rrDateStr,
+                    dateObj: parseDateString(rrDateStr),
+                    lfFlag: rec['F/L/I FLAG'] != null ? String(rec['F/L/I FLAG']) : '',
+                    invNo: rec['INVOICE NO.'] != null ? String(rec['INVOICE NO.']) : '',
+                    wgn: parseInt(rec['8-WHLR']) || 0,
+                    cwt: parseFloat(rec['WEIGHT CHRG']) || 0,
+                    basicFreight: parseFloat(rec['TOTAL FRGT']) || 0,
+                    gstAmt: parseFloat(rec['GST DETAILS TOTL GST']) || 0,
+                    commodity: cleanCommodityName(originalCmdt),
+                    dynamicPayload: dynamicValues
+                });
+            });
+
+            finalizeLoadedData(tempRawRows, uniqueStationsFrom);
+        }
+
+        // Shared tail for both parsers (CSV and JSON records): populates the
+        // dropdown, sets the date range, and renders the table.
+        function finalizeLoadedData(tempRawRows, uniqueStationsFrom) {
+            globalProcessedData = tempRawRows;
+
+            const dropdown = document.getElementById('stationFromFilter');
+            dropdown.innerHTML = '<option value="">ALL</option>';
+            Array.from(uniqueStationsFrom).sort().forEach(stn => {
+                const opt = document.createElement('option');
+                opt.value = stn;
+                opt.textContent = stn.substring(0, 4);
+                dropdown.appendChild(opt);
+            });
+
+            if (tempRawRows.length > 0) {
+                let sortedDates = [...tempRawRows].sort((a, b) => a.dateObj - b.dateObj);
+                const formatDateForInput = (d) => {
+                    let month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+                    if (month.length < 2) month = '0' + month;
+                    if (day.length < 2) day = '0' + day;
+                    return [year, month, day].join('-');
+                };
+                const earliestDataDateStr = formatDateForInput(sortedDates[0].dateObj);
+                // From Date always defaults to the minimum available data date
+                // (01-04-2026), unless the actual earliest row is even later.
+                document.getElementById('fromDateFilter').value = earliestDataDateStr > MIN_DATA_DATE_STR ? earliestDataDateStr : MIN_DATA_DATE_STR;
+                document.getElementById('toDateFilter').value = formatDateForInput(sortedDates[sortedDates.length - 1].dateObj);
+            } else {
+                document.getElementById('fromDateFilter').value = MIN_DATA_DATE_STR;
+            }
+
+            renderTableData();
+            document.getElementById('filterPanel').classList.remove('hidden');
+            document.getElementById('tableContainer').classList.remove('hidden');
+            document.getElementById('exportBtn').classList.remove('hidden');
+        }
+
+        function toggleDynamicComponent(type) {
+            const panel = document.getElementById('dynamicRadioSubPanel');
+            const container = document.getElementById('radioButtonsContainer');
+            const titleSpan = document.getElementById('dynamicPanelTitle');
+            
+            document.getElementById('btnViewRebate').className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 font-bold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md active:scale-95 whitespace-nowrap flex items-center gap-1";
+            document.getElementById('btnViewCharges').className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-rose-400 font-bold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md active:scale-95 whitespace-nowrap flex items-center gap-1";
+
+            if (activeDynamicFilterMode === type) {
+                panel.classList.add('hidden');
+                activeDynamicFilterMode = null;
+                return;
+            }
+
+            activeDynamicFilterMode = type;
+            panel.classList.remove('hidden');
+            container.innerHTML = "";
+
+            let targetArray = (type === 'rebate') ? rebateHeadersMap : chargesHeadersMap;
+            titleSpan.innerText = (type === 'rebate') ? "Rebate Fields" : "Charges Fields";
+            
+            if(type === 'rebate') {
+                document.getElementById('btnViewRebate').className = "bg-amber-600 text-slate-950 font-black px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1";
+            } else {
+                document.getElementById('btnViewCharges').className = "bg-rose-600 text-white font-black px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1";
+            }
+
+            if(targetArray.length === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-500 italic p-1">No matching columns found in current data structure.</span>`;
+                return;
+            }
+
+            targetArray.forEach((item, index) => {
+                let isChecked = (selectedDynamicColumnName === item.name) ? "checked" : "";
+                let uniqueRadioId = `dyn_radio_${index}`;
+                
+                let wrapper = document.createElement('label');
+                wrapper.className = "flex items-center gap-2 bg-slate-900/60 border border-slate-800 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-slate-850 hover:border-slate-700 transition-all select-none";
+                wrapper.innerHTML = `
+                    <input type="radio" id="${uniqueRadioId}" name="freightDynamicRadioGroup" value="${item.name}" ${isChecked} 
+                           onchange="applyDynamicRadioFilter('${item.name}')" class="accent-cyan-500 cursor-pointer w-3.5 h-3.5" />
+                    <span class="font-semibold text-slate-200 tracking-wide text-[11px]">${item.name}</span>
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        function applyDynamicRadioFilter(columnName) {
+            selectedDynamicColumnName = columnName;
+            document.getElementById('btnClearDynamicFilter').classList.remove('hidden');
+            renderTableData();
+        }
+
+        function clearDynamicRadioFilter() {
+            selectedDynamicColumnName = null;
+            activeDynamicFilterMode = null;
+            document.getElementById('dynamicRadioSubPanel').classList.add('hidden');
+            document.getElementById('btnClearDynamicFilter').classList.add('hidden');
+            
+            document.getElementById('btnViewRebate').className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-400 font-bold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md active:scale-95 whitespace-nowrap flex items-center gap-1";
+            document.getElementById('btnViewCharges').className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-rose-400 font-bold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md active:scale-95 whitespace-nowrap flex items-center gap-1";
+            
+            let radios = document.getElementsByName('freightDynamicRadioGroup');
+            radios.forEach(r => r.checked = false);
+            
+            renderTableData();
+        }
+
+        function formatUniqueStationsList(stationsArray) {
+            let uniqueArr = Array.from(new Set(stationsArray)).filter(s => s).sort();
+            if (uniqueArr.length === 0) return "---";
+            if (uniqueArr.length === 1) return uniqueArr[0];
+            if (uniqueArr.length === 2) return `${uniqueArr[0]} & ${uniqueArr[1]}`;
+            let lastElement = uniqueArr.pop();
+            return `${uniqueArr.join(', ')} & ${lastElement}`;
+        }
+
+        function renderTableData() {
+            ['btnSortDate', 'btnSortCmdt', 'btnSortToStn'].forEach(id => {
+                document.getElementById(id).className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-semibold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1 active:scale-95 whitespace-nowrap";
+            });
+
+            const dropdown = document.getElementById("stationFromFilter");
+            const selectedStation = dropdown.value.toUpperCase();
+            
+            const fromDateVal = document.getElementById("fromDateFilter").value;
+            const toDateVal = document.getElementById("toDateFilter").value;
+            const fromDateObj = fromDateVal ? new Date(fromDateVal) : null;
+            const toDateObj = toDateVal ? new Date(toDateVal) : null;
+            if(fromDateObj) fromDateObj.setHours(0,0,0,0);
+            if(toDateObj) toDateObj.setHours(23,59,59,999);
+
+            const input = document.getElementById("tableSearchInput");
+            const globalFilter = input.value.toUpperCase();
+
+            let filteredList = globalProcessedData.filter(item => {
+                let matchesStation = (selectedStation === "" || item.fromStn.toUpperCase() === selectedStation);
+                let matchesDate = true;
+                if(fromDateObj && item.dateObj < fromDateObj) matchesDate = false;
+                if(toDateObj && item.dateObj > toDateObj) matchesDate = false;
+
+                let textToSearch = `${item.fromStn} ${item.toStn} ${item.rrNum} ${item.rrDate} ${item.commodity}`.toUpperCase();
+                let matchesGlobal = (globalFilter === "" || textToSearch.indexOf(globalFilter) > -1);
+                
+                let matchesDynamicRadio = true;
+                if(selectedDynamicColumnName) {
+                    let targetVal = item.dynamicPayload[selectedDynamicColumnName] || 0;
+                    if(targetVal <= 0) matchesDynamicRadio = false;
+                }
+
+                return matchesStation && matchesDate && matchesGlobal && matchesDynamicRadio;
+            });
+
+            let tableHead = document.getElementById('freightTableHead');
+            let tableBody = document.getElementById('freightTableBody');
+            let tableHtml = '';
+            let srNo = 1;
+
+            let dynamicHeaderHtml = selectedDynamicColumnName ? `<th class="p-3 text-right text-orange-400 font-extrabold bg-orange-950/20 w-44">${selectedDynamicColumnName}</th>` : '';
+
+            if (currentSortField === 'toStn') {
+                document.getElementById('btnSortToStn').className = "bg-cyan-600 border border-cyan-500 text-white font-semibold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1 active:scale-95 whitespace-nowrap";
+                
+                let colspanVal = selectedDynamicColumnName ? 8 : 7;
+                tableHead.innerHTML = `
+                    <tr class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-bold tracking-widest sticky top-0 border-b border-slate-800 z-10 backdrop-blur-md">
+                        <th class="p-3 pl-5 text-center w-20">Sr. No.</th>
+                        <th class="p-3">From Stn.</th>
+                        <th class="p-3">To Stn.</th>
+                        <th class="p-3 text-center w-24">WGN.</th>
+                        <th class="p-3 text-right w-32">CWT</th>
+                        <th class="p-3 text-right w-44">BASIC FREIGHT Rs.</th>
+                        <th class="p-3 pr-5 text-right w-44">GST Amt. Rs.</th>
+                        ${dynamicHeaderHtml}
+                    </tr>
+                `;
+
+                let cmdtGroups = {};
+                filteredList.forEach(item => {
+                    let cmdt = item.commodity;
+                    let stn = item.toStn;
+                    if (!cmdtGroups[cmdt]) cmdtGroups[cmdt] = {};
+                    if (!cmdtGroups[cmdt][stn]) {
+                        cmdtGroups[cmdt][stn] = { fromStn: item.fromStn, wgn: 0, cwt: 0, basic: 0, gst: 0, dynSum: 0 };
+                    }
+                    cmdtGroups[cmdt][stn].wgn += item.wgn;
+                    cmdtGroups[cmdt][stn].cwt += item.cwt;
+                    cmdtGroups[cmdt][stn].basic += item.basicFreight;
+                    cmdtGroups[cmdt][stn].gst += item.gstAmt;
+                    if(selectedDynamicColumnName) {
+                        cmdtGroups[cmdt][stn].dynSum += (item.dynamicPayload[selectedDynamicColumnName] || 0);
+                    }
+                });
+
+                Object.keys(cmdtGroups).sort().forEach(cmdt => {
+                    tableHtml += `
+                        <tr class="bg-gradient-to-r from-slate-900 via-sky-950/40 to-slate-900 border-y border-slate-800/80">
+                            <td colspan="${colspanVal}" class="p-3.5 text-center text-base font-extrabold tracking-wide text-sky-400 uppercase">
+                                📦 ${cmdt}
+                            </td>
+                        </tr>
+                    `;
+
+                    let stnKeys = Object.keys(cmdtGroups[cmdt]).sort();
+                    let cmdtWgnSum = 0, cmdtCwtSum = 0, cmdtBasicSum = 0, cmdtGstSum = 0, cmdtDynSum = 0;
+
+                    stnKeys.forEach(stn => {
+                        let data = cmdtGroups[cmdt][stn];
+                        cmdtWgnSum += data.wgn; cmdtCwtSum += data.cwt; cmdtBasicSum += data.basic; cmdtGstSum += data.gst;
+                        cmdtDynSum += data.dynSum;
+
+                        let dynamicCellHtml = selectedDynamicColumnName ? `<td class="p-2.5 text-right font-mono text-orange-400 font-bold bg-orange-950/10">₹${data.dynSum.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>` : '';
+
+                        tableHtml += `
+                            <tr class="hover:bg-slate-900/60 transition-colors border-b border-slate-900/40">
+                                <td class="p-2.5 pl-5 text-center font-medium text-slate-500 font-mono">${srNo}</td>
+                                <td class="p-2.5 font-bold text-slate-400">${data.fromStn}</td>
+                                <td class="p-2.5 font-bold text-amber-400">${stn}</td>
+                                <td class="p-2.5 text-center font-mono text-slate-300">${data.wgn}</td>
+                                <td class="p-2.5 text-right font-mono text-slate-300">${data.cwt.toFixed(2)}</td>
+                                <td class="p-2.5 text-right font-mono text-cyan-400 font-semibold">₹${data.basic.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                <td class="p-2.5 pr-5 text-right font-mono text-emerald-400">₹${data.gst.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                ${dynamicCellHtml}
+                            </tr>
+                        `;
+                        srNo++;
+                    });
+
+                    let cleanName = cleanCommodityName(cmdt);
+                    let dynamicTotalCellHtml = selectedDynamicColumnName ? `<td class="p-3 text-right font-mono text-orange-400 text-sm font-black bg-orange-950/20">₹${cmdtDynSum.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>` : '';
+
+                    tableHtml += `
+                        <tr class="bg-cyan-950/40 border-b-2 border-slate-800 text-sm font-extrabold text-cyan-400">
+                            <td class="p-3 pl-5 text-center font-mono text-[10px] text-cyan-500/50">TOT</td>
+                            <td colspan="2" class="p-3 font-black text-cyan-300 uppercase tracking-wider">${cleanName} - TOTAL</td>
+                            <td class="p-3 text-center font-mono text-cyan-300 text-sm tracking-wide">${cmdtWgnSum}</td>
+                            <td class="p-3 text-right font-mono text-cyan-300 text-sm tracking-wide">${cmdtCwtSum.toFixed(2)}</td>
+                            <td class="p-3 text-right font-mono text-cyan-400 text-sm tracking-wide">₹${cmdtBasicSum.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                            <td class="p-3 pr-5 text-right font-mono text-emerald-400 text-sm tracking-wide">₹${cmdtGstSum.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                            ${dynamicTotalCellHtml}
+                        </tr>
+                    `;
+                });
+
+            } else if (currentSortField === 'commodity') {
+                document.getElementById('btnSortCmdt').className = "bg-cyan-600 border border-cyan-500 text-white font-semibold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1 active:scale-95 whitespace-nowrap";
+                tableHead.innerHTML = `
+                    <tr class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-bold tracking-widest sticky top-0 border-b border-slate-800 z-10 backdrop-blur-md">
+                        <th class="p-3.5 pl-5 text-center w-20">Sr. No.</th>
+                        <th class="p-3.5">COMMODITY CODE-NAME</th>
+                        <th class="p-3.5 text-center w-24">WGN.</th>
+                        <th class="p-3.5 text-right w-32">CWT</th>
+                        <th class="p-3.5 text-right w-44">BASIC FREIGHT Rs.</th>
+                        <th class="p-3.5 text-right w-44">G.S.T. Rs.</th>
+                        <th class="p-3.5 pr-5">TO STATION</th>
+                        ${dynamicHeaderHtml}
+                    </tr>
+                `;
+
+                let groups = {};
+                filteredList.forEach(item => {
+                    if (!groups[item.commodity]) groups[item.commodity] = { wgn: 0, cwt: 0, basic: 0, gst: 0, stations: [], dynSum: 0 };
+                    groups[item.commodity].wgn += item.wgn; groups[item.commodity].cwt += item.cwt;
+                    groups[item.commodity].basic += item.basicFreight; groups[item.commodity].gst += item.gstAmt;
+                    groups[item.commodity].stations.push(item.toStn);
+                    if(selectedDynamicColumnName) {
+                        groups[item.commodity].dynSum += (item.dynamicPayload[selectedDynamicColumnName] || 0);
+                    }
+                });
+
+                Object.keys(groups).sort().forEach(cmdt => {
+                    let g = groups[cmdt];
+                    let dynamicCellHtml = selectedDynamicColumnName ? `<td class="p-2.5 text-right font-mono text-orange-400 font-bold bg-orange-950/10">₹${g.dynSum.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>` : '';
+
+                    tableHtml += `
+                        <tr class="hover:bg-slate-900/60 transition-colors border-b border-slate-900/40">
+                            <td class="p-2.5 pl-5 text-center font-medium text-slate-500 font-mono">${srNo}</td>
+                            <td class="p-2.5 font-semibold text-sky-400 tracking-wide">${cmdt}</td>
+                            <td class="p-2.5 text-center font-mono text-slate-300">${g.wgn}</td>
+                            <td class="p-2.5 text-right font-mono text-slate-300">${g.cwt.toFixed(2)}</td>
+                            <td class="p-2.5 text-right font-mono text-cyan-400 font-semibold">₹${g.basic.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                            <td class="p-2.5 text-right font-mono text-emerald-400">₹${g.gst.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                            <td class="p-2.5 pr-5 font-bold text-amber-400 tracking-wide">${formatUniqueStationsList(g.stations)}</td>
+                            ${dynamicCellHtml}
+                        </tr>
+                    `;
+                    srNo++;
+                });
+
+            } else {
+                document.getElementById('btnSortDate').className = "bg-cyan-600 border border-cyan-500 text-white font-semibold px-3 py-2 rounded-lg text-xs transition-all cursor-pointer shadow-md flex items-center gap-1 active:scale-95 whitespace-nowrap";
+                
+                tableHead.innerHTML = `
+                    <tr class="bg-slate-900/80 text-slate-400 uppercase text-[10px] font-bold tracking-widest sticky top-0 border-b border-slate-800 z-10 backdrop-blur-md">
+                        <th class="p-3 pl-5 text-center w-20">Sr. No.</th>
+                        <th class="p-3">From Stn.</th>
+                        <th class="p-3">To Stn.</th>
+                        <th class="p-3">RR Number</th>
+                        <th class="p-3">RR Date</th>
+                        <th class="p-3 text-center">L/F</th>
+                        <th class="p-3">INV. NO.</th>
+                        <th class="p-3 text-center w-24">WGN.</th>
+                        <th class="p-3 text-right w-32">CWT</th>
+                        <th class="p-3 text-right w-44">BASIC FREIGHT Rs.</th>
+                        <th class="p-3 text-right w-44">GST Amt. Rs.</th>
+                        <th class="p-3 pr-5">COMMODITY</th>
+                        ${dynamicHeaderHtml}
+                    </tr>
+                `;
+
+                filteredList.sort((a, b) => a.dateObj - b.dateObj);
+                let lastDate = "";
+                let dateWgn = 0, dateCwt = 0, dateBasic = 0, dateGst = 0, dateCount = 0, dateDynSum = 0;
+
+                filteredList.forEach((item) => {
+                    if (lastDate !== "" && lastDate !== item.rrDate) {
+                        let dynamicSubtotalHtml = selectedDynamicColumnName ? `<td class="p-2 text-right font-mono text-orange-400 font-extrabold bg-orange-950/20">₹${dateDynSum.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>` : '';
+                        
+                        tableHtml += `
+                            <tr class="bg-cyan-950/30 text-cyan-400 text-xs font-bold border-y border-cyan-900/50">
+                                <td class="p-2 pl-5 text-center text-[10px] text-cyan-500/50">SUB</td>
+                                <td class="p-2 text-cyan-500/50">---</td> <td class="p-2 text-cyan-500/50">---</td> <td class="p-2 text-cyan-500/50">---</td>
+                                <td class="p-2 font-mono text-[11px] text-cyan-300 font-extrabold">${lastDate} TOTAL</td>
+                                <td class="p-2 text-center text-cyan-500/50">---</td> <td class="p-2 text-cyan-500/50">---</td>
+                                <td class="p-2 text-center font-mono text-cyan-300">${dateWgn}</td> <td class="p-2 text-right font-mono text-cyan-300">${dateCwt.toFixed(2)}</td>
+                                <td class="p-2 text-right font-mono text-cyan-400">₹${dateBasic.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                <td class="p-2 text-right font-mono text-emerald-400">₹${dateGst.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                                <td class="p-2 pr-5 italic text-[11px] text-cyan-400/70">(${dateCount} RRs)</td>
+                                ${dynamicSubtotalHtml}
+                            </tr>
+                        `;
+                        dateWgn = 0; dateCwt = 0; dateBasic = 0; dateGst = 0; dateCount = 0; dateDynSum = 0;
+                    }
+
+                    let currentDynVal = selectedDynamicColumnName ? (item.dynamicPayload[selectedDynamicColumnName] || 0) : 0;
+                    let dynamicCellHtml = selectedDynamicColumnName ? `<td class="p-2.5 text-right font-mono text-orange-400 font-bold bg-orange-950/10">₹${currentDynVal.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>` : '';
+
+                    tableHtml += `
+                        <tr class="hover:bg-slate-900/60 transition-colors border-b border-slate-900/40">
+                            <td class="p-2.5 pl-5 text-center font-medium text-slate-500 font-mono">${srNo}</td>
+                            <td class="p-2.5 font-bold text-amber-400">${item.fromStn}</td>
+                            <td class="p-2.5 font-bold text-slate-200">${item.toStn}</td>
+                            <td class="p-2.5 font-mono text-slate-400 tracking-wide">${item.rrNum}</td>
+                            <td class="p-2.5 text-slate-400 font-mono text-[11px] whitespace-nowrap">${item.rrDate}</td>
+                            <td class="p-2.5 text-center"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">${item.lfFlag}</span></td>
+                            <td class="p-2.5 font-mono text-slate-400">${item.invNo}</td>
+                            <td class="p-2.5 text-center font-mono text-slate-300">${item.wgn}</td>
+                            <td class="p-2.5 text-right font-mono text-slate-300">${item.cwt.toFixed(2)}</td>
+                            <td class="p-2.5 text-right font-mono text-cyan-400 font-semibold">₹${item.basicFreight.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                            <td class="p-2.5 text-right font-mono text-emerald-400">₹${item.gstAmt.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                            <td class="p-2.5 pr-5 font-semibold text-sky-400 tracking-wide">${item.commodity}</td>
+                            ${dynamicCellHtml}
+                        </tr>
+                    `;
+                    dateWgn += item.wgn; dateCwt += item.cwt; dateBasic += item.basicFreight; dateGst += item.gstAmt;
+                    dateDynSum += currentDynVal;
+                    dateCount++; lastDate = item.rrDate; srNo++;
+                });
+
+                if (filteredList.length > 0) {
+                    let dynamicSubtotalHtml = selectedDynamicColumnName ? `<td class="p-2 text-right font-mono text-orange-400 font-extrabold bg-orange-950/20">₹${dateDynSum.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>` : '';
+                    
+                    tableHtml += `
+                        <tr class="bg-cyan-950/30 text-cyan-400 text-xs font-bold border-y border-cyan-900/50">
+                            <td class="p-2 pl-5 text-center text-[10px] text-cyan-500/50">SUB</td>
+                            <td class="p-2 text-cyan-500/50">---</td> <td class="p-2 text-cyan-500/50">---</td> <td class="p-2 text-cyan-500/50">---</td>
+                            <td class="p-2 font-mono text-[11px] text-cyan-300 font-extrabold">${lastDate} TOTAL</td>
+                            <td class="p-2 text-center text-cyan-500/50">---</td> <td class="p-2 text-cyan-500/50">---</td>
+                            <td class="p-2 text-center font-mono text-cyan-300">${dateWgn}</td> <td class="p-2 text-right font-mono text-cyan-300">${dateCwt.toFixed(2)}</td>
+                            <td class="p-2 text-right font-mono text-cyan-400">₹${dateBasic.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                            <td class="p-2 text-right font-mono text-emerald-400">₹${dateGst.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                            <td class="p-2 pr-5 italic text-[11px] text-cyan-400/70">(${dateCount} RRs)</td>
+                            ${dynamicSubtotalHtml}
+                        </tr>
+                    `;
+                }
+            }
+
+            tableBody.innerHTML = tableHtml;
+            calculateLiveTotals(filteredList);
+        }
+
+        function sortTableBy(type) {
+            currentSortField = type;
+            renderTableData();
+        }
+
+        function filterFreightTable() {
+            renderTableData();
+        }
+
+        function calculateLiveTotals(filteredList) {
+            let visibleWgnSum = 0; let visibleCwtSum = 0; let visibleBasicSum = 0; let visibleGstSum = 0; let visibleDynSum = 0;
+            filteredList.forEach(item => {
+                visibleWgnSum += item.wgn; visibleCwtSum += item.cwt; visibleBasicSum += item.basicFreight; visibleGstSum += item.gstAmt;
+                if(selectedDynamicColumnName) {
+                    visibleDynSum += (item.dynamicPayload[selectedDynamicColumnName] || 0);
+                }
+            });
+
+            let totalRowLabelSpan = 7;
+            if (currentSortField === 'commodity') totalRowLabelSpan = 2;
+            if (currentSortField === 'toStn') totalRowLabelSpan = 3;
+
+            let dynamicGrandTotalHtml = selectedDynamicColumnName ? `<td class="p-3.5 text-right font-mono text-orange-400 text-sm font-black bg-orange-950/30">₹${visibleDynSum.toLocaleString('en-IN', {minimumFractionDigits:2})}</td>` : '';
+
+            /* CRITICAL ALIGNMENT FIX FOR DATE-WISE REGULAR TRANSIT VIEW */
+            // If the view is 'date' and a dynamic column is on, the commodity
+            // column must be left blank so the dynamic charge total lands under
+            // its own proper column instead of jumping under commodity.
+            let commoditySpacerHtml = (currentSortField === 'date' && selectedDynamicColumnName) ? `<td class="p-3.5"></td>` : '';
+            let commodityViewSpacerHtml = (currentSortField === 'commodity' && selectedDynamicColumnName) ? `<td class="p-3.5"></td>` : '';
+
+            let footerHtml = `
+                <tr class="bg-slate-900 text-slate-200 text-xs font-bold border-t-2 border-slate-800">
+                    <td class="p-3.5 pl-5 text-center tracking-wider bg-slate-850/80 text-cyan-400 font-extrabold text-[11px]" colspan="${totalRowLabelSpan}">GRAND TOTAL</td>
+                    <td class="p-3.5 text-center font-mono text-slate-200 text-sm font-black">${visibleWgnSum}</td>
+                    <td class="p-3.5 text-right font-mono text-slate-200 text-sm font-black">${visibleCwtSum.toFixed(2)}</td>
+                    <td class="p-3.5 text-right font-mono text-cyan-400 text-sm font-black">₹${visibleBasicSum.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                    <td class="p-3.5 pr-5 text-right font-mono text-emerald-400 text-sm font-black">₹${visibleGstSum.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                    ${currentSortField === 'date' ? commoditySpacerHtml + dynamicGrandTotalHtml : ''}
+                    ${currentSortField === 'commodity' ? commodityViewSpacerHtml + dynamicGrandTotalHtml : ''}
+                    ${currentSortField === 'toStn' ? dynamicGrandTotalHtml : ''}
+                </tr>
+            `;
+            document.getElementById('freightTableFoot').innerHTML = footerHtml;
+            document.getElementById('liveRowCount').innerText = filteredList.length;
+        }
+
+        function exportToExcel() {
+            const dropdown = document.getElementById("stationFromFilter");
+            const selectedStation = dropdown.value.toUpperCase();
+            
+            const fromDateVal = document.getElementById("fromDateFilter").value;
+            const toDateVal = document.getElementById("toDateFilter").value;
+            const fromDateObj = fromDateVal ? new Date(fromDateVal) : null;
+            const toDateObj = toDateVal ? new Date(toDateVal) : null;
+            if(fromDateObj) fromDateObj.setHours(0,0,0,0);
+            if(toDateObj) toDateObj.setHours(23,59,59,999);
+
+            const input = document.getElementById("tableSearchInput");
+            const globalFilter = input.value.toUpperCase();
+
+            let filteredList = globalProcessedData.filter(item => {
+                let matchesStation = (selectedStation === "" || item.fromStn.toUpperCase() === selectedStation);
+                let matchesDate = true;
+                if(fromDateObj && item.dateObj < fromDateObj) matchesDate = false;
+                if(toDateObj && item.dateObj > toDateObj) matchesDate = false;
+                
+                let textToSearch = `${item.fromStn} ${item.toStn} ${item.rrNum} ${item.rrDate} ${item.commodity}`.toUpperCase();
+                let matchesGlobal = (globalFilter === "" || textToSearch.indexOf(globalFilter) > -1);
+                
+                let matchesDynamicRadio = true;
+                if(selectedDynamicColumnName) {
+                    let targetVal = item.dynamicPayload[selectedDynamicColumnName] || 0;
+                    if(targetVal <= 0) matchesDynamicRadio = false;
+                }
+
+                return matchesStation && matchesDate && matchesGlobal && matchesDynamicRadio;
+            });
+
+            if (filteredList.length === 0) {
+                alert('No data found to export!');
+                return;
+            }
+
+            let excelRows = [];
+            let sumWgn = 0, sumCwt = 0, sumBasic = 0, sumGst = 0, sumDyn = 0;
+
+            if (currentSortField === 'toStn') {
+                let cmdtGroups = {};
+                filteredList.forEach(item => {
+                    let cmdt = item.commodity; let stn = item.toStn;
+                    if (!cmdtGroups[cmdt]) cmdtGroups[cmdt] = {};
+                    if (!cmdtGroups[cmdt][stn]) cmdtGroups[cmdt][stn] = { fromStn: item.fromStn, wgn: 0, cwt: 0, basic: 0, gst: 0, dynSum: 0 };
+                    cmdtGroups[cmdt][stn].wgn += item.wgn; cmdtGroups[cmdt][stn].cwt += item.cwt;
+                    cmdtGroups[cmdt][stn].basic += item.basicFreight; cmdtGroups[cmdt][stn].gst += item.gstAmt;
+                    if(selectedDynamicColumnName) {
+                        cmdtGroups[cmdt][stn].dynSum += (item.dynamicPayload[selectedDynamicColumnName] || 0);
+                    }
+                });
+
+                let sr = 1;
+                Object.keys(cmdtGroups).sort().forEach(cmdt => {
+                    let baseHeaderObj = { "Sr. No.": `${cmdt}`, "From Stn.": "", "To Stn.": "", "WGN.": "", "CWT": "", "BASIC FREIGHT Rs.": "", "GST Amt. Rs.": "" };
+                    if(selectedDynamicColumnName) baseHeaderObj[selectedDynamicColumnName] = "";
+                    excelRows.push(baseHeaderObj);
+                    
+                    let stnKeys = Object.keys(cmdtGroups[cmdt]).sort();
+                    let cWgn = 0, cCwt = 0, cBasic = 0, cGst = 0, cDyn = 0;
+
+                    stnKeys.forEach(stn => {
+                        let d = cmdtGroups[cmdt][stn];
+                        sumWgn += d.wgn; sumCwt += d.cwt; sumBasic += d.basic; sumGst += d.gst; sumDyn += d.dynSum;
+                        cWgn += d.wgn; cCwt += d.cwt; cBasic += d.basic; cGst += d.gst; cDyn += d.dynSum;
+
+                        let rowObj = {
+                            "Sr. No.": sr, "From Stn.": d.fromStn, "To Stn.": stn, "WGN.": d.wgn,
+                            "CWT": d.cwt, "BASIC FREIGHT Rs.": d.basic, "GST Amt. Rs.": d.gst
+                        };
+                        if(selectedDynamicColumnName) rowObj[selectedDynamicColumnName] = d.dynSum;
+                        excelRows.push(rowObj);
+                        sr++;
+                    });
+
+                    let cleanName = cleanCommodityName(cmdt);
+                    let totalObj = {
+                        "Sr. No.": "TOTAL", "From Stn.": `${cleanName} - TOTAL`, "To Stn.": "", "WGN.": cWgn,
+                        "CWT": cCwt, "BASIC FREIGHT Rs.": cBasic, "GST Amt. Rs.": cGst
+                    };
+                    if(selectedDynamicColumnName) totalObj[selectedDynamicColumnName] = cDyn;
+                    excelRows.push(totalObj);
+                });
+                
+                let grandObj = { "Sr. No.": "GRAND TOTAL", "From Stn.": "", "To Stn.": "", "WGN.": sumWgn, "CWT": sumCwt, "BASIC FREIGHT Rs.": sumBasic, "GST Amt. Rs.": sumGst };
+                if(selectedDynamicColumnName) grandObj[selectedDynamicColumnName] = sumDyn;
+                excelRows.push(grandObj);
+
+            } else if (currentSortField === 'commodity') {
+                let groups = {};
+                filteredList.forEach(item => {
+                    if (!groups[item.commodity]) groups[item.commodity] = { wgn: 0, cwt: 0, basic: 0, gst: 0, stations: [], dynSum: 0 };
+                    groups[item.commodity].wgn += item.wgn; groups[item.commodity].cwt += item.cwt;
+                    groups[item.commodity].basic += item.basicFreight; groups[item.commodity].gst += item.gstAmt;
+                    groups[item.commodity].stations.push(item.toStn);
+                    if(selectedDynamicColumnName) {
+                        groups[item.commodity].dynSum += (item.dynamicPayload[selectedDynamicColumnName] || 0);
+                    }
+                });
+
+                let sr = 1;
+                Object.keys(groups).sort().forEach(cmdt => {
+                    let g = groups[cmdt]; sumWgn += g.wgn; sumCwt += g.cwt; sumBasic += g.basic; sumGst += g.gst; sumDyn += g.dynSum;
+                    
+                    let rowObj = { "Sr. No.": sr, "COMMODITY CODE-NAME": cmdt, "WGN.": g.wgn, "CWT": g.cwt, "BASIC FREIGHT Rs.": g.basic, "G.S.T. Rs.": g.gst, "TO STATION": formatUniqueStationsList(g.stations) };
+                    if(selectedDynamicColumnName) rowObj[selectedDynamicColumnName] = g.dynSum;
+                    excelRows.push(rowObj);
+                    sr++;
+                });
+                
+                let grandObj = { "Sr. No.": "GRAND TOTAL", "COMMODITY CODE-NAME": "", "WGN.": sumWgn, "CWT": sumCwt, "BASIC FREIGHT Rs.": sumBasic, "G.S.T. Rs.": sumGst, "TO STATION": "" };
+                if(selectedDynamicColumnName) grandObj[selectedDynamicColumnName] = sumDyn;
+                excelRows.push(grandObj);
+            } else {
+                let sr = 1; filteredList.sort((a, b) => a.dateObj - b.dateObj);
+                filteredList.forEach(item => {
+                    sumWgn += item.wgn; sumCwt += item.cwt; sumBasic += item.basicFreight; sumGst += item.gstAmt;
+                    let currentDynVal = selectedDynamicColumnName ? (item.dynamicPayload[selectedDynamicColumnName] || 0) : 0;
+                    sumDyn += currentDynVal;
+
+                    let rowObj = { "Sr. No.": sr, "From Stn.": item.fromStn, "To Stn.": item.toStn, "RR Number": item.rrNum, "RR Date": item.rrDate, "L/F": item.lfFlag, "INV. NO.": item.invNo, "WGN.": item.wgn, "CWT": item.cwt, "BASIC FREIGHT Rs.": item.basicFreight, "GST Amt. Rs.": item.gstAmt, "COMMODITY": item.commodity };
+                    if(selectedDynamicColumnName) rowObj[selectedDynamicColumnName] = currentDynVal;
+                    excelRows.push(rowObj);
+                    sr++;
+                });
+                
+                let grandObj = { "Sr. No.": "GRAND TOTAL", "From Stn.": "", "To Stn.": "", "RR Number": "", "RR Date": "", "L/F": "", "INV. NO.": "", "WGN.": sumWgn, "CWT": sumCwt, "BASIC FREIGHT Rs.": sumBasic, "GST Amt. Rs.": sumGst, "COMMODITY": "" };
+                if(selectedDynamicColumnName) grandObj[selectedDynamicColumnName] = sumDyn;
+                excelRows.push(grandObj);
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(excelRows);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Filtered Report");
+            XLSX.writeFile(workbook, "Filtered_Freight_Report.xlsx");
+        }
+    </script>
+</body>
+</html>
