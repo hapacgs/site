@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Division Freight Dashboard | Outward Register Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+    :root{
+        --navy-950:#030812;
+        --navy-900:#0a1a2f;
+        --navy-800:#0e2a44;
+        --navy-700:#123a5c;
+        --cyan-300:#67e8f9;
+        --cyan-400:#22d3ee;
+        --cyan-500:#06b6d4;
+        --cyan-600:#0891b2;
+    }
+    body{
+        font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background: radial-gradient(circle at top, #0c2038 0%, #061225 45%, #020712 100%);
+        min-height:100vh;
+    }
+    .custom-scrollbar::-webkit-scrollbar{ width:8px; height:8px; }
+    .custom-scrollbar::-webkit-scrollbar-track{ background:#0a1626; }
+    .custom-scrollbar::-webkit-scrollbar-thumb{ background:#155e75; border-radius:4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover{ background:#0e7490; }
+
+    .glass-panel{
+        background: linear-gradient(180deg, rgba(14,42,68,0.55) 0%, rgba(10,26,47,0.75) 100%);
+        border:1px solid rgba(34,211,238,0.15);
+        backdrop-filter: blur(6px);
+    }
+
+    .station-card{
+        position:relative;
+        background: linear-gradient(155deg, rgba(14,42,68,0.65) 0%, rgba(6,17,32,0.9) 100%);
+        border:1px solid rgba(34,211,238,0.14);
+        transition: all .22s cubic-bezier(.2,.8,.2,1);
+        cursor:pointer;
+        overflow:visible;
+    }
+    .station-card::before{
+        content:"";
+        position:absolute; inset:0;
+        background: radial-gradient(circle at 0% 0%, rgba(34,211,238,0.10), transparent 55%);
+        opacity:0; transition: opacity .25s;
+    }
+    .station-card:hover{
+        transform: translateY(-4px);
+        border-color: rgba(34,211,238,0.55);
+        box-shadow: 0 12px 30px -8px rgba(6,182,212,0.35);
+    }
+    .station-card:hover::before{ opacity:1; }
+
+    .division-card{
+        background: linear-gradient(135deg, #0e7490 0%, #0a2540 45%, #030b1a 100%);
+        border:1px solid rgba(103,232,249,0.4);
+        box-shadow: 0 15px 45px -10px rgba(8,145,178,0.55);
+    }
+    .division-card:hover{
+        transform: translateY(-4px);
+        box-shadow: 0 20px 55px -8px rgba(8,145,178,0.75);
+    }
+
+    .rank-badge{
+        font-size:9px; font-weight:800; letter-spacing:.5px;
+        background: rgba(34,211,238,0.12);
+        color:#67e8f9;
+        border:1px solid rgba(34,211,238,0.3);
+        border-radius:999px;
+        padding:2px 8px;
+    }
+
+    .progress-track{
+        height:5px; width:100%;
+        background: rgba(255,255,255,0.06);
+        border-radius:999px; overflow:hidden;
+    }
+    .progress-fill{
+        height:100%;
+        background: linear-gradient(90deg, #0891b2, #22d3ee);
+        border-radius:999px;
+        transition: width .6s ease;
+    }
+
+    .kpi-tile{
+        background: linear-gradient(160deg, rgba(14,42,68,0.6), rgba(6,13,26,0.85));
+        border:1px solid rgba(34,211,238,0.16);
+        border-radius:14px;
+    }
+
+    .modal-overlay{
+        position:fixed; inset:0;
+        background: rgba(2,6,15,0.82);
+        backdrop-filter: blur(3px);
+        display:flex; align-items:flex-start; justify-content:center;
+        z-index:60; padding:16px;
+        opacity:0; pointer-events:none;
+        transition: opacity .2s ease;
+    }
+    .modal-overlay.active{ opacity:1; pointer-events:auto; }
+    .modal-box{
+        background: linear-gradient(180deg, #0b1f36 0%, #050d1a 100%);
+        border:1px solid rgba(34,211,238,0.25);
+        box-shadow: 0 30px 80px -15px rgba(0,0,0,0.7);
+        width:100%; max-width:1180px;
+        margin-top: 20px;
+        max-height: calc(100vh - 40px);
+        display:flex; flex-direction:column;
+        transform: scale(.97) translateY(10px);
+        transition: transform .22s ease;
+    }
+    .modal-overlay.active .modal-box{ transform: scale(1) translateY(0); }
+
+    .chip-input, .chip-select{
+        background: rgba(6,13,26,0.7);
+        border:1px solid rgba(34,211,238,0.2);
+        color:#e2f6fb;
+    }
+    .chip-input::placeholder{ color:#5f7c91; }
+
+    .autocomplete-dropdown{
+        position:fixed; margin-top:0;
+        background:#0a1a2f; border:1px solid rgba(34,211,238,0.35);
+        border-radius:10px; max-height:220px; overflow-y:auto; z-index:9999;
+        box-shadow: 0 15px 35px -10px rgba(0,0,0,0.75);
+    }
+    .autocomplete-dropdown.hidden{ display:none; }
+    .autocomplete-item{ padding:7px 10px; font-size:11px; color:#e2f6fb; cursor:pointer; background:#0a1a2f; }
+    .autocomplete-item:hover{ background:rgba(34,211,238,0.18); color:#67e8f9; }
+    .autocomplete-empty{ padding:8px 10px; font-size:10px; color:#5f7c91; background:#0a1a2f; }
+
+    .date-cyan-icon{ color-scheme: dark; }
+    .date-cyan-icon::-webkit-calendar-picker-indicator{
+        filter: invert(70%) sepia(55%) saturate(1500%) hue-rotate(150deg) brightness(105%) contrast(101%);
+        cursor:pointer;
+        opacity:0.95;
+    }
+    .date-cyan-icon::-webkit-calendar-picker-indicator:hover{ opacity:1; }
+
+    .kpi-hover-panel{
+        background: linear-gradient(180deg, rgba(8,145,178,0.95) 0%, #0a1a2f 100%);
+        border:1px solid rgba(103,232,249,0.4);
+        box-shadow: 0 15px 40px -10px rgba(0,0,0,0.6);
+    }
+
+    .pulse-dot{
+        width:8px; height:8px; border-radius:999px; background:#22d3ee;
+        box-shadow:0 0 0 0 rgba(34,211,238,0.7);
+        animation:pulse 2s infinite;
+    }
+    @keyframes pulse{
+        0%{ box-shadow:0 0 0 0 rgba(34,211,238,0.55); }
+        70%{ box-shadow:0 0 0 8px rgba(34,211,238,0); }
+        100%{ box-shadow:0 0 0 0 rgba(34,211,238,0); }
+    }
+
+    .loader-ring{
+        width:34px; height:34px;
+        border:3px solid rgba(34,211,238,0.15);
+        border-top-color:#22d3ee;
+        border-radius:50%;
+        animation:spin 0.9s linear infinite;
+    }
+    @keyframes spin{ to{ transform:rotate(360deg); } }
+
+    .tab-btn.active{
+        background:#0891b2; color:#f0feff; box-shadow:0 4px 14px rgba(8,145,178,0.4);
+    }
+
+    ::-webkit-scrollbar{ width:8px; height:8px; }
+</style>
+</head>
+<body class="p-3 md:p-6 text-slate-100 antialiased selection:bg-cyan-600 selection:text-white">
+
+<div class="max-w-[1600px] mx-auto space-y-5">
+
+    <!-- HEADER -->
+    <div class="glass-panel p-4 md:p-5 rounded-2xl shadow-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">🚉</span>
+                <h1 class="text-lg md:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-300 via-white to-cyan-400 bg-clip-text text-transparent">
+                    Division Freight Dashboard
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex-shrink-0">
+            <button onclick="loadDashboardData()" id="refreshBtn" class="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-5 py-2.5 rounded-xl transition-all cursor-pointer text-xs tracking-wide shadow-lg shadow-cyan-600/20 flex items-center justify-center gap-2 active:scale-95">
+                🔄 Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- FILTER PANEL -->
+    <div id="filterPanel" class="glass-panel rounded-2xl p-4 md:p-5 hidden">
+        <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs font-bold text-cyan-300 tracking-wide uppercase">🔎 Filters</h2>
+            <button onclick="resetFilters()" class="text-[10px] text-slate-400 hover:text-cyan-300 font-semibold underline underline-offset-2">RESET TO DEFAULT</button>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] text-slate-400 font-semibold">FROM DATE</label>
+                <div class="relative">
+                    <div class="chip-input rounded-lg px-2.5 py-2 text-xs flex items-center justify-between select-none">
+                        <span id="fromDateDisplay">01/04/2026</span><span class="text-cyan-400">📅</span>
+                    </div>
+                    <input id="fromDateFilter" type="date" min="2026-04-01" onchange="onFromDateChange()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"/>
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] text-slate-400 font-semibold">TO DATE</label>
+                <div class="relative">
+                    <div class="chip-input rounded-lg px-2.5 py-2 text-xs flex items-center justify-between select-none">
+                        <span id="toDateDisplay">—</span><span class="text-cyan-400">📅</span>
+                    </div>
+                    <input id="toDateFilter" type="date" onchange="onToDateChange()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"/>
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] text-slate-400 font-semibold">STATION FROM</label>
+                <div class="relative">
+                    <input id="filterStationFrom" type="text" autocomplete="off" placeholder="All (type to search)"
+                        oninput="onAutocompleteInput('filterStationFrom')"
+                        onfocus="onAutocompleteFocus('filterStationFrom')"
+                        class="chip-input rounded-lg pl-2.5 pr-7 py-2 text-xs w-full focus:outline-none focus:border-cyan-400"/>
+                    <button type="button" onclick="onAutocompleteArrowClick('filterStationFrom')" class="autocomplete-arrow-btn absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-300 text-[9px] px-1 leading-none">▼</button>
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] text-slate-400 font-semibold">STATION TO</label>
+                <div class="relative">
+                    <input id="filterStationTo" type="text" autocomplete="off" placeholder="All (type to search)"
+                        oninput="onAutocompleteInput('filterStationTo')"
+                        onfocus="onAutocompleteFocus('filterStationTo')"
+                        class="chip-input rounded-lg pl-2.5 pr-7 py-2 text-xs w-full focus:outline-none focus:border-cyan-400"/>
+                    <button type="button" onclick="onAutocompleteArrowClick('filterStationTo')" class="autocomplete-arrow-btn absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-300 text-[9px] px-1 leading-none">▼</button>
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] text-slate-400 font-semibold">COMMODITY NAME</label>
+                <div class="relative">
+                    <input id="filterCommodity" type="text" autocomplete="off" placeholder="All (type to search)"
+                        oninput="onAutocompleteInput('filterCommodity')"
+                        onfocus="onAutocompleteFocus('filterCommodity')"
+                        class="chip-input rounded-lg pl-2.5 pr-7 py-2 text-xs w-full focus:outline-none focus:border-cyan-400"/>
+                    <button type="button" onclick="onAutocompleteArrowClick('filterCommodity')" class="autocomplete-arrow-btn absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-300 text-[9px] px-1 leading-none">▼</button>
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <label class="text-[10px] text-slate-400 font-semibold">SORT BY</label>
+                <select id="sortSelect" onchange="renderStationCards()" class="chip-select rounded-lg px-2.5 py-2 text-xs font-semibold focus:outline-none focus:border-cyan-400">
+                    <option value="wgn">WGN (High → Low)</option>
+                    <option value="freight">Freight (High → Low)</option>
+                    <option value="rr">RR Count (High → Low)</option>
+                    <option value="name">Station Name (A → Z)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING STATE -->
+    <div id="loadingState" class="glass-panel rounded-2xl p-16 flex flex-col items-center justify-center gap-4">
+        <div class="loader-ring"></div>
+        <p class="text-sm text-cyan-300 font-semibold tracking-wide">Loading division freight data…</p>
+    </div>
+
+    <!-- ERROR STATE -->
+    <div id="errorState" class="hidden glass-panel rounded-2xl p-8 border border-rose-500/30 text-center">
+        <p class="text-rose-400 font-bold mb-1">⚠ Unable to load data</p>
+        <p id="errorMsg" class="text-xs text-slate-400"></p>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="mainContent" class="hidden space-y-5">
+
+        <!-- DIVISION SUMMARY STRIP -->
+        <div id="kpiStrip" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3"></div>
+
+        <!-- STATION CARDS GRID -->
+        <div class="glass-panel rounded-2xl p-4 md:p-5">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-bold text-cyan-300 tracking-wide flex items-center gap-2">📍 Station-wise Cards <span id="stationCountTag" class="rank-badge"></span></h2>
+                <p class="text-[10px] text-slate-500">Click any card to open detailed analytics</p>
+            </div>
+            <div id="stationCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5"></div>
+        </div>
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="text-center pt-2 pb-1">
+        <p class="text-[11px] text-slate-500">Division Freight Dashboard</p>
+        <p class="text-[11px] text-slate-500 mt-0.5">Designed &amp; Developed By <span class="text-cyan-300 font-bold">Gaurang Thakker</span>, CGS-HAPA</p>
+    </div>
+</div>
+
+<!-- Shared floating dropdown for the Station From / Station To / Commodity search
+     filters. Positioned via JS (fixed, computed from the active input's own
+     bounding box) and given a solid opaque background + very high z-index so it
+     always renders fully on top, never bleeding/transparent behind station cards. -->
+<div id="sharedAutocompleteDropdown" class="autocomplete-dropdown hidden"></div>
+
+<!-- DETAIL MODAL -->
+<div id="detailModal" class="modal-overlay" onclick="if(event.target===this) closeModal()">
+    <div class="modal-box rounded-2xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 md:p-5 border-b border-cyan-900/40 flex-shrink-0">
+            <div class="min-w-0">
+                <h3 id="modalTitle" class="text-base md:text-lg font-extrabold text-cyan-300"></h3>
+                <p id="modalSubtitle" class="text-[11px] text-slate-400 mt-0.5"></p>
+            </div>
+            <div class="flex items-center gap-2.5 flex-shrink-0">
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] text-slate-400 font-semibold uppercase">From Date</label>
+                    <div class="relative">
+                        <div class="chip-input rounded-lg px-2.5 py-1.5 text-[11px] flex items-center justify-between gap-2 select-none">
+                            <span id="modalFromDateDisplay">—</span><span class="text-cyan-400">📅</span>
+                        </div>
+                        <input id="modalFromDateFilter" type="date" onchange="onModalDateChange()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"/>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-[9px] text-slate-400 font-semibold uppercase">To Date</label>
+                    <div class="relative">
+                        <div class="chip-input rounded-lg px-2.5 py-1.5 text-[11px] flex items-center justify-between gap-2 select-none">
+                            <span id="modalToDateDisplay">—</span><span class="text-cyan-400">📅</span>
+                        </div>
+                        <input id="modalToDateFilter" type="date" onchange="onModalDateChange()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"/>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white w-8 h-8 rounded-full flex items-center justify-center transition-all text-sm font-bold flex-shrink-0 self-end">✕</button>
+            </div>
+        </div>
+
+        <div class="overflow-y-auto custom-scrollbar p-4 md:p-5 space-y-5">
+            <div id="modalKpis" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div class="kpi-tile p-4">
+                    <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                        <p class="text-xs font-bold text-slate-300">📦 WGN by Commodity <span class="text-[10px] text-slate-500 font-semibold">(all commodities)</span></p>
+                        <p class="text-[9px] text-slate-500">Tap "All Commodities" bar to clear the to-station filter</p>
+                    </div>
+                    <div id="commodityChartWrap" class="h-56 overflow-y-auto custom-scrollbar"><div id="commodityChartInner" style="height:224px;"><canvas id="chartCommodity"></canvas></div></div>
+                </div>
+                <div class="kpi-tile p-4">
+                    <p class="text-xs font-bold text-slate-300 mb-2">🎯 Freight Share by Destination (Top 8)</p>
+                    <div class="h-56"><canvas id="chartDestination"></canvas></div>
+                </div>
+            </div>
+
+            <div class="kpi-tile p-4">
+                <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+                    <p class="text-xs font-bold text-slate-300">🚉 To-Station Breakdown <span id="toStationFilterTag" class="text-cyan-300"></span></p>
+                    <button id="clearCommodityFilterBtn" onclick="clearToStationFilter()" class="hidden text-[10px] text-slate-400 hover:text-cyan-300 font-semibold underline underline-offset-2">✕ Clear commodity filter</button>
+                </div>
+                <p class="text-[10px] text-slate-500 mb-3">Tip: click a bar in the commodity chart above to see only that commodity's to-station split</p>
+                <div id="toStationList" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 max-h-96 overflow-y-auto custom-scrollbar pr-1"></div>
+            </div>
+
+            <div class="kpi-tile p-4" id="stationCompareWrap" style="display:none;">
+                <p class="text-xs font-bold text-slate-300 mb-2">🏭 Station-wise Comparison (WGN)</p>
+                <div class="h-64"><canvas id="chartStationCompare"></canvas></div>
+            </div>
+
+            <div class="kpi-tile p-0 overflow-hidden">
+                <div class="flex items-center justify-between px-4 pt-4">
+                    <p class="text-xs font-bold text-slate-300">📋 RR-level Records <span id="modalRowCount" class="text-cyan-400"></span></p>
+                    <input id="modalTableSearch" type="text" placeholder="Filter rows…" oninput="renderModalTable()" class="chip-input rounded-lg px-2.5 py-1.5 text-[11px] w-40 focus:outline-none focus:border-cyan-400"/>
+                </div>
+                <div class="overflow-x-auto overflow-y-auto custom-scrollbar mt-3" style="max-height:320px;">
+                    <table class="w-full text-[11px]">
+                        <thead class="sticky top-0 bg-slate-950/95 z-10">
+                            <tr class="text-slate-400 border-b border-cyan-900/40">
+                                <th class="p-2 text-left">From</th>
+                                <th class="p-2 text-left">To</th>
+                                <th class="p-2 text-left">RR No.</th>
+                                <th class="p-2 text-left">RR Date</th>
+                                <th class="p-2 text-left">Commodity</th>
+                                <th class="p-2 text-right">WGN</th>
+                                <th class="p-2 text-right">CWT</th>
+                                <th class="p-2 text-right">Basic Frgt ₹</th>
+                                <th class="p-2 text-right">GST ₹</th>
+                                <th class="p-2 text-right">Total Frgt ₹</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const APPSCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6xdeYuinKqsBYT3XX_5MHPHw0tmvJpkGrE7NtnNHKSwwZmMbbXQbAznzgUc72aLR-/exec";
+
+    // Data is only ever considered valid from 01-04-2026 onward. Anything
+    // dated before this is dropped right after parsing, before filters,
+    // aggregation, or display — it never enters the filterable universe.
+    const MIN_DATE_OBJ = new Date(2026, 3, 1); // month is 0-indexed -> April
+    const MONTH_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+
+    let RAW_RECORDS = [];      // parsed records, before the 01-04-2026 floor
+    let VALID_RECORDS = [];    // records on/after 01-04-2026 — the filterable universe
+    let ALL_RECORDS = [];      // VALID_RECORDS after the active filter panel selection
+    let STATION_MAP = {};
+    let DIVISION_TOTALS = null;
+    let CURRENT_MODAL_RECORDS = [];
+    let charts = { commodity:null, destination:null, compare:null };
+    let CURRENT_TOSTATION_RECORDS = [];
+
+    function formatDDMMYYYY(d) {
+        if (!d || isNaN(d.getTime())) return '—';
+        const dd = String(d.getDate()).padStart(2,'0');
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        return `${dd}/${mm}/${d.getFullYear()}`;
+    }
+    function formatMonYYYY(d) {
+        if (!d || isNaN(d.getTime())) return '—';
+        return `${MONTH_ABBR[d.getMonth()]}-${d.getFullYear()}`;
+    }
+    function dateInputStr(d) {
+        const yyyy = d.getFullYear(), mm = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+        return `${yyyy}-${mm}-${dd}`;
+    }
+    function dateNum(d) {
+        if (!d || isNaN(d.getTime())) return -1;
+        return d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate();
+    }
+    function computeDateRangeLabel(records) {
+        if (!records.length) return 'No records in the selected range';
+        let minD = records[0].dateObj, maxD = records[0].dateObj;
+        records.forEach(r => { if (r.dateObj < minD) minD = r.dateObj; if (r.dateObj > maxD) maxD = r.dateObj; });
+        return `${formatDDMMYYYY(minD)} to ${formatDDMMYYYY(maxD)}`;
+    }
+    function getDivisionMinDate() {
+        if (!ALL_RECORDS.length) return null;
+        return ALL_RECORDS.reduce((min, r) => r.dateObj < min ? r.dateObj : min, ALL_RECORDS[0].dateObj);
+    }
+    function getDivisionMaxDate() {
+        if (!ALL_RECORDS.length) return null;
+        return ALL_RECORDS.reduce((max, r) => r.dateObj > max ? r.dateObj : max, ALL_RECORDS[0].dateObj);
+    }
+    // To Date is always capped at the last date of the month BEFORE the current month —
+    // e.g. if today is any date in Aug-2026, data is only available up to 31-Jul-2026.
+    function getMaxToDate() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), 0);
+    }
+    function showToast(message) {
+        let toast = document.getElementById('customToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'customToast';
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%) translateY(-16px)';
+            toast.style.zIndex = '9999';
+            toast.style.padding = '12px 22px';
+            toast.style.borderRadius = '12px';
+            toast.style.fontSize = '12px';
+            toast.style.fontWeight = '700';
+            toast.style.color = '#f0feff';
+            toast.style.background = 'linear-gradient(135deg, #0891b2 0%, #0a1a2f 100%)';
+            toast.style.border = '1px solid rgba(103,232,249,0.5)';
+            toast.style.boxShadow = '0 15px 40px -10px rgba(8,145,178,0.6)';
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity .25s ease, transform .25s ease';
+            toast.style.pointerEvents = 'none';
+            toast.style.textAlign = 'center';
+            document.body.appendChild(toast);
+        }
+        toast.innerText = message;
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+        });
+        clearTimeout(toast._hideTimer);
+        toast._hideTimer = setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(-50%) translateY(-16px)';
+        }, 3200);
+    }
+
+
+    // ---------- Helpers (mirrors source register logic) ----------
+    function safeSplitCSV(line) {
+        let result = [], current = '', inQuotes = false;
+        for (let i = 0; i < line.length; i++) {
+            let ch = line[i];
+            if (ch === '"') inQuotes = !inQuotes;
+            else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+            else current += ch;
+        }
+        result.push(current.trim());
+        return result;
+    }
+    function parseDateString(dateStr) {
+        if (!dateStr) return new Date(0);
+        const parts = dateStr.split('-');
+        if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        return new Date(dateStr);
+    }
+    function cleanCommodityName(cmdtStr) {
+        if (!cmdtStr) return 'UNSPECIFIED';
+        let c = cmdtStr.replace(/^[0-9\s\-–—]+/, '').trim().toUpperCase();
+        return c || 'UNSPECIFIED';
+    }
+    function resolveCommodity(originalCmdt, cnsrCodeVal, cnsgCodeVal) {
+        const cnsr = (cnsrCodeVal != null ? String(cnsrCodeVal) : '').toUpperCase();
+        const cnsg = (cnsgCodeVal != null ? String(cnsgCodeVal) : '').toUpperCase();
+        if (cnsr.indexOf('RAIL') > -1 || cnsg.indexOf('RAIL') > -1) return 'RMC';
+        return originalCmdt;
+    }
+    function fmtNum(n){ return (n||0).toLocaleString('en-IN'); }
+    function fmtMoney(n){ return '₹' + (n||0).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+    function fmtMoneyShort(n){
+        n = n || 0;
+        if (n >= 10000000) return '₹' + (n/10000000).toFixed(2) + ' Cr';
+        if (n >= 100000) return '₹' + (n/100000).toFixed(2) + ' L';
+        if (n >= 1000) return '₹' + (n/1000).toFixed(1) + ' K';
+        return '₹' + n.toFixed(0);
+    }
+
+    // ---------- Parsers ----------
+    function parseCSVToRecords(csvText) {
+        const lines = csvText.split(/\r?\n/);
+        if (lines.length < 4) return [];
+        const headers = safeSplitCSV(lines[2]);
+        const toIdx = headers.indexOf('STATION TO');
+        const rrIdx = headers.indexOf('RR NUMBER');
+        const dateIdx = headers.indexOf('RR DATE');
+        const wgnIdx = headers.indexOf('8-WHLR');
+        const cwtIdx = headers.indexOf('WEIGHT CHRG');
+        const basicIdx = headers.indexOf('TOTAL FRGT');
+        const gstIdx = headers.indexOf('GST DETAILS TOTL GST');
+        const cmdtIdx = headers.indexOf('CMDT CODE-CODE');
+        const fromIdx = headers.indexOf('STATION FROM');
+        const cnsrIdx = headers.indexOf('CNSR CODE');
+        const cnsgIdx = headers.indexOf('CNSG CODE');
+        const distIdx = headers.indexOf('DISTANCE CHRG');
+
+        let out = [];
+        for (let i = 3; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const row = safeSplitCSV(lines[i]);
+            const stnFromVal = row[fromIdx] ? row[fromIdx].trim() : '';
+            if (stnFromVal.toUpperCase() === 'TOTAL' || row[0] === '' || !row[rrIdx]) continue;
+
+            const rrDateStr = row[dateIdx] || '';
+            const originalCmdt = resolveCommodity(
+                row[cmdtIdx] ? row[cmdtIdx].replace(/"/g, '').trim() : '',
+                cnsrIdx > -1 ? row[cnsrIdx] : '', cnsgIdx > -1 ? row[cnsgIdx] : ''
+            );
+            out.push({
+                fromStn: stnFromVal, toStn: row[toIdx] || '', rrNum: row[rrIdx] || '',
+                rrDate: rrDateStr, dateObj: parseDateString(rrDateStr),
+                wgn: parseInt(row[wgnIdx]) || 0, cwt: parseFloat(row[cwtIdx]) || 0,
+                basicFreight: parseFloat(row[basicIdx]) || 0, gstAmt: parseFloat(row[gstIdx]) || 0,
+                distance: distIdx > -1 ? (parseFloat(row[distIdx]) || 0) : 0,
+                commodity: cleanCommodityName(originalCmdt)
+            });
+        }
+        return out;
+    }
+    function parseJSONToRecords(records) {
+        if (!Array.isArray(records)) return [];
+        let out = [];
+        records.forEach(rec => {
+            const stnFromVal = (rec['STATION FROM'] != null ? String(rec['STATION FROM']) : '').trim();
+            const rrNumRaw = rec['RR NUMBER'];
+            if (stnFromVal.toUpperCase() === 'TOTAL' || !stnFromVal || rrNumRaw === undefined || rrNumRaw === null || rrNumRaw === '') return;
+            const rrDateStr = rec['RR DATE'] != null ? String(rec['RR DATE']) : '';
+            const originalCmdt = resolveCommodity(
+                rec['CMDT CODE-CODE'] != null ? String(rec['CMDT CODE-CODE']).replace(/"/g, '').trim() : '',
+                rec['CNSR CODE'], rec['CNSG CODE']
+            );
+            out.push({
+                fromStn: stnFromVal, toStn: rec['STATION TO'] != null ? String(rec['STATION TO']) : '',
+                rrNum: String(rrNumRaw), rrDate: rrDateStr, dateObj: parseDateString(rrDateStr),
+                wgn: parseInt(rec['8-WHLR']) || 0, cwt: parseFloat(rec['WEIGHT CHRG']) || 0,
+                basicFreight: parseFloat(rec['TOTAL FRGT']) || 0, gstAmt: parseFloat(rec['GST DETAILS TOTL GST']) || 0,
+                distance: parseFloat(rec['DISTANCE CHRG']) || 0,
+                commodity: cleanCommodityName(originalCmdt)
+            });
+        });
+        return out;
+    }
+
+    // ---------- Load ----------
+    async function loadDashboardData() {
+        const btn = document.getElementById('refreshBtn');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true; btn.innerHTML = '⏳ Loading…';
+        document.getElementById('loadingState').classList.remove('hidden');
+        document.getElementById('errorState').classList.add('hidden');
+        document.getElementById('mainContent').classList.add('hidden');
+        document.getElementById('filterPanel').classList.add('hidden');
+
+        try {
+            const response = await fetch(APPSCRIPT_URL, { method: 'GET', redirect: 'follow' });
+            if (!response.ok) throw new Error(`Server returned HTTP ${response.status}`);
+            const responseText = await response.text();
+            const trimmed = responseText.trim();
+
+            let records = null, csvText = null;
+            if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+                const parsed = JSON.parse(trimmed);
+                if (Array.isArray(parsed)) records = parsed;
+                else if (typeof parsed === 'string') csvText = parsed;
+                else if (parsed && typeof parsed.csv === 'string') csvText = parsed.csv;
+                else if (parsed && typeof parsed.data === 'string') csvText = parsed.data;
+                else if (parsed && Array.isArray(parsed.data)) records = parsed.data;
+                else throw new Error('Unrecognized JSON response shape from Apps Script.');
+            } else {
+                csvText = responseText;
+            }
+
+            RAW_RECORDS = records ? parseJSONToRecords(records) : parseCSVToRecords(csvText);
+            const MIN_DATE_NUM = dateNum(MIN_DATE_OBJ);
+            VALID_RECORDS = RAW_RECORDS.filter(r => dateNum(r.dateObj) >= MIN_DATE_NUM);
+
+            populateFilterDropdowns();
+            setDefaultFilterValues();
+            applyFilters();
+
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('filterPanel').classList.remove('hidden');
+        } catch (err) {
+            console.error(err);
+            document.getElementById('loadingState').classList.add('hidden');
+            document.getElementById('errorState').classList.remove('hidden');
+            document.getElementById('errorMsg').innerText = err.message + ' — please check the Apps Script deployment access and try Refresh again.';
+        } finally {
+            btn.disabled = false; btn.innerHTML = originalHtml;
+        }
+    }
+
+    // ---------- Filter panel ----------
+    function populateFilterDropdowns() {
+        const fromSet = new Set(), toSet = new Set(), cmdtSet = new Set();
+        VALID_RECORDS.forEach(r => {
+            if (r.fromStn) fromSet.add(r.fromStn);
+            if (r.toStn) toSet.add(r.toStn);
+            if (r.commodity) cmdtSet.add(r.commodity);
+        });
+        AUTOCOMPLETE_OPTIONS.filterStationFrom = Array.from(fromSet).sort();
+        AUTOCOMPLETE_OPTIONS.filterStationTo = Array.from(toSet).sort();
+        AUTOCOMPLETE_OPTIONS.filterCommodity = Array.from(cmdtSet).sort();
+    }
+
+    // Keeps the visible date "chip" in DD/MM/YYYY next to the (locale-format)
+    // native <input type="date"> that actually drives the calendar picker.
+    function updateDateDisplays() {
+        const fromInput = document.getElementById('fromDateFilter');
+        const toInput = document.getElementById('toDateFilter');
+        const fromDisp = document.getElementById('fromDateDisplay');
+        const toDisp = document.getElementById('toDateDisplay');
+        if (fromInput.value) fromDisp.innerText = formatDDMMYYYY(new Date(fromInput.value + 'T00:00:00'));
+        if (toInput.value) toDisp.innerText = formatDDMMYYYY(new Date(toInput.value + 'T00:00:00'));
+    }
+
+    function setDefaultFilterValues() {
+        const fromInput = document.getElementById('fromDateFilter');
+        const toInput = document.getElementById('toDateFilter');
+        const maxToD = getMaxToDate();
+        toInput.max = dateInputStr(maxToD);
+        // Only set defaults the first time (leave the user's chosen filter alone on Refresh).
+        if (!fromInput.value) fromInput.value = dateInputStr(MIN_DATE_OBJ);
+        if (!toInput.value) toInput.value = dateInputStr(maxToD);
+        updateDateDisplays();
+    }
+
+    function onFromDateChange() {
+        const fromInput = document.getElementById('fromDateFilter');
+        if (fromInput.value) {
+            const picked = new Date(fromInput.value + 'T00:00:00');
+            if (dateNum(picked) < dateNum(MIN_DATE_OBJ)) {
+                fromInput.value = dateInputStr(MIN_DATE_OBJ);
+                showToast('⚠ Data is available from 01-04-2026 only.');
+            }
+        }
+        updateDateDisplays();
+        applyFilters();
+    }
+
+    function onToDateChange() {
+        const toInput = document.getElementById('toDateFilter');
+        const maxToD = getMaxToDate();
+        if (toInput.value) {
+            const picked = new Date(toInput.value + 'T00:00:00');
+            if (dateNum(picked) > dateNum(maxToD)) {
+                toInput.value = dateInputStr(maxToD);
+            }
+        }
+        updateDateDisplays();
+        applyFilters();
+    }
+
+    function resetFilters() {
+        document.getElementById('fromDateFilter').value = dateInputStr(MIN_DATE_OBJ);
+        document.getElementById('toDateFilter').value = dateInputStr(getMaxToDate());
+        document.getElementById('filterStationFrom').value = '';
+        document.getElementById('filterStationTo').value = '';
+        document.getElementById('filterCommodity').value = '';
+        updateDateDisplays();
+        applyFilters();
+    }
+
+    // ---------- Custom search-filter dropdowns ----------
+    // A single shared dropdown (appended once, fixed-positioned via JS from the
+    // active input's own bounding box) is used for all three fields. This avoids
+    // the earlier per-field <div> approach, whose dropdown could render behind /
+    // bleed through the station cards below it depending on ancestor stacking
+    // contexts. Typing still filters live; the ▼ button next to each field always
+    // shows the FULL unfiltered option list (no need to erase the typed text first
+    // just to see other stations/commodities).
+    const AUTOCOMPLETE_OPTIONS = { filterStationFrom: [], filterStationTo: [], filterCommodity: [] };
+    let AUTOCOMPLETE_ACTIVE_INPUT = null;
+
+    function positionSharedDropdown(inputId) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById('sharedAutocompleteDropdown');
+        const rect = input.getBoundingClientRect();
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.top = (rect.bottom + 4) + 'px';
+        dropdown.style.width = rect.width + 'px';
+    }
+    function renderSharedDropdown(inputId, showFullList) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById('sharedAutocompleteDropdown');
+        const options = AUTOCOMPLETE_OPTIONS[inputId] || [];
+        const query = showFullList ? '' : input.value.trim().toUpperCase();
+        const matches = query ? options.filter(o => o.toUpperCase().indexOf(query) !== -1) : options;
+
+        AUTOCOMPLETE_ACTIVE_INPUT = inputId;
+        positionSharedDropdown(inputId);
+        dropdown.innerHTML = matches.length
+            ? matches.map(o => `<div class="autocomplete-item" onmousedown="selectAutocompleteOption('${inputId}', this.getAttribute('data-val'))" data-val="${o.replace(/"/g,'&quot;')}">${o}</div>`).join('')
+            : `<div class="autocomplete-empty">No matches</div>`;
+        dropdown.classList.remove('hidden');
+    }
+    function onAutocompleteInput(inputId) {
+        renderSharedDropdown(inputId, false);
+        applyFilters();
+    }
+    function onAutocompleteFocus(inputId) {
+        renderSharedDropdown(inputId, false);
+    }
+    // Bypasses the current typed text entirely — always lists every option.
+    function onAutocompleteArrowClick(inputId) {
+        document.getElementById(inputId).focus();
+        renderSharedDropdown(inputId, true);
+    }
+    function selectAutocompleteOption(inputId, value) {
+        document.getElementById(inputId).value = value;
+        document.getElementById('sharedAutocompleteDropdown').classList.add('hidden');
+        applyFilters();
+    }
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('sharedAutocompleteDropdown');
+        if (!dropdown) return;
+        const activeInput = AUTOCOMPLETE_ACTIVE_INPUT ? document.getElementById(AUTOCOMPLETE_ACTIVE_INPUT) : null;
+        const onArrowBtn = e.target.closest && e.target.closest('.autocomplete-arrow-btn');
+        if (e.target !== activeInput && !dropdown.contains(e.target) && !onArrowBtn) {
+            dropdown.classList.add('hidden');
+        }
+    });
+    window.addEventListener('resize', () => {
+        if (AUTOCOMPLETE_ACTIVE_INPUT) positionSharedDropdown(AUTOCOMPLETE_ACTIVE_INPUT);
+    });
+
+    // Text inputs now back these filters (with datalist auto-suggest). A typed
+    // value matches if it's contained anywhere in the field (case-insensitive),
+    // so partial typing narrows results the same way a search box would.
+    function applyFilters() {
+        const fromVal = document.getElementById('fromDateFilter').value;
+        const toVal = document.getElementById('toDateFilter').value;
+        const maxToD = getMaxToDate();
+        let fromD = fromVal ? new Date(fromVal + 'T00:00:00') : MIN_DATE_OBJ;
+        let toD = toVal ? new Date(toVal + 'T00:00:00') : maxToD;
+        if (dateNum(fromD) < dateNum(MIN_DATE_OBJ)) fromD = MIN_DATE_OBJ;
+        if (dateNum(toD) > dateNum(maxToD)) toD = maxToD;
+        const fromNum = dateNum(fromD), toNum = dateNum(toD);
+
+        const stnFrom = document.getElementById('filterStationFrom').value.trim().toUpperCase();
+        const stnTo = document.getElementById('filterStationTo').value.trim().toUpperCase();
+        const cmdt = document.getElementById('filterCommodity').value.trim().toUpperCase();
+
+        ALL_RECORDS = VALID_RECORDS.filter(r => {
+            const n = dateNum(r.dateObj);
+            if (n < fromNum || n > toNum) return false;
+            if (stnFrom && r.fromStn.toUpperCase().indexOf(stnFrom) === -1) return false;
+            if (stnTo && r.toStn.toUpperCase().indexOf(stnTo) === -1) return false;
+            if (cmdt && r.commodity.toUpperCase().indexOf(cmdt) === -1) return false;
+            return true;
+        });
+
+        buildAggregates();
+        renderDivisionKpis();
+        renderStationCards();
+    }
+
+
+    // ---------- Aggregation ----------
+    function bumpMetric(map, key, r) {
+        if (!map[key]) map[key] = { wgn:0, cwt:0, basic:0 };
+        map[key].wgn += r.wgn; map[key].cwt += r.cwt; map[key].basic += r.basicFreight;
+    }
+
+    function buildAggregates() {
+        STATION_MAP = {};
+        ALL_RECORDS.forEach(r => {
+            const key = r.fromStn.toUpperCase();
+            if (!STATION_MAP[key]) {
+                STATION_MAP[key] = { station: r.fromStn, wgn:0, cwt:0, basic:0, gst:0, distance:0, count:0, commodityMap:{}, destMap:{}, dateMap:{}, records:[], minDate:r.dateObj, maxDate:r.dateObj };
+            }
+            const s = STATION_MAP[key];
+            s.wgn += r.wgn; s.cwt += r.cwt; s.basic += r.basicFreight; s.gst += r.gstAmt; s.distance += r.distance; s.count++;
+            s.totalFreight = s.basic + s.gst;
+            if (r.dateObj < s.minDate) s.minDate = r.dateObj;
+            if (r.dateObj > s.maxDate) s.maxDate = r.dateObj;
+
+            bumpMetric(s.commodityMap, r.commodity, r);
+            bumpMetric(s.destMap, r.toStn || 'UNKNOWN', r);
+
+            const dateKey = formatDDMMYYYY(r.dateObj);
+            if (!s.dateMap[dateKey]) s.dateMap[dateKey] = { wgn:0, cwt:0, basic:0, dateObj:r.dateObj };
+            s.dateMap[dateKey].wgn += r.wgn;
+            s.dateMap[dateKey].cwt += r.cwt;
+            s.dateMap[dateKey].basic += r.basicFreight;
+            s.records.push(r);
+        });
+
+        DIVISION_TOTALS = { wgn:0, cwt:0, basic:0, gst:0, distance:0, count:0, commodityMap:{}, destMap:{}, dateMap:{}, stationMetrics:{} };
+        Object.values(STATION_MAP).forEach(s => {
+            DIVISION_TOTALS.wgn += s.wgn; DIVISION_TOTALS.cwt += s.cwt;
+            DIVISION_TOTALS.basic += s.basic; DIVISION_TOTALS.gst += s.gst; DIVISION_TOTALS.distance += s.distance; DIVISION_TOTALS.count += s.count;
+            DIVISION_TOTALS.stationMetrics[s.station] = { wgn:s.wgn, cwt:s.cwt, basic:s.basic };
+            DIVISION_TOTALS.totalFreight = DIVISION_TOTALS.basic + DIVISION_TOTALS.gst;
+
+            Object.entries(s.commodityMap).forEach(([k,v]) => {
+                if (!DIVISION_TOTALS.commodityMap[k]) DIVISION_TOTALS.commodityMap[k] = { wgn:0, cwt:0, basic:0 };
+                DIVISION_TOTALS.commodityMap[k].wgn += v.wgn; DIVISION_TOTALS.commodityMap[k].cwt += v.cwt; DIVISION_TOTALS.commodityMap[k].basic += v.basic;
+            });
+            Object.entries(s.destMap).forEach(([k,v]) => {
+                if (!DIVISION_TOTALS.destMap[k]) DIVISION_TOTALS.destMap[k] = { wgn:0, cwt:0, basic:0 };
+                DIVISION_TOTALS.destMap[k].wgn += v.wgn; DIVISION_TOTALS.destMap[k].cwt += v.cwt; DIVISION_TOTALS.destMap[k].basic += v.basic;
+            });
+            Object.entries(s.dateMap).forEach(([k,v]) => {
+                if (!DIVISION_TOTALS.dateMap[k]) DIVISION_TOTALS.dateMap[k] = { wgn:0, cwt:0, basic:0, dateObj:v.dateObj };
+                DIVISION_TOTALS.dateMap[k].wgn += v.wgn;
+                DIVISION_TOTALS.dateMap[k].cwt += v.cwt;
+                DIVISION_TOTALS.dateMap[k].basic += v.basic;
+            });
+        });
+    }
+
+
+    // ---------- KPI Strip ----------
+    // Compact "infographic" list of the top 3 commodities (by WGN) for a station/division — used for card hover.
+    function commodityHoverListHtml(commodityMap) {
+        const entries = topEntries(commodityMap, 3, 'wgn');
+        if (!entries.length) return `<p class="text-[9px] text-cyan-100/70">No data</p>`;
+        const max = entries[0][1].wgn || 1;
+        return entries.map(([name, m]) => `
+            <div class="mb-1.5 last:mb-0">
+                <div class="flex justify-between text-[9px] text-cyan-50 mb-0.5 gap-2">
+                    <span class="font-bold truncate">${name}</span><span class="flex-shrink-0">${fmtNum(m.wgn)} WGN</span>
+                </div>
+                <div class="progress-track" style="height:3px; background:rgba(255,255,255,0.15);">
+                    <div class="progress-fill" style="width:${Math.max(4, Math.round(m.wgn/max*100))}%"></div>
+                </div>
+            </div>`).join('');
+    }
+
+    // Compact "infographic" list of the top 3 stations for a given metric — shown on hover.
+    function kpiHoverListHtml(metricKey, formatter) {
+        const entries = Object.values(STATION_MAP)
+            .map(s => [s.station, s[metricKey] || 0])
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 3);
+        if (!entries.length) return `<p class="text-[9px] text-cyan-100/70">No data</p>`;
+        const max = entries[0][1] || 1;
+        return entries.map(([name, val]) => `
+            <div class="mb-1.5 last:mb-0">
+                <div class="flex justify-between text-[9px] text-cyan-50 mb-0.5">
+                    <span class="font-bold">${name}</span><span>${formatter(val)}</span>
+                </div>
+                <div class="progress-track" style="height:3px; background:rgba(255,255,255,0.15);">
+                    <div class="progress-fill" style="width:${Math.max(4, Math.round(val/max*100))}%"></div>
+                </div>
+            </div>`).join('');
+    }
+
+    function kpiTileHtml(icon, label, value, accent, tooltipTitle, tooltipHtml) {
+        return `
+        <div class="kpi-tile p-3.5 flex items-center gap-3 relative group cursor-default">
+            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0" style="background:${accent}1a; border:1px solid ${accent}40;">${icon}</div>
+            <div class="min-w-0">
+                <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate">${label}</p>
+                <p class="text-sm md:text-base font-black text-white truncate">${value}</p>
+            </div>
+            <div class="kpi-hover-panel hidden group-hover:block absolute left-0 top-full mt-2 w-52 z-30 rounded-xl p-3">
+                <p class="text-[9px] font-black text-cyan-100 uppercase tracking-wider mb-2">${tooltipTitle}</p>
+                ${tooltipHtml}
+            </div>
+        </div>`;
+    }
+
+    function renderDivisionKpis() {
+        const d = DIVISION_TOTALS;
+        const strip = document.getElementById('kpiStrip');
+        strip.innerHTML = `
+            ${kpiTileHtml('🏢','Total Stations', fmtNum(Object.keys(STATION_MAP).length), '#22d3ee', 'Top Stations · WGN', kpiHoverListHtml('wgn', fmtNum))}
+            ${kpiTileHtml('🚃','Total WGN', fmtNum(d.wgn), '#22d3ee', 'Top Contributors · WGN', kpiHoverListHtml('wgn', fmtNum))}
+            ${kpiTileHtml('⚖️','Total CWT', fmtNum(d.cwt.toFixed(0)), '#38bdf8', 'Top Contributors · CWT', kpiHoverListHtml('cwt', v=>fmtNum(v.toFixed(0))))}
+            ${kpiTileHtml('💰','Basic Freight', fmtMoneyShort(d.basic), '#34d399', 'Top Contributors · Freight', kpiHoverListHtml('basic', fmtMoneyShort))}
+            ${kpiTileHtml('🧾','GST Amount', fmtMoneyShort(d.gst), '#fbbf24', 'Top Contributors · GST', kpiHoverListHtml('gst', fmtMoneyShort))}
+            ${kpiTileHtml('🧮','Total Freight', fmtMoneyShort(d.totalFreight), '#22d3ee', 'Top Contributors · Total Freight (Basic+GST)', kpiHoverListHtml('totalFreight', fmtMoneyShort))}
+            ${kpiTileHtml('📄','RR Records', fmtNum(d.count), '#f472b6', 'Top Stations · RR Count', kpiHoverListHtml('count', fmtNum))}
+            ${kpiTileHtml('🛤️','Total KMs', fmtNum(Math.round(d.distance)), '#a78bfa', 'Top Contributors · KMs', kpiHoverListHtml('distance', v=>fmtNum(Math.round(v))))}
+        `;
+    }
+
+    // ---------- Station Cards ----------
+    function renderStationCards() {
+        const grid = document.getElementById('stationCardsGrid');
+        const sortMode = document.getElementById('sortSelect').value;
+
+        let stations = Object.values(STATION_MAP);
+
+        if (sortMode === 'wgn') stations.sort((a,b) => b.wgn - a.wgn);
+        else if (sortMode === 'freight') stations.sort((a,b) => (b.basic+b.gst) - (a.basic+a.gst));
+        else if (sortMode === 'rr') stations.sort((a,b) => b.count - a.count);
+        else stations.sort((a,b) => a.station.localeCompare(b.station));
+
+        const maxWgn = Math.max(1, ...Object.values(STATION_MAP).map(s => s.wgn));
+        document.getElementById('stationCountTag').innerText = `${stations.length} shown`;
+
+        let html = '';
+
+        // Division Total pinned card
+        {
+            const d = DIVISION_TOTALS;
+            html += `
+            <div class="division-card relative rounded-2xl p-4 cursor-pointer transition-all" onclick="openDivisionModal()">
+                <div class="flex items-start justify-between mb-2.5">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-cyan-100/80 font-bold">Division Total</p>
+                        <h3 class="text-lg font-black text-white">All Stations</h3>
+                    </div>
+                    <span class="rank-badge" style="background:rgba(255,255,255,0.15); color:#fff; border-color:rgba(255,255,255,0.35);">GRAND TOTAL</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2.5 mt-3">
+                    <div>
+                        <p class="text-[10px] text-cyan-100/70 font-semibold">WGN</p>
+                        <p class="text-base font-black text-white">${fmtNum(d.wgn)}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-cyan-100/70 font-semibold">CWT</p>
+                        <p class="text-base font-black text-white">${fmtNum(d.cwt.toFixed(0))}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-cyan-100/70 font-semibold">Basic Freight</p>
+                        <p class="text-base font-black text-white">${fmtMoneyShort(d.basic)}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-cyan-100/70 font-semibold">GST</p>
+                        <p class="text-base font-black text-white">${fmtMoneyShort(d.gst)}</p>
+                    </div>
+                </div>
+                <div class="mt-2.5 pt-2.5 border-t border-white/10 flex items-center justify-between">
+                    <p class="text-[10px] text-cyan-100/70 font-semibold">Total Freight (Basic+GST)</p>
+                    <p class="text-sm font-black text-white">${fmtMoneyShort(d.totalFreight)}</p>
+                </div>
+                <p class="text-[10px] text-cyan-100/60 mt-3 pt-2.5 border-t border-white/10">${fmtNum(d.count)} RR records · Tap for division-wide analytics</p>
+                <p class="text-[10px] text-cyan-100/70 mt-1.5 font-semibold">📅 ${formatMonYYYY(getDivisionMinDate())} to ${formatMonYYYY(getDivisionMaxDate())}</p>
+            </div>`;
+        }
+
+        stations.forEach((s, idx) => {
+            const pct = Math.max(4, Math.round((s.wgn / maxWgn) * 100));
+            const destCount = Object.keys(s.destMap).length;
+            const cmdtCount = Object.keys(s.commodityMap).length;
+            html += `
+            <div class="station-card relative rounded-2xl p-4" onclick="openStationModal('${s.station.replace(/'/g,"\\'")}')">
+                <div class="flex items-start justify-between mb-2">
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-slate-400 font-bold">Station</p>
+                        <h3 class="text-base font-black text-cyan-300">${s.station}</h3>
+                    </div>
+                    <span class="rank-badge">#${idx+1}</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5 mt-2.5">
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-semibold">WGN</p>
+                        <p class="text-sm font-black text-white">${fmtNum(s.wgn)}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-semibold">CWT</p>
+                        <p class="text-sm font-black text-white">${fmtNum(s.cwt.toFixed(0))}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-semibold">Basic Freight</p>
+                        <p class="text-sm font-black text-emerald-400">${fmtMoneyShort(s.basic)}</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 font-semibold">GST</p>
+                        <p class="text-sm font-black text-amber-400">${fmtMoneyShort(s.gst)}</p>
+                    </div>
+                </div>
+
+                <div class="mt-2.5 pt-2.5 border-t border-cyan-900/30 flex items-center justify-between">
+                    <p class="text-[10px] text-slate-400 font-semibold">Total Freight (Basic+GST)</p>
+                    <p class="text-sm font-black text-cyan-300">${fmtMoneyShort(s.totalFreight)}</p>
+                </div>
+
+                <div class="mt-3">
+                    <div class="flex justify-between text-[9px] text-slate-500 mb-1">
+                        <span>WGN share (of top station)</span><span>${pct}%</span>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+                </div>
+
+                <p class="text-[10px] text-slate-500 mt-3 pt-2.5 border-t border-cyan-900/30">
+                    ${fmtNum(s.count)} RRs · ${destCount} destinations · ${cmdtCount} commodities
+                </p>
+                <p class="text-[10px] text-cyan-400/80 mt-1.5 font-semibold">📅 ${formatMonYYYY(getDivisionMinDate())} to ${formatMonYYYY(getDivisionMaxDate())}</p>
+            </div>`;
+        });
+
+        grid.innerHTML = html;
+    }
+
+    // ---------- Modal (shared render engine) ----------
+    function topEntries(map, n, metricKey) {
+        return Object.entries(map).sort((a,b) => b[1][metricKey] - a[1][metricKey]).slice(0, n);
+    }
+
+    // Every chart tooltip always shows WGN, CWT and Basic Freight together,
+    // regardless of which metric drives the bar/slice height.
+    function fullMetricTooltipLines(m) {
+        return [
+            `WGN: ${fmtNum(m.wgn)}`,
+            `CWT: ${fmtNum(m.cwt.toFixed(2))}`,
+            `Basic Freight: ${fmtMoney(m.basic)}`
+        ];
+    }
+
+    function destroyCharts() {
+        Object.keys(charts).forEach(k => { if (charts[k]) { charts[k].destroy(); charts[k] = null; } });
+    }
+
+    const CHART_PALETTE = ['#22d3ee','#0891b2','#38bdf8','#34d399','#fbbf24','#f472b6','#a78bfa','#fb7185'];
+
+    function chartDefaults(){
+        return { color:'#94a3b8', font:{ family:'Segoe UI', size:10 } };
+    }
+
+    let CURRENT_COMMODITY_MAP = null;
+    let CURRENT_COMMODITY_SOURCE_RECORDS = [];
+
+    function renderCommodityChart(commodityMap, sourceRecords) {
+        CURRENT_COMMODITY_MAP = commodityMap;
+        CURRENT_COMMODITY_SOURCE_RECORDS = sourceRecords;
+        drawCommodityChart();
+    }
+    // Always shows every commodity — no Top-8/All toggle — plus one extra
+    // "All Commodities" bar (the total across every commodity) so clicking
+    // it resets the to-station breakdown back to the unfiltered view.
+    function drawCommodityChart() {
+        if (!CURRENT_COMMODITY_MAP) return;
+        const commodityEntries = Object.entries(CURRENT_COMMODITY_MAP).sort((a,b) => b[1].wgn - a[1].wgn);
+        const allTotal = commodityEntries.reduce((acc, [,m]) => {
+            acc.wgn += m.wgn; acc.cwt += m.cwt; acc.basic += m.basic; return acc;
+        }, { wgn:0, cwt:0, basic:0 });
+        const entries = [['All Commodities', allTotal], ...commodityEntries];
+
+        // Give the canvas a taller inner wrapper (one row-height per bar) so
+        // every bar stays readable, and let the fixed-height outer wrap
+        // scroll instead of squashing bars when there are many commodities.
+        const inner = document.getElementById('commodityChartInner');
+        inner.style.height = Math.max(224, entries.length * 26) + 'px';
+
+        if (charts.commodity) { charts.commodity.destroy(); charts.commodity = null; }
+
+        const ctx = document.getElementById('chartCommodity');
+        charts.commodity = new Chart(ctx, {
+            type:'bar',
+            data:{ labels: entries.map(e=>e[0]), datasets:[{ label:'WGN', data: entries.map(e=>e[1].wgn),
+                backgroundColor: entries.map((e,i)=> i===0 ? '#f0feff' : CHART_PALETTE[(i-1) % CHART_PALETTE.length]),
+                borderRadius:6, maxBarThickness:26 }] },
+            options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y',
+                onClick: (evt, elements) => {
+                    if (!elements.length) return;
+                    const idx = elements[0].index;
+                    if (idx === 0) { clearToStationFilter(); return; }
+                    const commodityName = entries[idx][0];
+                    renderToStationList(CURRENT_COMMODITY_SOURCE_RECORDS, commodityName);
+                },
+                onHover: (evt, elements) => { evt.native.target.style.cursor = elements.length ? 'pointer' : 'default'; },
+                plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0a1a2f', borderColor:'#0891b2', borderWidth:1,
+                    callbacks:{ title:(items)=> items[0].label, label:(c)=> fullMetricTooltipLines(entries[c.dataIndex][1]) } } },
+                scales:{ x:{ ticks:{ color:'#94a3b8', font:{size:9} }, grid:{ color:'rgba(148,163,184,0.08)' } },
+                         y:{ ticks:{ color:'#cbd5e1', font:{size:9} }, grid:{ display:false } } } }
+        });
+    }
+    function renderDestinationChart(destMap) {
+        const ctx = document.getElementById('chartDestination');
+        const entries = topEntries(destMap, 8, 'basic');
+        charts.destination = new Chart(ctx, {
+            type:'doughnut',
+            data:{ labels: entries.map(e=>e[0]), datasets:[{ data: entries.map(e=>e[1].basic), backgroundColor: CHART_PALETTE, borderColor:'#0a1a2f', borderWidth:2 }] },
+            options:{ responsive:true, maintainAspectRatio:false,
+                plugins:{ legend:{ position:'right', labels:{ color:'#cbd5e1', font:{size:9}, boxWidth:10 } },
+                          tooltip:{ backgroundColor:'#0a1a2f', borderColor:'#0891b2', borderWidth:1,
+                            callbacks:{ title:(items)=> items[0].label, label:(c)=> fullMetricTooltipLines(entries[c.dataIndex][1]) } } } }
+        });
+    }
+    // Aggregates raw RR records by "to station" (STATION TO), optionally
+    // restricted to one commodity — powers the To-Station Breakdown list
+    // and its commodity-bar-click filtering. Includes GST (unlike the
+    // lighter destMap used for the doughnut chart) so Total Freight can
+    // be shown per to-station.
+    function buildToStationMetrics(records, commodityFilter) {
+        const map = {};
+        records.forEach(r => {
+            if (commodityFilter && r.commodity !== commodityFilter) return;
+            const key = r.toStn || 'UNKNOWN';
+            if (!map[key]) map[key] = { wgn:0, cwt:0, basic:0, gst:0 };
+            map[key].wgn += r.wgn; map[key].cwt += r.cwt; map[key].basic += r.basicFreight; map[key].gst += r.gstAmt;
+        });
+        return map;
+    }
+    // Renders each to-station as a KPI-tile-style "button card" (matching the
+    // card look used elsewhere in the modal) instead of a table row.
+    function toStationCardHtml(name, m, isTotal) {
+        const total = m.basic + m.gst;
+        return `
+        <div class="kpi-tile p-3 ${isTotal ? 'ring-1 ring-cyan-400/60' : ''}">
+            <p class="text-[10px] font-black uppercase tracking-wider truncate mb-2 ${isTotal ? 'text-white' : 'text-cyan-300'}">${isTotal ? '🧮 TOTAL' : '📍 ' + name}</p>
+            <div class="grid grid-cols-2 gap-1.5">
+                <div><p class="text-[8px] text-slate-500 font-semibold uppercase">WGN</p><p class="text-[11px] font-black text-white">${fmtNum(m.wgn)}</p></div>
+                <div><p class="text-[8px] text-slate-500 font-semibold uppercase">CWT</p><p class="text-[11px] font-black text-white">${fmtNum(m.cwt.toFixed(2))}</p></div>
+                <div><p class="text-[8px] text-slate-500 font-semibold uppercase">Basic</p><p class="text-[11px] font-black text-emerald-400">${fmtMoneyShort(m.basic)}</p></div>
+                <div><p class="text-[8px] text-slate-500 font-semibold uppercase">GST</p><p class="text-[11px] font-black text-amber-400">${fmtMoneyShort(m.gst)}</p></div>
+            </div>
+            <div class="mt-2 pt-2 border-t border-cyan-900/30 flex items-center justify-between">
+                <p class="text-[8px] text-slate-500 font-semibold uppercase">Total Frgt</p>
+                <p class="text-xs font-black text-cyan-300">${fmtMoneyShort(total)}</p>
+            </div>
+        </div>`;
+    }
+    function renderToStationList(records, commodityFilter) {
+        CURRENT_TOSTATION_RECORDS = records;
+        const metricsMap = buildToStationMetrics(records, commodityFilter);
+        const entries = Object.entries(metricsMap).sort((a,b) => b[1].wgn - a[1].wgn);
+
+        // Always show a Total card too — when a commodity is selected via the
+        // chart, its own to-station total still needs to be visible at a glance.
+        const totalMetrics = entries.reduce((acc, [,m]) => {
+            acc.wgn += m.wgn; acc.cwt += m.cwt; acc.basic += m.basic; acc.gst += m.gst; return acc;
+        }, { wgn:0, cwt:0, basic:0, gst:0 });
+
+        const listEl = document.getElementById('toStationList');
+        listEl.innerHTML = entries.length
+            ? toStationCardHtml('TOTAL', totalMetrics, true) + entries.map(([name, m]) => toStationCardHtml(name, m, false)).join('')
+            : `<p class="text-[11px] text-slate-500 text-center py-4 col-span-full">No data</p>`;
+
+        const tag = document.getElementById('toStationFilterTag');
+        const clearBtn = document.getElementById('clearCommodityFilterBtn');
+        if (commodityFilter) {
+            tag.innerText = `— filtered: ${commodityFilter}`;
+            clearBtn.classList.remove('hidden');
+        } else {
+            tag.innerText = '';
+            clearBtn.classList.add('hidden');
+        }
+    }
+    function clearToStationFilter() {
+        renderToStationList(CURRENT_TOSTATION_RECORDS, null);
+    }
+    function renderStationCompareChart(records) {
+        const map = {};
+        records.forEach(r => {
+            const key = r.fromStn;
+            if (!map[key]) map[key] = { wgn:0, cwt:0, basic:0 };
+            map[key].wgn += r.wgn; map[key].cwt += r.cwt; map[key].basic += r.basicFreight;
+        });
+        const entries = Object.entries(map).sort((a,b)=>b[1].wgn - a[1].wgn);
+        const ctx = document.getElementById('chartStationCompare');
+        charts.compare = new Chart(ctx, {
+            type:'bar',
+            data:{ labels: entries.map(e=>e[0]), datasets:[{ label:'WGN', data: entries.map(e=>e[1].wgn), backgroundColor:'#0891b2', borderRadius:6, maxBarThickness:34 }] },
+            options:{ responsive:true, maintainAspectRatio:false,
+                plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0a1a2f', borderColor:'#0891b2', borderWidth:1,
+                    callbacks:{ title:(items)=> items[0].label, label:(c)=> fullMetricTooltipLines(entries[c.dataIndex][1]) } } },
+                scales:{ x:{ ticks:{ color:'#94a3b8', font:{size:9} }, grid:{ display:false } },
+                         y:{ ticks:{ color:'#94a3b8', font:{size:9} }, grid:{ color:'rgba(148,163,184,0.08)' } } } }
+        });
+    }
+
+    function modalKpiTile(icon,label,value,color){
+        return `<div class="kpi-tile p-3 text-center">
+            <div class="text-lg mb-1">${icon}</div>
+            <p class="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">${label}</p>
+            <p class="text-sm font-black" style="color:${color}">${value}</p>
+        </div>`;
+    }
+
+    // Aggregates a plain record list into the same {wgn,cwt,basic,gst,commodityMap,
+    // destMap} shape used elsewhere — needed because the modal's own From/To Date
+    // filter recomputes everything from MODAL_BASE_RECORDS on every date change.
+    function computeMetricsFromRecords(records) {
+        const m = { wgn:0, cwt:0, basic:0, gst:0, count:0, commodityMap:{}, destMap:{} };
+        records.forEach(r => {
+            m.wgn += r.wgn; m.cwt += r.cwt; m.basic += r.basicFreight; m.gst += r.gstAmt; m.count++;
+            bumpMetric(m.commodityMap, r.commodity, r);
+            bumpMetric(m.destMap, r.toStn || 'UNKNOWN', r);
+        });
+        return m;
+    }
+
+    // ---------- Modal From/To Date filter ----------
+    // MODAL_BASE_RECORDS holds the station's (or division's) full record set for
+    // the currently-open modal, before the modal's own date range is applied.
+    let MODAL_BASE_RECORDS = [];
+    let MODAL_MODE = 'station'; // 'station' | 'division'
+
+    function updateModalDateDisplays() {
+        const fromInput = document.getElementById('modalFromDateFilter');
+        const toInput = document.getElementById('modalToDateFilter');
+        document.getElementById('modalFromDateDisplay').innerText = fromInput.value ? formatDDMMYYYY(new Date(fromInput.value + 'T00:00:00')) : '—';
+        document.getElementById('modalToDateDisplay').innerText = toInput.value ? formatDDMMYYYY(new Date(toInput.value + 'T00:00:00')) : '—';
+    }
+
+    function setupModalDateFilter(records) {
+        const fromInput = document.getElementById('modalFromDateFilter');
+        const toInput = document.getElementById('modalToDateFilter');
+        const floor = dateInputStr(MIN_DATE_OBJ), ceiling = dateInputStr(getMaxToDate());
+        fromInput.min = floor; fromInput.max = ceiling;
+        toInput.min = floor; toInput.max = ceiling;
+
+        const minD = records.length ? records.reduce((min,r)=> r.dateObj < min ? r.dateObj : min, records[0].dateObj) : MIN_DATE_OBJ;
+        const maxD = records.length ? records.reduce((max,r)=> r.dateObj > max ? r.dateObj : max, records[0].dateObj) : getMaxToDate();
+        fromInput.value = dateInputStr(minD);
+        toInput.value = dateInputStr(maxD);
+        updateModalDateDisplays();
+    }
+
+    function onModalDateChange() {
+        const fromInput = document.getElementById('modalFromDateFilter');
+        const toInput = document.getElementById('modalToDateFilter');
+        let fromD = fromInput.value ? new Date(fromInput.value + 'T00:00:00') : MIN_DATE_OBJ;
+        let toD = toInput.value ? new Date(toInput.value + 'T00:00:00') : getMaxToDate();
+        if (dateNum(fromD) > dateNum(toD)) {
+            [fromD, toD] = [toD, fromD];
+            fromInput.value = dateInputStr(fromD);
+            toInput.value = dateInputStr(toD);
+        }
+        updateModalDateDisplays();
+        renderModalContent();
+    }
+
+    // Re-renders every modal section (KPIs, charts, to-station cards, RR table)
+    // from MODAL_BASE_RECORDS filtered to the modal's own From/To Date range.
+    function renderModalContent() {
+        const fromInput = document.getElementById('modalFromDateFilter');
+        const toInput = document.getElementById('modalToDateFilter');
+        const fromNum = dateNum(fromInput.value ? new Date(fromInput.value + 'T00:00:00') : MIN_DATE_OBJ);
+        const toNum = dateNum(toInput.value ? new Date(toInput.value + 'T00:00:00') : getMaxToDate());
+        const filtered = MODAL_BASE_RECORDS.filter(r => { const n = dateNum(r.dateObj); return n >= fromNum && n <= toNum; });
+
+        const m = computeMetricsFromRecords(filtered);
+        document.getElementById('modalKpis').innerHTML = `
+            ${modalKpiTile('🚃','Total WGN', fmtNum(m.wgn), '#22d3ee')}
+            ${modalKpiTile('⚖️','Total CWT', fmtNum(m.cwt.toFixed(0)), '#38bdf8')}
+            ${modalKpiTile('💰','Basic Freight', fmtMoney(m.basic), '#34d399')}
+            ${modalKpiTile('🧾','GST Amount', fmtMoney(m.gst), '#fbbf24')}
+            ${modalKpiTile('🧮','Total Freight', fmtMoney(m.basic + m.gst), '#22d3ee')}
+        `;
+        destroyCharts();
+        renderCommodityChart(m.commodityMap, filtered);
+        renderDestinationChart(m.destMap);
+        renderToStationList(filtered, null);
+        if (MODAL_MODE === 'division') {
+            document.getElementById('stationCompareWrap').style.display = 'block';
+            renderStationCompareChart(filtered);
+        } else {
+            document.getElementById('stationCompareWrap').style.display = 'none';
+        }
+
+        CURRENT_MODAL_RECORDS = filtered;
+        renderModalTable();
+    }
+
+    function openStationModal(stationName) {
+        const s = STATION_MAP[stationName.toUpperCase()];
+        if (!s) return;
+        document.getElementById('modalTitle').innerText = `📍 ${s.station}`;
+        document.getElementById('modalSubtitle').innerText = `Station-wise detailed freight analytics`;
+
+        MODAL_MODE = 'station';
+        MODAL_BASE_RECORDS = s.records;
+        setupModalDateFilter(s.records);
+        document.getElementById('modalTableSearch').value = '';
+        renderModalContent();
+
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    function openDivisionModal() {
+        document.getElementById('modalTitle').innerText = `🏢 Division — All Stations`;
+        document.getElementById('modalSubtitle').innerText = `Division-wide freight analytics across ${Object.keys(STATION_MAP).length} stations`;
+
+        MODAL_MODE = 'division';
+        MODAL_BASE_RECORDS = ALL_RECORDS;
+        setupModalDateFilter(ALL_RECORDS);
+        document.getElementById('modalTableSearch').value = '';
+        renderModalContent();
+
+        document.getElementById('detailModal').classList.add('active');
+    }
+
+    function renderModalTable() {
+        const search = document.getElementById('modalTableSearch').value.trim().toUpperCase();
+        let rows = CURRENT_MODAL_RECORDS;
+        if (search) {
+            rows = rows.filter(r => `${r.fromStn} ${r.toStn} ${r.rrNum} ${r.rrDate} ${r.commodity}`.toUpperCase().includes(search));
+        }
+        document.getElementById('modalRowCount').innerText = `(${fmtNum(rows.length)} rows, grouped commodity-wise · date-wise within each commodity)`;
+
+        // Group commodity-wise; within each commodity, sort date-wise (oldest first).
+        const groups = {};
+        rows.forEach(r => {
+            if (!groups[r.commodity]) groups[r.commodity] = [];
+            groups[r.commodity].push(r);
+        });
+        const commodityNames = Object.keys(groups).sort();
+
+        let html = '';
+        commodityNames.forEach(cmdt => {
+            const groupRows = groups[cmdt].slice().sort((a,b) => a.dateObj - b.dateObj);
+            html += `<tr class="bg-cyan-950/30"><td colspan="10" class="p-2 text-[10px] font-black text-cyan-300 uppercase tracking-widest">${cmdt}</td></tr>`;
+
+            let gWgn = 0, gCwt = 0, gBasic = 0, gGst = 0;
+            groupRows.forEach(r => {
+                gWgn += r.wgn; gCwt += r.cwt; gBasic += r.basicFreight; gGst += r.gstAmt;
+                html += `<tr class="border-b border-slate-800/60 hover:bg-cyan-950/20">
+                    <td class="p-2 text-cyan-300 font-semibold">${r.fromStn}</td>
+                    <td class="p-2">${r.toStn}</td>
+                    <td class="p-2 font-mono text-slate-400">${r.rrNum}</td>
+                    <td class="p-2 text-slate-400">${formatDDMMYYYY(r.dateObj)}</td>
+                    <td class="p-2">${r.commodity}</td>
+                    <td class="p-2 text-right font-mono">${fmtNum(r.wgn)}</td>
+                    <td class="p-2 text-right font-mono">${fmtNum(r.cwt.toFixed(2))}</td>
+                    <td class="p-2 text-right font-mono text-emerald-400">${fmtMoney(r.basicFreight)}</td>
+                    <td class="p-2 text-right font-mono text-amber-400">${fmtMoney(r.gstAmt)}</td>
+                    <td class="p-2 text-right font-mono text-cyan-300 font-bold">${fmtMoney(r.basicFreight + r.gstAmt)}</td>
+                </tr>`;
+            });
+
+            html += `<tr class="bg-slate-900/70 border-b-2 border-cyan-700/40">
+                <td colspan="4" class="p-2 text-[10px] font-black text-white">TOTAL — ${cmdt}</td>
+                <td class="p-2"></td>
+                <td class="p-2 text-right font-mono font-black text-cyan-300">${fmtNum(gWgn)}</td>
+                <td class="p-2 text-right font-mono font-black text-cyan-300">${fmtNum(gCwt.toFixed(2))}</td>
+                <td class="p-2 text-right font-mono font-black text-emerald-300">${fmtMoney(gBasic)}</td>
+                <td class="p-2 text-right font-mono font-black text-amber-300">${fmtMoney(gGst)}</td>
+                <td class="p-2 text-right font-mono font-black text-cyan-300">${fmtMoney(gBasic + gGst)}</td>
+            </tr>`;
+        });
+
+        if (rows.length === 0) html = `<tr><td colspan="10" class="text-center py-6 text-slate-500">No matching records</td></tr>`;
+        document.getElementById('modalTableBody').innerHTML = html;
+    }
+
+    function closeModal() {
+        document.getElementById('detailModal').classList.remove('active');
+    }
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    // ---------- Init ----------
+    loadDashboardData();
+</script>
+</body>
+</html>
