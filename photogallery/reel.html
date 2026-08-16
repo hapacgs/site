@@ -158,7 +158,9 @@
     width:100%; height:100%; object-fit:cover;
     display:block;
     background: rgba(148,224,255,0.06);
+    transition: transform .5s cubic-bezier(.22,.9,.28,1);
   }
+  .card.pos-0:hover img{ transform: scale(1.04); }
 
   .card-actions{
     position:absolute; top:14px; right:14px;
@@ -185,12 +187,48 @@
     color:#04222c;
   }
 
+  /* fullscreen expand overlay -- shows on hover over the active (front) card */
+  .expand-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: rgba(6,13,26,0);
+    opacity:0;
+    transition: opacity .3s ease, background .3s ease;
+    z-index:3;
+  }
+  .card.pos-0:hover .expand-overlay{
+    opacity:1;
+    background: rgba(6,13,26,0.28);
+  }
+  .expand-btn{
+    width:52px; height:52px; border-radius:50%;
+    background: rgba(6,15,26,0.65);
+    border:1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff;
+    cursor:pointer;
+    transform: scale(.85);
+    transition: transform .25s cubic-bezier(.22,.9,.28,1), background .2s ease, color .2s ease;
+  }
+  .card.pos-0:hover .expand-btn{ transform: scale(1); }
+  .expand-btn:hover{
+    background: var(--cyan-bright);
+    color:#04222c;
+    box-shadow: 0 0 26px rgba(34,211,238,.45);
+  }
+  .expand-btn svg{ width:22px; height:22px; }
+
   .card::after{
     content:'';
     position:absolute; inset:0;
     background: linear-gradient(180deg, rgba(6,13,26,0) 55%, rgba(6,13,26,0.55));
     opacity:0;
     transition: opacity .5s ease;
+    pointer-events:none;
   }
 
   .card.pos-0{ transform: translateX(0) translateZ(0) rotateY(0deg) scale(1); z-index:5; filter: none; }
@@ -213,6 +251,8 @@
     opacity:0;
     transform: translateY(6px);
     transition: all .4s ease;
+    z-index:2;
+    pointer-events:none;
   }
   .card-caption .view{
     background: var(--navy);
@@ -222,39 +262,6 @@
     border:1px solid var(--glass-border);
   }
   .card.pos-0 .card-caption{ opacity:1; transform:translateY(0); }
-
-  .caption-edit{
-    display:none;
-    flex-direction:column;
-    gap:8px;
-    width:100%;
-  }
-  .caption-edit.active{ display:flex; }
-  .caption-edit input{
-    font-family:'Inter', sans-serif;
-    font-size:12.5px;
-    padding:8px 10px;
-    border-radius:8px;
-    border:1px solid var(--glass-border);
-    background: rgba(6,15,26,0.8);
-    color:#fff;
-    outline:none;
-  }
-  .caption-edit input:focus{ border-color: var(--cyan-bright); }
-  .caption-edit .edit-row{ display:flex; gap:6px; }
-  .caption-edit .edit-row button{
-    flex:1;
-    font-size:12px;
-    padding:7px 0;
-    border-radius:8px;
-    border:1px solid var(--glass-border);
-    cursor:pointer;
-    font-family:'Inter', sans-serif;
-  }
-  .caption-edit .save-btn{ background: var(--cyan-bright); color:#04222c; border-color:transparent; }
-  .caption-edit .cancel-btn{ background: rgba(255,255,255,0.06); color: var(--ink); }
-  .card.editing .card-caption > .view{ display:none; }
-  .caption-edit .edit-err{ font-size:11.5px; color: var(--danger); min-height:14px; }
 
   .nav{
     display:flex; gap:16px;
@@ -293,12 +300,77 @@
   }
   .dot.active{ background: var(--cyan-bright); width:22px; border-radius:4px; box-shadow: 0 0 12px rgba(34,211,238,.6); }
 
+  /* ============== FULLSCREEN LIGHTBOX ============== */
+  .lightbox{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: rgba(3,7,15,0.88);
+    backdrop-filter: blur(6px);
+    opacity:0;
+    visibility:hidden;
+    transition: opacity .35s ease, visibility 0s linear .35s;
+    padding: 40px;
+  }
+  .lightbox.open{
+    opacity:1;
+    visibility:visible;
+    transition: opacity .35s ease;
+  }
+  .lightbox-frame{
+    position:relative;
+    max-width:min(92vw, 1100px);
+    max-height:88vh;
+    transform: scale(.92);
+    transition: transform .35s cubic-bezier(.22,.9,.28,1);
+  }
+  .lightbox.open .lightbox-frame{ transform: scale(1); }
+  .lightbox-frame img{
+    display:block;
+    max-width:min(92vw, 1100px);
+    max-height:88vh;
+    width:auto; height:auto;
+    border-radius:16px;
+    box-shadow: 0 30px 90px rgba(0,0,0,0.6);
+    border:1px solid var(--glass-border);
+  }
+  .lightbox-caption{
+    text-align:center;
+    margin-top:16px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    color: var(--cyan-bright);
+  }
+  .lightbox-close{
+    position:absolute;
+    top:-18px; right:-18px;
+    width:44px; height:44px;
+    border-radius:50%;
+    background: linear-gradient(120deg, var(--cyan-bright), var(--cyan-deep));
+    border:1px solid var(--glass-border);
+    color:#04222c;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .lightbox-close:hover{
+    transform: scale(1.08);
+    box-shadow: 0 0 26px rgba(34,211,238,.5);
+  }
+  .lightbox-close svg{ width:18px; height:18px; }
+
   @media (max-width: 760px){
     .stage{ height:340px; }
     .card{ width:250px; height:310px; }
     .card.pos--1{ transform: translateX(-140px) translateZ(-120px) rotateY(28deg) scale(.8); }
     .card.pos-1{ transform: translateX(140px) translateZ(-120px) rotateY(-28deg) scale(.8); }
     .card.pos--2, .card.pos-2{ opacity:0; pointer-events:none; }
+    .lightbox-close{ top:-14px; right:0; }
   }
 </style>
 </head>
@@ -332,6 +404,17 @@
 
 <div class="dots" id="dots"></div>
 
+<!-- Fullscreen lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-frame">
+    <button class="lightbox-close" id="lightboxClose" title="Minimize" aria-label="Minimize">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+</div>
+
 <script>
   // ============================================================
   // CONFIG -- paste your Google Apps Script Web App URL here
@@ -348,6 +431,11 @@
   const dotsWrap = document.getElementById('dots');
   const emptyState = document.getElementById('emptyState');
   const statusLine = document.getElementById('statusLine');
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightboxImg');
+  const lightboxCaption = document.getElementById('lightboxCaption');
+  const lightboxClose = document.getElementById('lightboxClose');
 
   function setStatus(msg, isErr){
     statusLine.textContent = msg || '';
@@ -392,41 +480,27 @@
       card.innerHTML =
         '<img src="' + p.viewUrl + '" alt="' + escapeHtml(p.caption) + '" loading="lazy">' +
         '<div class="card-actions">' +
-          '<button class="icon-btn edit-btn" title="Edit caption">&#9998;</button>' +
           '<a class="icon-btn" href="' + p.downloadUrl + '" title="Download" target="_blank" rel="noopener">&#11015;</a>' +
+        '</div>' +
+        '<div class="expand-overlay">' +
+          '<button class="expand-btn" title="View fullscreen" aria-label="View fullscreen">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M16 3h3a2 2 0 0 1 2 2v3"/><path d="M8 21H5a2 2 0 0 1-2-2v-3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>' +
+          '</button>' +
         '</div>' +
         '<div class="card-caption">' +
           '<div class="view">' + escapeHtml(p.caption) + '</div>' +
-          '<div class="caption-edit">' +
-            '<input type="text" class="edit-caption" value="' + escapeAttr(p.caption) + '" placeholder="Caption">' +
-            '<input type="password" class="edit-password" placeholder="Password">' +
-            '<div class="edit-err"></div>' +
-            '<div class="edit-row">' +
-              '<button class="save-btn">Save</button>' +
-              '<button class="cancel-btn">Cancel</button>' +
-            '</div>' +
-          '</div>' +
         '</div>';
 
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.card-actions') || e.target.closest('.caption-edit')) return;
+        if (e.target.closest('.card-actions')) return;
+        if (e.target.closest('.expand-overlay')) return;
         current = i; update();
       });
 
-      card.querySelector('.edit-btn').addEventListener('click', (e) => {
+      card.querySelector('.expand-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         current = i; update();
-        toggleEdit(card, true);
-      });
-      card.querySelector('.cancel-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleEdit(card, false);
-      });
-      card.querySelector('.save-btn').addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const newCaption = card.querySelector('.edit-caption').value.trim() || p.caption;
-        const password = card.querySelector('.edit-password').value;
-        await saveCaption(p, newCaption, password, card);
+        openLightbox(p);
       });
 
       track.appendChild(card);
@@ -443,39 +517,26 @@
     update();
   }
 
-  function toggleEdit(card, on){
-    card.classList.toggle('editing', on);
-    card.querySelector('.caption-edit').classList.toggle('active', on);
-    if (on){
-      card.querySelector('.edit-err').textContent = '';
-      card.querySelector('.edit-password').value = '';
-    }
+  function openLightbox(photo){
+    lightboxImg.src = photo.viewUrl;
+    lightboxImg.alt = photo.caption || '';
+    lightboxCaption.textContent = photo.caption || '';
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
   }
 
-  async function saveCaption(photo, caption, password, card){
-    const saveBtn = card.querySelector('.save-btn');
-    const errBox = card.querySelector('.edit-err');
-    errBox.textContent = '';
-    if (!password){
-      errBox.textContent = 'Please enter the password.';
-      return;
-    }
-    saveBtn.textContent = 'Saving...';
-    try{
-      const res = await fetch(CONFIG.SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'updateCaption', id: photo.id, caption: caption, password: password })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      photo.caption = caption;
-      build();
-    }catch(err){
-      errBox.textContent = err.message;
-      saveBtn.textContent = 'Save';
-    }
+  function closeLightbox(){
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
   }
+
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
+  });
 
   function update(){
     const cards = track.querySelectorAll('.card');
@@ -485,10 +546,7 @@
       if (diff > n/2) diff -= n;
       if (diff < -n/2) diff += n;
 
-      const wasEditing = card.classList.contains('editing');
       card.className = 'card';
-      if (wasEditing && diff === 0) card.classList.add('editing');
-
       if (diff === 0) card.classList.add('pos-0');
       else if (diff === -1) card.classList.add('pos--1');
       else if (diff === 1) card.classList.add('pos-1');
@@ -513,6 +571,7 @@
     update();
   });
   document.addEventListener('keydown', (e) => {
+    if (lightbox.classList.contains('open')) return;
     if (e.key === 'ArrowLeft') document.getElementById('prevBtn').click();
     if (e.key === 'ArrowRight') document.getElementById('nextBtn').click();
   });
@@ -523,7 +582,6 @@
       return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
     });
   }
-  function escapeAttr(str){ return escapeHtml(str); }
 
   loadPhotos();
 </script>
