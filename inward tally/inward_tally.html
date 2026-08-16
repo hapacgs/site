@@ -1,91 +1,13 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>INWARD TALLY</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+<link rel="stylesheet" href="../iw_css/common.css">
 
 <style>
-:root {
-  --navy-deep: #050b18;
-  --navy: #0a1630;
-  --navy-mid: #0f2148;
-  --cyan: #00e5ff;
-  --cyan-soft: #7ff5ff;
-  --glass: rgba(255,255,255,0.05);
-  --glass-border: rgba(0,229,255,0.25);
-  --text: #eaf6ff;
-  --text-dim: #8fa9c2;
-}
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  color: var(--text);
-  padding: 28px 16px;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(0,229,255,0.12), transparent 40%),
-    radial-gradient(circle at 85% 90%, rgba(0,120,255,0.15), transparent 45%),
-    linear-gradient(160deg, var(--navy-deep), var(--navy) 55%, var(--navy-mid));
-  background-attachment: fixed;
-}
-
-.container {
-  max-width: 560px;
-  margin: auto;
-  background: var(--glass);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  padding: 24px 20px;
-  border-radius: 20px;
-  border: 1px solid var(--glass-border);
-  box-shadow:
-    0 8px 40px rgba(0,0,0,0.45),
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 0 40px rgba(0,229,255,0.06);
-}
-
-h2 {
-  text-align: center;
-  color: var(--cyan-soft);
-  letter-spacing: 4px;
-  font-weight: 700;
-  margin: 0 0 20px 0;
-  text-shadow: 0 0 18px rgba(0,229,255,0.5);
-}
-
-button {
-  padding: 8px 14px;
-  background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(0,120,255,0.12));
-  border: 1px solid rgba(0,229,255,0.35);
-  color: var(--cyan-soft);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-button:hover {
-  background: linear-gradient(135deg, rgba(0,229,255,0.35), rgba(0,120,255,0.22));
-  box-shadow: 0 0 16px rgba(0,229,255,0.35);
-  transform: translateY(-1px);
-}
-
-button:active { transform: translateY(0); }
-
-button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
 .upload-area {
   border: 1px dashed var(--glass-border);
   background: rgba(255,255,255,0.03);
@@ -105,21 +27,6 @@ button:disabled {
 input[type="file"] {
   color: var(--cyan-soft);
   font-size: 12px;
-}
-
-.station-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 20px;
-}
-
-.station-row label {
-  color: var(--cyan-soft);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 1.5px;
 }
 
 .station-row input {
@@ -188,19 +95,246 @@ input[type="file"] {
   padding: 6px;
 }
 
-.submit-btn {
-  padding: 10px 34px;
-  background: linear-gradient(135deg, var(--cyan), #0090c8);
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  color: #001824;
-  letter-spacing: 1px;
-  box-shadow: 0 0 20px rgba(0,229,255,0.4);
+.entry-input {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border-radius: 6px;
+  font-size: 13px;
+  box-sizing: border-box;
 }
 
-.submit-btn:hover { box-shadow: 0 0 28px rgba(0,229,255,0.6); }
+.entry-input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0,229,255,0.3);
+}
+
+.entry-input[readonly] { opacity: 0.75; }
+
+/* Auto-calculate hone wale fields (Total Freight, Class) ke liye alag
+   look - taaki user-entered vs auto-calculated turant pehchana ja sake */
+.entry-input.auto-field {
+  opacity: 1;
+  background: rgba(0,229,255,0.10);
+  border-color: rgba(0,229,255,0.4);
+  color: var(--cyan-soft);
+  font-weight: 700;
+}
+
+.status-arrived {
+  background: #ffffff;
+  color: #ff2b2b;
+}
+
+.date-pick-btn {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  margin-right: 14px;
+}
+
+.radio-option input[type="radio"] {
+  accent-color: var(--cyan);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.submit-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  filter: grayscale(40%);
+}
+
+/* Native <select> dropdown ke options browser ke default (white) background
+   use karte hain, par text color humari .entry-input se white/cyan inherit
+   ho raha tha - isliye white-on-white ho raha tha. Options ko explicitly
+   dark background + light text de rahe hain taaki text dikhe. */
+#rakeIdSelect option {
+  background: #0a1830;
+  color: #e6fbff;
+}
+
+#rakeIdSelect option:checked,
+#rakeIdSelect option:hover {
+  background: #0d6efd;
+  color: #ffffff;
+}
+
+/* ---------------- Edit-icon (pencil) button, used next to CLASS field ---------------- */
+.icon-btn {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.04);
+  font-size: 14px;
+  flex: 0 0 auto;
+  user-select: none;
+}
+.icon-btn:hover {
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px rgba(0,229,255,0.3);
+}
+
+/* ---------------- Generic centered modal overlay (password prompt, confirm-before-send) ---------------- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-box {
+  background: #0a1830;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 20px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-box h3 {
+  margin: 0 0 14px 0;
+  color: var(--cyan-soft);
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.modal-box p {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.confirm-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(0,229,255,0.12);
+  font-size: 13px;
+}
+.confirm-row:last-child { border-bottom: none; }
+.confirm-row .lbl { color: var(--text-dim); }
+.confirm-row .val { color: var(--cyan-soft); font-weight: 700; text-align: right; }
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+/* ---------------- Commodity Code -> Class management panel (right side) ---------------- */
+.class-panel {
+  display: none;
+  position: fixed;
+  top: 70px;
+  right: 24px;
+  width: 340px;
+  max-height: 78vh;
+  overflow-y: auto;
+  background: #0a1830;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 16px;
+  z-index: 999;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+}
+.class-panel.open { display: block; }
+.class-panel h3 {
+  margin: 0 0 12px 0;
+  color: var(--cyan-soft);
+  font-size: 13px;
+  letter-spacing: 1px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.class-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.class-table th, .class-table td {
+  border: 1px solid rgba(0,229,255,0.15);
+  padding: 5px 6px;
+  text-align: center;
+}
+.class-table th {
+  background: rgba(0,229,255,0.06);
+  color: var(--cyan-soft);
+}
+.class-table input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px;
+  font-size: 12px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border-radius: 4px;
+  text-align: center;
+}
+.class-row-del {
+  cursor: pointer;
+  color: #ff5c5c;
+  font-size: 15px;
+}
+
+@media (max-width: 760px) {
+  .class-panel { left: 12px; right: 12px; width: auto; top: 40px; }
+}
+
+/* Navy blue / cyan themed success popup shown after SUBMIT / EDIT succeeds */
+.success-box {
+  background: linear-gradient(160deg, #001b3a 0%, #002a52 100%);
+  border: 1px solid #00e5ff;
+  box-shadow: 0 0 30px rgba(0,229,255,0.35);
+  text-align: center;
+}
+.success-emoji {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 10px rgba(255,214,0,0.6));
+}
+.success-line {
+  color: #00e5ff;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-size: 15px;
+  margin: 6px 0;
+  text-shadow: 0 0 8px rgba(0,229,255,0.4);
+}
+.success-box .modal-actions {
+  justify-content: center;
+  margin-top: 16px;
+}
 
 </style>
 </head>
@@ -209,33 +343,191 @@ input[type="file"] {
 <div class="container">
     <h2>INWARD TALLY</h2>
 
+    <div class="station-row" id="rakeSelectRow" style="margin-bottom: 18px;">
+        <label>SELECT RAKE ID</label>
+        <select id="rakeIdSelect" class="entry-input" style="width:auto; display:inline-block;" tabindex="1">
+            <option value="">-- Loading Arriving Rake IDs... --</option>
+        </select>
+    </div>
+
     <div id="main-upload-section">
         <div class="upload-area">
             <div>PLEASE UPLOAD FILE HERE</div>
-            <input type="file" id="csvFile">
+            <input type="file" id="csvFile" tabindex="2">
         </div>
         <div class="station-row">
             <label>ENTER STATION CODE</label>
-            <input type="text" id="stationInput" value="HAPA" maxlength="4">
+            <input type="text" id="stationInput" value="HAPA" maxlength="4" tabindex="3">
         </div>
         <div style="text-align: center;">
-            <button id="processBtn" onclick="processData()">PROCESS</button>
+            <button id="processBtn" onclick="processData()" tabindex="4">PROCESS</button>
         </div>
     </div>
 
     <table id="summaryTable" class="summary-table"></table>
 </div>
 
+<!-- Commodity Code -> Class management panel (opens after password verify) -->
+<div class="class-panel" id="classPanel">
+    <h3>COMMODITY CODE → CLASS
+        <span class="icon-btn" onclick="closeClassPanel()">✕</span>
+    </h3>
+    <table class="class-table">
+        <thead><tr><th>SR NO.</th><th>COMMODITY CODE</th><th>CLASS</th><th></th></tr></thead>
+        <tbody id="classTableBody"></tbody>
+    </table>
+    <div style="text-align:center; margin-top:12px;">
+        <button type="button" class="submit-btn" onclick="addClassRow()">+ ADD ROW</button>
+        <button type="button" class="submit-btn" onclick="saveClassTable()" style="margin-left:8px;">SAVE</button>
+    </div>
+</div>
+
+<!-- Password prompt - CLASS table edit karne se pehle -->
+<div class="modal-overlay" id="classPasswordOverlay">
+    <div class="modal-box">
+        <h3>ENTER PASSWORD</h3>
+        <input type="password" id="classPasswordInput" class="entry-input" placeholder="Password" autocomplete="off">
+        <div class="modal-actions">
+            <button type="button" class="submit-btn" onclick="verifyClassPassword()">UNLOCK</button>
+            <button type="button" class="submit-btn" onclick="closeClassPasswordModal()">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- Submit/Edit se pehle confirmation - sirf manually-entered (auto-compute NAHI hone
+     wale) fields dikhate hain, taaki final DB entry jaane se pehle user check kar le -->
+<div class="modal-overlay" id="confirmOverlay">
+    <div class="modal-box">
+        <h3>PLEASE CONFIRM ENTERED DATA</h3>
+        <div id="confirmRows"></div>
+        <div class="small-note" style="margin-top:10px; color: var(--text-dim);">
+            Please check the information and confirm before submitting to Google Sheet.
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="submit-btn" id="confirmProceedBtn" onclick="doSendToSheet()">CONFIRM &amp; SEND</button>
+            <button type="button" class="submit-btn" onclick="closeConfirmModal()">GO BACK &amp; EDIT</button>
+        </div>
+    </div>
+</div>
+
+<!-- Validation warning popup for invalid / future RR DATE entries -->
+<div class="modal-overlay" id="dateWarningOverlay">
+    <div class="modal-box">
+        <h3 id="dateWarningTitle">INVALID ENTRY</h3>
+        <p id="dateWarningMessage"></p>
+        <div class="modal-actions">
+            <button type="button" class="submit-btn" id="dateWarningOkBtn" onclick="closeDateWarningModal()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Navy blue / cyan themed success popup for SUBMIT / EDIT - replaces the plain alert() -->
+<div class="modal-overlay" id="successOverlay">
+    <div class="modal-box success-box">
+        <div class="success-emoji">😃</div>
+        <div class="success-line">DATA SENT TO GOOGLE SHEET SUCCESSFULLY.</div>
+        <div class="success-line" id="successCsvLine">CSV FILE SAVED TO GOOGLE DRIVE SUCCESSFULLY.</div>
+        <div class="modal-actions">
+            <button type="button" class="submit-btn" id="successOkBtn" onclick="closeSuccessModal()">OK</button>
+        </div>
+    </div>
+</div>
+
 <script>
 let globalData=[], globalHeader=[];
 let currentPayload = []; 
+let isUpdateMode = false;
+// The raw File object the user selected in the CSV upload input - kept around
+// (not just the parsed rows) so the original file itself can be saved as-is
+// into the shared Drive folder once the entry is successfully submitted.
+let uploadedCsvFile = null;
+// When an existing rake is selected for EDIT, its original (sheet) status is
+// stored here - so that sendToSheet() only auto-manages the status when the
+// rake is still in the Inward Tally phase (blank or ARRIVING); the status of
+// rakes that have already moved on to the WTR/Delivery Book stage is not
+// accidentally overwritten from here.
+let originalStatus = "";
+// Commodity Code -> Class mapping list (loaded from backend Script Properties).
+// The CLASS field now auto-fills by matching the current rake's COMMODITY CODE
+// against this list, instead of a static "130A".
+let commodityClassMap = [];
+// Commodity code of the currently open form (new insert or edit) - when the
+// CLASS table is SAVEd, the CLASS field is refreshed immediately based on this.
+let currentCommodityCode = "";
+let arrivingRakesData = [];
+// Full sheet data (not just ARRIVING ones, all records) - this lets us show the
+// latest matching entry for the "LAST LOCAL/FOREIGN DELIVERY NO." reference as
+// soon as LOCAL/FOREIGN is selected (display only, the number is still entered manually).
+let allSheetData = [];
 
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
-const SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
-const SHEET_NAME = "IW_Data";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2hFOjiIlfK375_uBK3EQJ-_4KUwflq8AV3gmJtFjDGt-b-KhDm7avaq040OrxonTdTw/exec";
+const SHEET_ID = "1kZF1pTmCnMcjMKwzLvxU6CMoyqkiBEGd2lWOYXSxo64";
+const SHEET_NAME = "iw_rake_data";
+// Shared Drive folder where every uploaded CSV file is also saved on SUBMIT
+// (filename: "<SR NO> INV <INVOICE NO.> <STATION FROM> <STATION TO> <RR DATE> (<DELIVERY NO.>).csv")
+const CSV_UPLOAD_FOLDER_ID = "1h21i2sdh9DMFmQhbdmApFkW03CruUkQq";
+
+// Accepts a bare array, a {records:[...]}/{data:[...]}/{rows:[...]}/{result:[...]} wrapper,
+// or a single rake object -- normalizes to an array either way.
+function extractArray(json) {
+    if (Array.isArray(json)) return json;
+    if (json && Array.isArray(json.records)) return json.records;
+    if (json && Array.isArray(json.data)) return json.data;
+    if (json && Array.isArray(json.rows)) return json.rows;
+    if (json && Array.isArray(json.result)) return json.result;
+    if (json && typeof json === "object" && Object.prototype.hasOwnProperty.call(json, "rakeId")) return [json];
+    return [];
+}
+
+// A record is counted as "incomplete" as long as any of the inward tally form's
+// manually-entered fields (RR NUMBER, RR DATE, CHARGE WEIGHT, FREIGHT,
+// G.S.T.) is empty/missing. This check is what sendToSheet() uses to decide
+// whether STATUS stays blank/NIL or becomes "ARRIVING".
+function isRakeIncomplete(record) {
+    let fields = ["rrNumber", "rrDate", "chargeWeight", "freightExclGst", "gst"];
+    return fields.some(f => {
+        let v = record[f];
+        return v === undefined || v === null || v.toString().trim() === "";
+    });
+}
+
+// On page load, all rakes are fetched from the database, and only those whose
+// STATUS is currently BLANK/NIL (i.e. the Inward Tally data is not fully
+// filled in) are put into the Rake ID dropdown. As soon as all the data is
+// filled in, sendToSheet() sets the status to "ARRIVING" and that rake is
+// removed from this dropdown.
+function loadArrivingRakes() {
+    let select = document.getElementById("rakeIdSelect");
+    let url = APPS_SCRIPT_URL + "?action=listAll&sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME) + "&_=" + Date.now();
+    fetch(url, { cache: "no-store" }).then(r => r.json()).then(json => {
+        let all = extractArray(json);
+        allSheetData = all;
+        arrivingRakesData = all.filter(r => (r.status || "").toString().trim() === "");
+        if (arrivingRakesData.length === 0) {
+            select.innerHTML = '<option value="">-- No Pending Rakes Found --</option>';
+            return;
+        }
+        select.innerHTML = '<option value="">-- Select Rake ID --</option>' +
+            arrivingRakesData.map(rec =>
+                `<option value="${rec.rakeId}">${rec.rakeId}</option>`
+            ).join("");
+    }).catch(err => {
+        console.error(err);
+        select.innerHTML = '<option value="">-- Error Loading Rake IDs --</option>';
+    });
+}
+
+document.getElementById("rakeIdSelect").addEventListener("change", function () {
+    let rakeId = this.value;
+    if (!rakeId) return;
+    let record = arrivingRakesData.find(r => r.rakeId === rakeId);
+    if (!record) { alert("Selected rake data not found."); return; }
+    showExistingRakeForm(record);
+});
 
 document.getElementById("csvFile").addEventListener("change", e => {
     if(e.target.files.length === 0) return;
+    uploadedCsvFile = e.target.files[0];
     Papa.parse(e.target.files[0], { skipEmptyLines: true, complete: (res) => {
         let rows = res.data;
         let hIdx = rows.findIndex(r => r.join(" ").includes("WAGON RLY"));
@@ -245,7 +537,76 @@ document.getElementById("csvFile").addEventListener("change", e => {
     }});
 });
 
-// BCN.. -> BCN (agar 4th char H nahi hain), BOXN.. -> BOXN (agar 5th char H nahi hain), baaki as-it-is
+// Reads a File object and resolves to its raw Base64 content (data: URL prefix stripped)
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        let reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// Saves the originally-uploaded CSV file into the shared Drive folder, named:
+// "<SR NO> INV <INVOICE NO.> <STATION FROM> <STATION TO> <RR DATE> (<DELIVERY NO.>).csv"
+// The SR NO. itself is assigned by the backend (a running counter kept in
+// Script Properties) so it stays correct even with concurrent uploads.
+// Resolves to { skipped: true } when there was nothing to upload, or to the
+// backend's JSON response (status/message/fileName) otherwise - the caller
+// decides how to report success/failure to the user.
+function uploadCsvFileToDrive(payload) {
+    if (!uploadedCsvFile) return Promise.resolve({ skipped: true });
+    return fileToBase64(uploadedCsvFile).then(base64 => {
+        return fetch(APPS_SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "saveCsvFile",
+                folderId: CSV_UPLOAD_FOLDER_ID,
+                invoiceNo: payload.invoiceNo,
+                stationFrom: payload.stationFrom,
+                stationTo: payload.stationTo,
+                rrDate: payload.rrDate,
+                deliveryNo: payload.deliveryNo,
+                fileBase64: base64
+            })
+        }).then(r => r.json());
+    });
+}
+
+loadArrivingRakes();
+
+// Loads the Commodity Code -> Class list from the backend (Script Properties).
+// Requires a new "getCommodityClasses" action on the backend (no password
+// needed, this is read-only).
+function loadCommodityClasses() {
+    let url = APPS_SCRIPT_URL + "?action=getCommodityClasses&_=" + Date.now();
+    fetch(url, { cache: "no-store" }).then(r => r.json()).then(json => {
+        commodityClassMap = (json && Array.isArray(json.list)) ? json.list : [];
+        refreshClassFieldFromCommodity();
+    }).catch(err => console.error(err));
+}
+loadCommodityClasses();
+
+// Looks up the CLASS for a given COMMODITY CODE in commodityClassMap
+// (case/space-insensitive match). Returns null if no match is found.
+function getClassForCommodity(code) {
+    code = (code || "").toString().trim().toUpperCase();
+    if (!code) return null;
+    let match = commodityClassMap.find(r => (r.commodityCode || "").toString().trim().toUpperCase() === code);
+    return (match && match.class) ? match.class.toString().trim() : null;
+}
+
+// Refreshes the currently open form's CLASS field based on currentCommodityCode
+// - this is also called right after the table is SAVEd, so a new/edited
+// mapping is reflected in the CLASS field immediately.
+function refreshClassFieldFromCommodity() {
+    let el = document.getElementById("deliveryClass");
+    if (!el || !currentCommodityCode) return;
+    let cls = getClassForCommodity(currentCommodityCode);
+    if (cls) el.value = cls;
+}
+
+// BCN.. -> BCN (if the 4th char is not H), BOXN.. -> BOXN (if the 5th char is not H), everything else as-is
 function getWagonType(val) {
     val = (val || "").toString().trim();
     if (val.substring(0,3) === "BCN" && val.charAt(3) !== "H") return "BCN";
@@ -256,6 +617,96 @@ function getWagonType(val) {
 // Free Hours for Unloading logic:
 // Rake Type "M" => 5
 // Rake Type "R" => based on No. of Wagons: <=20 => 5, 21-30 => 7, 31-44 => 9, >45 => 11
+// ---------------- Things related to the pencil icon next to the CLASS field ----------------
+
+function openClassPasswordModal() {
+    document.getElementById("classPasswordInput").value = "";
+    document.getElementById("classPasswordOverlay").classList.add("open");
+}
+function closeClassPasswordModal() {
+    document.getElementById("classPasswordOverlay").classList.remove("open");
+}
+
+// The password field is type="password", so the browser automatically
+// masks it as dots (•••••).
+function verifyClassPassword() {
+    let pass = document.getElementById("classPasswordInput").value;
+    if (pass !== "94976") {
+        alert("WRONG PASSWORD !!!");
+        return;
+    }
+    closeClassPasswordModal();
+    openClassPanel();
+}
+
+function openClassPanel() {
+    renderClassTable();
+    document.getElementById("classPanel").classList.add("open");
+}
+function closeClassPanel() {
+    document.getElementById("classPanel").classList.remove("open");
+}
+
+function renderClassTable() {
+    let tbody = document.getElementById("classTableBody");
+    if (commodityClassMap.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="small-note">No entries yet</td></tr>';
+        return;
+    }
+    tbody.innerHTML = commodityClassMap.map((row, idx) => `
+        <tr>
+            <td>${idx + 1}</td>
+            <td><input type="text" value="${row.commodityCode || ''}" onchange="updateClassRow(${idx}, 'commodityCode', this.value)"></td>
+            <td><input type="text" value="${row.class || ''}" onchange="updateClassRow(${idx}, 'class', this.value)"></td>
+            <td><span class="class-row-del" title="Delete Row" onclick="deleteClassRow(${idx})">🗑️</span></td>
+        </tr>
+    `).join("");
+}
+
+function updateClassRow(idx, field, value) {
+    if (!commodityClassMap[idx]) return;
+    commodityClassMap[idx][field] = value.trim();
+}
+
+function addClassRow() {
+    commodityClassMap.push({ commodityCode: "", class: "" });
+    renderClassTable();
+}
+
+function deleteClassRow(idx) {
+    commodityClassMap.splice(idx, 1);
+    renderClassTable();
+}
+
+// Saves the full list to the backend (Script Properties). Requires a new
+// "saveCommodityClasses" action (POST, password-protected 94976) on the backend.
+function saveClassTable() {
+    // Rows with an empty commodity code are removed before saving
+    commodityClassMap = commodityClassMap.filter(r => (r.commodityCode || "").toString().trim() !== "");
+
+    let payload = {
+        action: "saveCommodityClasses",
+        password: "94976",
+        list: commodityClassMap
+    };
+
+    fetch(APPS_SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === "success") {
+                alert("COMMODITY CODE / CLASS LIST SAVED !!!");
+                renderClassTable();
+                refreshClassFieldFromCommodity();
+            } else {
+                alert("ERROR: " + (res.message || "Could not save."));
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("ERROR: Check console.");
+        });
+}
+
 function computeFreeHours(rakeType, wagonCount) {
     let type = (rakeType || "").toString().trim().toUpperCase();
     let n = parseInt(wagonCount) || 0;
@@ -280,6 +731,7 @@ function processData(){
     if(filtered.length == 0){ alert("No data found"); return; }
 
     document.getElementById("main-upload-section").style.display = "none";
+    originalStatus = "";
 
     let wagonCount = filtered.length;
     let invNums = filtered.map(r => parseInt(r[globalHeader.indexOf("INVOICE NO.")])).filter(n => !isNaN(n));
@@ -291,30 +743,41 @@ function processData(){
     let year = d[2].length === 4 ? d[2] : ('20' + d[2]);
     let finalDate = `${d[0]}-${d[1]}-${year}`;
     let sttnFrom = filtered[0][globalHeader.indexOf("STTN FROM")];
-    let rakeId = `${sttnFrom}${station}${new Date().toLocaleDateString('en-GB').replace(/\//g,'')}01`;
+    // Rake ID is now built from the RR (INVOICE) DATE + INVOICE NO., not the
+    // current/upload date - this will also match the other sheet and won't
+    // clash for multiple rakes on the same station pair + same day.
+    let rakeId = `${sttnFrom}${station}${finalDate.replace(/-/g,'')}${invDisplay.toString().replace(/-/g,'')}`;
     let rakeType = filtered[0][globalHeader.indexOf("RK PM")];
     let wagonType = getWagonType(filtered[0][globalHeader.indexOf("WAGON TYPE")]);
     let wagonSummary = JSON.stringify(filtered.map(r => ({RLY: r[globalHeader.indexOf("WAGON RLY")], TYPE: r[globalHeader.indexOf("WAGON TYPE")], NO: r[globalHeader.indexOf("WAGON NO")].toString()})));
     let freeHours = computeFreeHours(rakeType, wagonCount);
+    let commodityCode = filtered[0][globalHeader.indexOf("CMDT")];
+    currentCommodityCode = commodityCode;
+    let initialClass = getClassForCommodity(commodityCode) || "130A";
 
-    // Data Mapping for Google Sheet (A to AC => 29 columns, index 0 to 28)
-    // A-M (0-12): basic rake info, N-W (13-22): filled later via WTR page,
-    // X (23): TOTAL DET. (filled later via WTR page), Y (24): FREE HRS. (filled now)
-    currentPayload = new Array(29).fill("");
-    currentPayload[0] = rakeId;                                        // A - RAKE ID
-    currentPayload[1] = rakeType;                                      // B - RAKE TYPE
-    currentPayload[2] = wagonType;                                     // C - WAGON TYPE
-    currentPayload[3] = sttnFrom;                                      // D - STATION FROM
-    currentPayload[4] = station;                                       // E - STATION TO
-    currentPayload[5] = wagonCount;                                    // F - NO. OF WAGONS
-    currentPayload[6] = invDisplay;                                    // G - INVOICE NO.
-    currentPayload[7] = finalDate;                                     // H - INVOICE DATE
-    currentPayload[8] = totalWT.toFixed(2);                            // I - ACTUAL WT (TONNE)
-    currentPayload[9] = filtered[0][globalHeader.indexOf("CNSR")];     // J - CONSIGNER
-    currentPayload[10] = filtered[0][globalHeader.indexOf("CNSG")];    // K - CONSIGNEE
-    currentPayload[11] = filtered[0][globalHeader.indexOf("CMDT")];    // L - COMMODITY CODE
-    // Index 12 (M Column - WAGON SUMMARY) sendToSheet mein textarea se liya jayega
-    currentPayload[24] = freeHours;                                    // Y - FREE HRS. (FOR UNLOADING)
+    // The backend (Apps Script) is being rewritten from scratch, so a named
+    // object is now sent (not the old column-index approach) - whatever field
+    // is known here is filled in here, the rest (placement/release/local-foreign
+    // related demurrage-delivery items) will be filled in later on the WTR and
+    // Delivery Book pages.
+    currentPayload = {
+        rakeId: rakeId,
+        rakeType: rakeType,
+        wagonType: wagonType,
+        stationFrom: sttnFrom,
+        stationTo: station,
+        wagonCount: wagonCount,
+        invoiceNo: invDisplay,
+        invoiceDate: finalDate,
+        actualWt: totalWT.toFixed(2),
+        consigner: filtered[0][globalHeader.indexOf("CNSR")],
+        consignee: filtered[0][globalHeader.indexOf("CNSG")],
+        commodityCode: filtered[0][globalHeader.indexOf("CMDT")],
+        freeHrs: freeHours
+        // wagonSummary, rrNumber, rrDate, chargeWeight, freightExclGst, gst,
+        // totalFreightInclGst, localForeign, deliveryClass - these will be taken
+        // from the form in sendToSheet() (at submit time)
+    };
 
     document.getElementById("summaryTable").style.display = "table";
     document.getElementById("summaryTable").innerHTML = `
@@ -326,33 +789,465 @@ function processData(){
         <tr><td class="heading">NO. OF WAGONS</td><td>${wagonCount}</td></tr>
         <tr><td class="heading">INVOICE NO.</td><td>${invDisplay}</td></tr>
         <tr><td class="heading">INVOICE DATE</td><td>${finalDate}</td></tr>
-        <tr><td class="heading">ACTUAL WT (TONNE)</td><td>${totalWT.toFixed(2)}</td></tr>
+        <tr><td class="heading">ACTUAL WEIGHT (TONNE)</td><td>${totalWT.toFixed(2)}</td></tr>
         <tr><td class="heading">CONSIGNER</td><td>${filtered[0][globalHeader.indexOf("CNSR")]}</td></tr>
         <tr><td class="heading">CONSIGNEE</td><td>${filtered[0][globalHeader.indexOf("CNSG")]}</td></tr>
-        <tr><td class="heading">COMMODITY CODE</td><td>${filtered[0][globalHeader.indexOf("CMDT")]}</td></tr>
-        <tr><td class="heading">WAGON SUMMARY</td><td><textarea id="wagonJson">${wagonSummary}</textarea></td></tr>
+        <tr><td class="heading">COMMODITY CODE</td><td>${commodityCode}</td></tr>
+        <tr><td class="heading">RR NUMBER</td><td><input type="text" id="rrNumber" class="entry-input" tabindex="5"></td></tr>
+        <tr><td class="heading">RR DATE <span class="small-note">(DD/MM/YYYY)</span></td><td>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input type="text" id="rrDate" class="entry-input" inputmode="numeric" placeholder="__/__/____" style="flex:1;" tabindex="6">
+                <button type="button" class="date-pick-btn" onclick="openRrDatePicker()">📅</button>
+                <input type="date" id="rrDatePicker" style="position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;" tabindex="-1">
+            </div>
+        </td></tr>
+        <tr><td class="heading">CHARGE WEIGHT <span class="small-note">(TONNE)</span></td><td><input type="text" id="chargeWeight" class="entry-input" inputmode="decimal" placeholder="e.g. 3852.2" tabindex="7"></td></tr>
+        <tr><td class="heading">FREIGHT <span class="small-note">(EXCL. GST)</span></td><td><input type="text" inputmode="numeric" id="freightExclGst" class="entry-input" tabindex="8"></td></tr>
+        <tr><td class="heading">G.S.T.</td><td><input type="text" inputmode="numeric" id="gst" class="entry-input" tabindex="9"></td></tr>
+        <tr><td class="heading">TOTAL FREIGHT <span class="small-note">(INCL. GST, AUTO)</span></td><td><input type="text" id="totalFreightInclGst" class="entry-input auto-field" readonly tabindex="-1"></td></tr>
+        <tr><td class="heading">LOCAL / FOREIGN</td><td>
+            <label class="radio-option"><input type="radio" name="localForeign" value="LOCAL" checked tabindex="10"> LOCAL</label>
+            <label class="radio-option"><input type="radio" name="localForeign" value="FOREIGN" tabindex="10"> FOREIGN</label>
+        </td></tr>
+        <tr><td class="heading">DELIVERY NO. <span class="small-note">(AUTO)</span></td><td>
+            <div style="display:flex; align-items:center; gap:4px;">
+                <span id="deliveryNoPrefix" class="entry-input auto-field" style="flex:0 0 auto; width:auto; padding:7px 8px;">LOCAL/1/</span>
+                <input type="text" id="deliveryNoNum" class="entry-input auto-field" style="flex:1;" readonly tabindex="-1">
+            </div>
+            <div id="lastDeliveryNoDisplay" class="small-note" style="margin-top:4px;"></div>
+        </td></tr>
+        <tr><td class="heading">CLASS <span class="small-note">(AUTO)</span></td><td>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <input type="text" id="deliveryClass" class="entry-input auto-field" style="flex:1;" value="${initialClass}" readonly tabindex="-1">
+                <span class="icon-btn" title="Manage Commodity Code / Class" onclick="openClassPasswordModal()">✏️</span>
+            </div>
+        </td></tr>
+        <tr><td class="heading">WAGON SUMMARY</td><td><textarea id="wagonJson" tabindex="11">${wagonSummary}</textarea></td></tr>
         <tr><td class="heading">FREE HOURS FOR UNLOADING</td><td>${freeHours}</td></tr>
-        <tr><td class="heading">STATUS</td><td id="statusValueCell"></td></tr>
+        <tr><td class="heading">STATUS</td><td><span id="statusValueCell" class="status-badge status-arrived">NIL</span></td></tr>
         <tr><td colspan="2" style="text-align:center; padding:12px;">
-            <button class="submit-btn" id="submitBtn" onclick="sendToSheet()">SUBMIT</button>
+            <button class="submit-btn" id="submitBtn" onclick="confirmBeforeSend()" tabindex="12">SUBMIT</button>
+            <button class="submit-btn" id="editBtn" onclick="confirmBeforeSend()" style="margin-left:10px;" disabled tabindex="13">EDIT</button>
         </td></tr>
     `;
+
+    attachEntryFormListeners();
 }
 
-function sendToSheet() {
-    // Wagon Summary ko M (Index 12) mein set kar rahe hain
-    currentPayload[12] = document.getElementById("wagonJson").value;
+// DD/MM/YYYY -> YYYY-MM-DD, used internally only to build a JS Date object
+function dmyToISO(dmy) {
+    if (!dmy) return "";
+    let p = dmy.split("/");
+    if (p.length !== 3) return "";
+    let dd = p[0].padStart(2, "0");
+    let mm = p[1].padStart(2, "0");
+    let yyyy = p[2];
+    if (yyyy.length !== 4) return "";
+    return `${yyyy}-${mm}-${dd}`;
+}
 
-    let submitBtn = document.getElementById("submitBtn");
-    submitBtn.disabled = true;
-    submitBtn.innerText = "SENDING...";
+// Today's date in DD/MM/YYYY format
+function todayDMY() {
+    let t = new Date();
+    return `${String(t.getDate()).padStart(2, "0")}/${String(t.getMonth() + 1).padStart(2, "0")}/${t.getFullYear()}`;
+}
 
-    let payload = {
+// Today's date in YYYY-MM-DD format (for the native date picker's "max" attribute)
+function todayISO() {
+    let t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
+// DD/MM/YY -> DD/MM/YYYY (auto-expands a 2-digit year, always assuming 20YY)
+function normalizeDateYear(dmy) {
+    let p = dmy.split("/");
+    if (p.length !== 3 || p[2].length !== 2) return dmy;
+    return `${p[0]}/${p[1]}/20${p[2]}`;
+}
+
+// Strict DD/MM/YYYY validator - the date must be exactly a 2-digit day, a
+// 2-digit month and a full 4-digit year, and must resolve to a real calendar
+// date. Anything shorter, longer, or malformed (e.g. "09/08/6") is invalid.
+function isValidStrictDMY(dmy) {
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dmy)) return false;
+    let p = dmy.split("/");
+    let dd = parseInt(p[0], 10), mm = parseInt(p[1], 10), yyyy = parseInt(p[2], 10);
+    let d = new Date(yyyy, mm - 1, dd);
+    return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
+}
+
+// Styled replacement for the native alert() popup, used for every date
+// validation warning (navy blue / cyan themed, matches the app's modal style).
+function showDateWarningModal(title, message, focusEl) {
+    document.getElementById("dateWarningTitle").innerText = title;
+    document.getElementById("dateWarningMessage").innerText = message;
+    window._dateWarningFocusEl = focusEl || null;
+    document.getElementById("dateWarningOverlay").classList.add("open");
+}
+function closeDateWarningModal() {
+    document.getElementById("dateWarningOverlay").classList.remove("open");
+    if (window._dateWarningFocusEl) {
+        let el = window._dateWarningFocusEl;
+        window._dateWarningFocusEl = null;
+        setTimeout(function () { el.focus(); }, 0);
+    }
+}
+
+// Navy blue / cyan themed success popup shown after a SUBMIT / EDIT that
+// saved successfully - replaces the old plain-text alert() popups.
+// showCsvLine: true only when the CSV file was actually saved to Drive in
+// this run (fresh insert with an uploaded CSV); hidden for EDIT / no-CSV cases.
+function showSuccessModal(showCsvLine) {
+    document.getElementById("successCsvLine").style.display = showCsvLine ? "block" : "none";
+    document.getElementById("successOverlay").classList.add("open");
+}
+function closeSuccessModal() {
+    document.getElementById("successOverlay").classList.remove("open");
+    location.reload();
+}
+
+// Every date field must always hold a complete, valid DD/MM/YYYY date. A
+// 2-digit year is auto-expanded to 20YY as a convenience; anything else that
+// doesn't resolve to a full, real DD/MM/YYYY date (missing digits, a short
+// year like "09/08/6", an impossible day/month, etc.) is rejected and the
+// field is cleared for re-entry. Future dates are rejected the same way.
+function enforceDateNotFuture(dateId) {
+    let el = document.getElementById(dateId);
+    if (!el || !el.value) return;
+    let val = el.value;
+    let parts = val.split("/");
+    if (parts.length === 3 && parts[2].length === 2) {
+        val = normalizeDateYear(val);
+    }
+    if (!isValidStrictDMY(val)) {
+        showDateWarningModal("INVALID DATE", "Please enter a complete, valid date in DD/MM/YYYY format (e.g. " + todayDMY() + ").", el);
+        el.value = "";
+        return;
+    }
+    el.value = val;
+    let iso = dmyToISO(val);
+    let entered = new Date(iso + "T00:00:00");
+    let today = new Date(dmyToISO(todayDMY()) + "T00:00:00");
+    if (entered.getTime() > today.getTime()) {
+        showDateWarningModal("FUTURE DATE NOT ALLOWED", "Future dates are not allowed. Please enter today's date (" + todayDMY() + ") or an earlier date.", el);
+        el.value = "";
+    }
+}
+
+// Auto-formats RR DATE into DD/MM/YYYY as the user types (only digits allowed,
+// "/" is inserted automatically). On leaving the field, a 2-digit year is
+// expanded to 4 digits and future dates are rejected with a warning.
+function attachDateMask(id) {
+    let el = document.getElementById(id);
+    el.setAttribute("maxlength", "10");
+    el.addEventListener("input", function () {
+        let digits = this.value.replace(/\D/g, "").substring(0, 8);
+        let out = digits;
+        if (digits.length > 4) out = digits.substring(0, 2) + "/" + digits.substring(2, 4) + "/" + digits.substring(4);
+        else if (digits.length > 2) out = digits.substring(0, 2) + "/" + digits.substring(2);
+        this.value = out;
+    });
+    el.addEventListener("blur", function () {
+        enforceDateNotFuture(id);
+    });
+}
+
+// Opens the native calendar as soon as the 📅 button is pressed (and its value
+// change listener in attachEntryFormListeners() syncs the rrDate field)
+// dates later than today stay disabled in the calendar (max attribute)
+function openRrDatePicker() {
+    let picker = document.getElementById("rrDatePicker");
+    picker.max = todayISO();
+    if (picker.showPicker) picker.showPicker();
+    else picker.click();
+}
+
+// When an existing ARRIVING rake is selected from the dropdown - the data that
+// was already filled in (at CSV/insert time) is just displayed here, and the
+// remaining fields (RR Number, RR Date, Charge Weight, Freight, GST,
+// Local/Foreign, Class, Wagon Summary) can be filled in/updated by the user here.
+function showExistingRakeForm(record) {
+    isUpdateMode = true;
+    document.getElementById("main-upload-section").style.display = "none";
+
+    let rakeId = record.rakeId || "-";
+    let rakeType = record.rakeType || "-";
+    let wagonType = record.wagonType || "-";
+    let sttnFrom = record.stationFrom || "-";
+    let station = record.stationTo || "-";
+    let wagonCount = record.wagonCount || "-";
+    let invDisplay = record.invoiceNo || "-";
+    let finalDate = record.invoiceDate || "-";
+    let totalWT = record.actualWt || "-";
+    let consigner = record.consigner || "-";
+    let consignee = record.consignee || "-";
+    let commodityCode = record.commodityCode || "-";
+    let freeHours = record.freeHrs || "-";
+    let wagonSummary = record.wagonSummary || "[]";
+    originalStatus = (record.status || "").toString().trim();
+    let statusVal = originalStatus || "NIL";
+    currentCommodityCode = record.commodityCode || "";
+    let classValue = getClassForCommodity(currentCommodityCode) || record.deliveryClass || "130A";
+
+    // Only the trailing number part is extracted from the already-saved
+    // DELIVERY NO. (e.g. "LOCAL/1/23") to prefill the number input; the prefix
+    // (LOCAL/1/ or FOREIGN/1/) will always be generated from localForeign.
+    let existingDeliveryNoRaw = record.deliveryNo || "";
+    let existingDeliveryNoNum = existingDeliveryNoRaw.includes("/")
+        ? existingDeliveryNoRaw.substring(existingDeliveryNoRaw.lastIndexOf("/") + 1)
+        : existingDeliveryNoRaw;
+
+    // At update time, only rakeId is used to identify the record and the
+    // remaining fields are filled in from the form in sendToSheet() - already-
+    // known fields don't need to be sent again in the payload (the backend will
+    // simply match rakeId and merge/update those fields).
+    currentPayload = { rakeId: rakeId };
+
+    document.getElementById("summaryTable").style.display = "table";
+    document.getElementById("summaryTable").innerHTML = `
+        <tr><td class="heading">RAKE ID</td><td>${rakeId}</td></tr>
+        <tr><td class="heading">RAKE TYPE</td><td>${rakeType}</td></tr>
+        <tr><td class="heading">WAGON TYPE</td><td>${wagonType}</td></tr>
+        <tr><td class="heading">STATION FROM</td><td>${sttnFrom}</td></tr>
+        <tr><td class="heading">STATION TO</td><td>${station}</td></tr>
+        <tr><td class="heading">NO. OF WAGONS</td><td>${wagonCount}</td></tr>
+        <tr><td class="heading">INVOICE NO.</td><td>${invDisplay}</td></tr>
+        <tr><td class="heading">INVOICE DATE</td><td>${finalDate}</td></tr>
+        <tr><td class="heading">ACTUAL WEIGHT (TONNE)</td><td>${totalWT}</td></tr>
+        <tr><td class="heading">CONSIGNER</td><td>${consigner}</td></tr>
+        <tr><td class="heading">CONSIGNEE</td><td>${consignee}</td></tr>
+        <tr><td class="heading">COMMODITY CODE</td><td>${commodityCode}</td></tr>
+        <tr><td class="heading">RR NUMBER</td><td><input type="text" id="rrNumber" class="entry-input" value="${record.rrNumber || ''}" tabindex="5"></td></tr>
+        <tr><td class="heading">RR DATE <span class="small-note">(DD/MM/YYYY)</span></td><td>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <input type="text" id="rrDate" class="entry-input" inputmode="numeric" placeholder="__/__/____" style="flex:1;" value="${record.rrDate || ''}" tabindex="6">
+                <button type="button" class="date-pick-btn" onclick="openRrDatePicker()">📅</button>
+                <input type="date" id="rrDatePicker" style="position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;" tabindex="-1">
+            </div>
+        </td></tr>
+        <tr><td class="heading">CHARGE WEIGHT <span class="small-note">(TONNE)</span></td><td><input type="text" id="chargeWeight" class="entry-input" inputmode="decimal" placeholder="e.g. 3852.2" value="${record.chargeWeight || ''}" tabindex="7"></td></tr>
+        <tr><td class="heading">FREIGHT <span class="small-note">(EXCL. GST)</span></td><td><input type="text" inputmode="numeric" id="freightExclGst" class="entry-input" value="${record.freightExclGst || ''}" tabindex="8"></td></tr>
+        <tr><td class="heading">G.S.T.</td><td><input type="text" inputmode="numeric" id="gst" class="entry-input" value="${record.gst || ''}" tabindex="9"></td></tr>
+        <tr><td class="heading">TOTAL FREIGHT <span class="small-note">(INCL. GST, AUTO)</span></td><td><input type="text" id="totalFreightInclGst" class="entry-input auto-field" readonly tabindex="-1"></td></tr>
+        <tr><td class="heading">LOCAL / FOREIGN</td><td>
+            <label class="radio-option"><input type="radio" name="localForeign" value="LOCAL" ${(record.localForeign || "LOCAL") === "LOCAL" ? "checked" : ""} tabindex="10"> LOCAL</label>
+            <label class="radio-option"><input type="radio" name="localForeign" value="FOREIGN" ${record.localForeign === "FOREIGN" ? "checked" : ""} tabindex="10"> FOREIGN</label>
+        </td></tr>
+        <tr><td class="heading">DELIVERY NO. <span class="small-note">(AUTO)</span></td><td>
+            <div style="display:flex; align-items:center; gap:4px;">
+                <span id="deliveryNoPrefix" class="entry-input auto-field" style="flex:0 0 auto; width:auto; padding:7px 8px;">${(record.localForeign || "LOCAL")}/1/</span>
+                <input type="text" id="deliveryNoNum" class="entry-input auto-field" style="flex:1;" value="${existingDeliveryNoNum}" readonly tabindex="-1">
+            </div>
+            <div id="lastDeliveryNoDisplay" class="small-note" style="margin-top:4px;"></div>
+        </td></tr>
+        <tr><td class="heading">CLASS <span class="small-note">(AUTO)</span></td><td>
+            <div style="display:flex; align-items:center; gap:6px;">
+                <input type="text" id="deliveryClass" class="entry-input auto-field" style="flex:1;" value="${classValue}" readonly tabindex="-1">
+                <span class="icon-btn" title="Manage Commodity Code / Class" onclick="openClassPasswordModal()">✏️</span>
+            </div>
+        </td></tr>
+        <tr><td class="heading">WAGON SUMMARY</td><td><textarea id="wagonJson" tabindex="11">${wagonSummary}</textarea></td></tr>
+        <tr><td class="heading">FREE HOURS FOR UNLOADING</td><td>${freeHours}</td></tr>
+        <tr><td class="heading">STATUS</td><td><span id="statusValueCell" class="status-badge status-arrived">${statusVal}</span></td></tr>
+        <tr><td colspan="2" style="text-align:center; padding:12px;">
+            <button class="submit-btn" id="submitBtn" onclick="confirmBeforeSend()" disabled tabindex="12">SUBMIT</button>
+            <button class="submit-btn" id="editBtn" onclick="confirmBeforeSend()" style="margin-left:10px;" tabindex="13">EDIT</button>
+            <button type="button" class="date-pick-btn" style="margin-left:10px;" onclick="location.reload()">CANCEL</button>
+        </td></tr>
+    `;
+
+    attachEntryFormListeners();
+}
+
+function calculateTotalFreight() {
+    let freight = parseInt(document.getElementById("freightExclGst").value) || 0;
+    let gst = parseInt(document.getElementById("gst").value) || 0;
+    document.getElementById("totalFreightInclGst").value = (freight + gst);
+}
+
+// After the new entry-form inputs are built from the summary table's
+// innerHTML, their masks and auto-calc listeners are attached here.
+function attachEntryFormListeners() {
+    attachDateMask("rrDate");
+
+    // The calendar (📅) button opens the native date-picker, but whatever date
+    // is chosen there is always written into the rrDate text field in DD/MM/YYYY
+    // format - the date is never shown anywhere in yyyy-mm-dd or any other format.
+    document.getElementById("rrDatePicker").addEventListener("change", function () {
+        if (!this.value) return;
+        let parts = this.value.split("-"); // yyyy-mm-dd
+        document.getElementById("rrDate").value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        enforceDateNotFuture("rrDate");
+    });
+
+    document.getElementById("chargeWeight").addEventListener("input", function () {
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        let parts = this.value.split('.');
+        if (parts.length > 2) this.value = parts[0] + '.' + parts.slice(1).join('');
+        parts = this.value.split('.');
+        if (parts[1] && parts[1].length > 1) {
+            this.value = parts[0] + '.' + parts[1].substring(0, 1);
+        }
+    });
+
+    document.getElementById("freightExclGst").addEventListener("input", function () {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        calculateTotalFreight();
+    });
+    document.getElementById("gst").addEventListener("input", function () {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        calculateTotalFreight();
+    });
+    calculateTotalFreight();
+
+    // As soon as LOCAL/FOREIGN is changed, the DELIVERY NO. prefix (LOCAL/1/ or
+    // FOREIGN/1/) is updated, and the number is also generated automatically
+    // (last assigned number+1) - the user no longer types anything here. The
+    // "LAST ... DELIVERY NO." reference for that type is also shown below.
+    document.querySelectorAll('input[name="localForeign"]').forEach(radio => {
+        radio.addEventListener("change", function () {
+            if (this.checked) {
+                updateDeliveryPrefix(this.value);
+                updateLastDeliveryNoDisplay(this.value);
+            }
+        });
+    });
+    let checkedRadio = document.querySelector('input[name="localForeign"]:checked');
+    if (checkedRadio) {
+        updateDeliveryPrefix(checkedRadio.value);
+        updateLastDeliveryNoDisplay(checkedRadio.value);
+    }
+}
+
+// Updates the DELIVERY NO. prefix text (LOCAL/1/ or FOREIGN/1/) based on the
+// selected LOCAL/FOREIGN type - the number always remains a manual user entry.
+function updateDeliveryPrefix(type) {
+    let prefixEl = document.getElementById("deliveryNoPrefix");
+    if (prefixEl) prefixEl.innerText = type + "/1/";
+}
+
+// Excluding the current rakeId, finds the highest (numerically) DELIVERY NO.
+// of the same type (LOCAL/FOREIGN) in allSheetData (the full sheet data) and
+// shows it as "LAST LOCAL DELIVERY NO. : LOCAL/1/44" (or FOREIGN), AND
+// automatically fills the next number (+1) into the DELIVERY NO. text box
+// (shows NIL if no entry is found, and the number starts from 1).
+function updateLastDeliveryNoDisplay(type) {
+    let display = document.getElementById("lastDeliveryNoDisplay");
+    let numInput = document.getElementById("deliveryNoNum");
+    if (!display) return;
+
+    let matches = allSheetData.filter(r =>
+        (r.localForeign || "").toString().trim().toUpperCase() === type.toString().trim().toUpperCase() &&
+        r.rakeId !== (currentPayload.rakeId || null) &&
+        r.deliveryNo
+    );
+
+    let label = "LAST " + type.toString().trim().toUpperCase() + " DELIVERY NO. : ";
+
+    if (matches.length === 0) {
+        display.innerText = label + "NIL";
+        if (numInput) numInput.value = 1;
+        return;
+    }
+
+    // Extracts the number after the last "/" from a deliveryNo string like
+    // "LOCAL/1/44" to find the entry with the highest number.
+    let maxEntry = null;
+    let maxNum = -1;
+    matches.forEach(r => {
+        let deliveryNoStr = r.deliveryNo.toString();
+        let numPart = deliveryNoStr.includes("/") ? deliveryNoStr.substring(deliveryNoStr.lastIndexOf("/") + 1) : deliveryNoStr;
+        let num = parseInt(numPart, 10);
+        if (!isNaN(num) && num > maxNum) {
+            maxNum = num;
+            maxEntry = r;
+        }
+    });
+
+    display.innerText = label + (maxEntry ? maxEntry.deliveryNo : "NIL");
+    if (numInput) numInput.value = (maxNum > -1 ? maxNum + 1 : 1);
+}
+
+
+// Collects all the form's fields into currentPayload (makes no network call
+// - only gathers data and computes the status).
+function buildPayloadFromForm() {
+    currentPayload.wagonSummary = document.getElementById("wagonJson").value;
+    currentPayload.rrNumber = document.getElementById("rrNumber").value.trim();
+    currentPayload.rrDate = document.getElementById("rrDate").value.trim();
+    currentPayload.chargeWeight = document.getElementById("chargeWeight").value;
+    currentPayload.freightExclGst = document.getElementById("freightExclGst").value;
+    currentPayload.gst = document.getElementById("gst").value;
+    currentPayload.totalFreightInclGst = document.getElementById("totalFreightInclGst").value;
+    currentPayload.localForeign = document.querySelector('input[name="localForeign"]:checked').value;
+    currentPayload.deliveryNo = currentPayload.localForeign + "/1/" + document.getElementById("deliveryNoNum").value.trim();
+    currentPayload.deliveryClass = document.getElementById("deliveryClass").value.trim();
+
+    // STATUS: stays BLANK/NIL until all the required Inward Tally fields
+    // (RR Number, RR Date, Charge Weight, Freight, GST) are filled in.
+    // Only once all are filled does the status become "ARRIVING". This is only
+    // done when the rake is still in the Inward Tally phase (a new insert, or
+    // its original status was blank/ARRIVING at edit time) - the status of rakes
+    // that have already moved on (ARRIVED/RELEASED/DELIVERED) is not touched here.
+    let stillInInwardPhase = !isUpdateMode || originalStatus === "" || originalStatus.toUpperCase() === "ARRIVING";
+    if (stillInInwardPhase) {
+        currentPayload.status = isRakeIncomplete(currentPayload) ? "" : "ARRIVING";
+    }
+}
+
+// Clicking the SUBMIT/EDIT button does not go straight to the database - first
+// only the fields the USER MANUALLY FILLED IN (NOT the auto-calculated/auto-
+// looked-up ones, like Total Freight or Class) are shown in a confirmation
+// popup. Once an entry is final in the database it's hard to change values,
+// so this is a final check.
+function confirmBeforeSend() {
+    buildPayloadFromForm();
+
+    let rows = [
+        ["RR Number", currentPayload.rrNumber || "-"],
+        ["RR Date", currentPayload.rrDate || "-"],
+        ["Charge Weight (Tonne)", currentPayload.chargeWeight || "-"],
+        ["Freight (Excl. GST)", currentPayload.freightExclGst || "-"],
+        ["G.S.T.", currentPayload.gst || "-"],
+        ["Local / Foreign", currentPayload.localForeign || "-"],
+        ["Delivery No.", currentPayload.deliveryNo || "-"]
+    ];
+
+    document.getElementById("confirmRows").innerHTML = rows.map(([lbl, val]) =>
+        `<div class="confirm-row"><span class="lbl">${lbl}</span><span class="val">${val}</span></div>`
+    ).join("");
+
+    document.getElementById("confirmOverlay").classList.add("open");
+}
+
+function closeConfirmModal() {
+    document.getElementById("confirmOverlay").classList.remove("open");
+}
+
+// The actual database call only goes out from here after "CONFIRM & SEND"
+// is pressed in the confirmation popup.
+function doSendToSheet() {
+    closeConfirmModal();
+
+    // NOTE: "update" action/shape assumed to match backend's existing "insert" convention
+    // (rakeId used to identify which row to update) - adjust here if the Apps Script
+    // backend expects a different action name or payload shape for updates.
+    let payload = isUpdateMode ? {
+        action: "update",
+        sheetId: SHEET_ID,
+        sheetName: SHEET_NAME,
+        rakeId: currentPayload.rakeId,
+        data: currentPayload
+    } : {
         action: "insert",
         sheetId: SHEET_ID,
         sheetName: SHEET_NAME,
         data: currentPayload
     };
+
+    let activeBtn = document.getElementById(isUpdateMode ? "editBtn" : "submitBtn");
+    activeBtn.disabled = true;
+    activeBtn.innerText = isUpdateMode ? "UPDATING..." : "SENDING...";
 
     fetch(APPS_SCRIPT_URL, {
         method: "POST",
@@ -361,13 +1256,31 @@ function sendToSheet() {
     .then(r => r.json())
     .then(res => {
         if (res.status === "duplicate") {
-            alert("DUPLICATE ENTRY !!! RAKE ID '" + currentPayload[0] + "' Already Exist in Google Sheet.");
+            alert("DUPLICATE ENTRY !!! RAKE ID '" + currentPayload.rakeId + "' Already Exist in Google Sheet.");
             location.reload();
         } else if (res.status === "success") {
-            alert("DATA SENT SUCCESSFULLY !!!");
-            location.reload();
-            document.getElementById("statusValueCell").innerText = "ARRIVED";
-            
+            // On a fresh insert (not an edit), also save the originally-uploaded
+            // CSV file into the shared Drive folder before reloading. The result
+            // is always reported to the user (success with filename, or the
+            // exact error) - it never fails silently.
+            let csvUploadPromise = (!isUpdateMode && uploadedCsvFile) ? uploadCsvFileToDrive(currentPayload) : Promise.resolve({ skipped: true });
+            let csvSavedOk = false;
+            csvUploadPromise
+                .then(csvRes => {
+                    if (!csvRes || csvRes.skipped) return;
+                    if (csvRes.status === "success") {
+                        csvSavedOk = true;
+                    } else {
+                        alert("RAKE DATA WAS SAVED, BUT THE CSV FILE COULD NOT BE SAVED TO DRIVE.\n\n" + (csvRes.message || "Unknown error from the backend."));
+                    }
+                })
+                .catch(err => {
+                    console.error("CSV upload to Drive failed:", err);
+                    alert("RAKE DATA WAS SAVED, BUT THE CSV FILE COULD NOT BE SAVED TO DRIVE (network/script error).\n\n" + err);
+                })
+                .finally(() => {
+                    showSuccessModal(csvSavedOk);
+                });
         } else {
             alert("ERROR: " + (res.message || "Error..."));
         }
@@ -377,8 +1290,8 @@ function sendToSheet() {
         alert("ERROR: Check console.");
     })
     .finally(() => {
-        submitBtn.disabled = false;
-        submitBtn.innerText = "SUBMIT";
+        activeBtn.disabled = false;
+        activeBtn.innerText = isUpdateMode ? "EDIT" : "SUBMIT";
     });
 }
 </script>

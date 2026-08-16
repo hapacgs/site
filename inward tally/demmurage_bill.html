@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Demmurage Bill - HAPA Goods Shed</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
     :root{
         --navy-900:#03192e;
@@ -47,7 +49,7 @@
         padding: 16px 18px;
         backdrop-filter: blur(10px);
     }
-    #resultsCard{ max-width: 1180px; }
+    #resultsCard{ max-width: 1000px; width: fit-content; }
     .card h3{
         margin: 0 0 14px;
         font-size: 14px;
@@ -86,23 +88,125 @@
     #submitBtn{ width:auto; padding: 8px 22px; font-size: 13px; align-self:flex-start; }
     button:disabled{ opacity: 0.5; cursor: not-allowed; }
 
+    /* -- Date filter: text input (always DD/MM/YYYY) + native date-picker triggered by a cyan icon -- */
+    .date-input-wrap{ position:relative; display:flex; align-items:center; }
+    .date-input-wrap input[type="text"]{ padding-right: 36px; }
+    .hidden-date-picker{
+        position:absolute; left:0; top:0; width:1px; height:1px;
+        opacity:0; pointer-events:none; border:0; padding:0;
+    }
+    .date-icon-btn{
+        position:absolute; right:3px; top:50%; transform:translateY(-50%);
+        width:28px; height:28px; padding:0; display:flex; align-items:center; justify-content:center;
+        background:transparent; border:none; width:28px;
+    }
+    .date-icon-btn:hover{ background: rgba(34,211,238,0.12); border-radius:6px; }
+    .date-icon-btn svg{ width:18px; height:18px; pointer-events:none; }
+    .date-icon-btn svg *{ stroke: var(--cyan-400); }
+
+    @media (max-width: 600px){
+        .page-title{ font-size: 20px; }
+        .card{ padding: 14px 12px; }
+        .filter-grid{ grid-template-columns: 1fr 1fr; gap: 10px; }
+        #submitBtn{ width:100%; align-self:stretch; }
+    }
+
+    /* Themed popup overlay, reused for the Email modal and the Success modal --
+       same dark navy / glowing cyan look as the rest of this page. */
+    .wsm-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(2,10,20,0.72);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 20px;
+    }
+    .wsm-box {
+        background: linear-gradient(160deg, var(--navy-900), var(--navy-800) 60%, var(--navy-700));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px 22px;
+        max-width: 320px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 10px 50px rgba(0,0,0,0.6), 0 0 40px rgba(34,211,238,0.15);
+    }
+    .wsm-icon { font-size: 32px; color: var(--cyan-400); text-shadow: 0 0 16px rgba(34,211,238,0.6); margin-bottom: 8px; }
+    .wsm-title {
+        color: var(--cyan-300);
+        font-weight: 800;
+        letter-spacing: 1.8px;
+        font-size: 14px;
+        margin-bottom: 14px;
+        text-transform: uppercase;
+        text-shadow: 0 0 18px rgba(34,211,238,0.5);
+    }
+    .wsm-label { font-size: 12.5px; text-align: left; margin-bottom: 6px; color: var(--text); }
+    .wsm-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: rgba(6,26,46,0.6);
+        color: var(--text);
+        font-size: 13px;
+        outline: none;
+        margin-bottom: 12px;
+    }
+    .wsm-input::placeholder { color: var(--muted); }
+    .wsm-input:focus { border-color: var(--cyan-400); box-shadow: 0 0 10px rgba(34,211,238,0.35); }
+    .wsm-error { min-height: 16px; font-size: 12px; color: #ff8f8f; margin: 0 0 6px; text-align: left; }
+    .wsm-msg { font-size: 14px; margin-bottom: 18px; color: var(--text); line-height: 1.5; }
+    .wsm-btns { display: flex; gap: 12px; justify-content: center; margin-top: 6px; }
+    .wsm-btn {
+        padding: 10px 28px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        letter-spacing: 0.5px;
+    }
+    .wsm-btn-primary { background: linear-gradient(135deg, var(--cyan-400), #0090c8); color: #001824; box-shadow: 0 0 16px rgba(34,211,238,0.4); }
+    .wsm-btn-primary:hover { box-shadow: 0 0 24px rgba(34,211,238,0.55); }
+    .wsm-btn-cancel { background: linear-gradient(135deg, #5a6b7a, #33414d); color: var(--text); box-shadow: none; }
+    .wsm-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
     .status-msg{ max-width: 1000px; margin: 0 auto 12px; font-size: 13px; color: var(--muted); text-align:center; }
     .status-msg.error{ color: #ff9b9b; }
 
     /* ===== Results table ===== */
     .table-wrap{ overflow-x:auto; }
-    table.results-table{ width:100%; border-collapse: collapse; font-size:10.5px; table-layout: fixed; }
+    table.results-table{ width:auto; max-width:100%; border-collapse: collapse; font-size:14px; table-layout: auto; }
     table.results-table th, table.results-table td{
         border: 1px solid var(--border);
-        padding: 5px 4px;
+        padding: 9px 12px;
         text-align:center;
-        word-wrap: break-word;
+        white-space: nowrap;
     }
-    table.results-table th{ background: rgba(34,211,238,0.1); color: var(--cyan-300); line-height:1.3; }
+    table.results-table th{ background: rgba(34,211,238,0.1); color: var(--cyan-300); line-height:1.3; text-transform: uppercase; letter-spacing: 0.3px; }
     table.results-table tr:hover td{ background: rgba(34,211,238,0.06); }
-    table.results-table th.col-wgn, table.results-table td.col-wgn{ width: 42px; }
-    table.results-table th.col-pdf, table.results-table td.col-pdf{ width: 44px; }
-    table.results-table th.col-sr{ width: 34px; }
+    table.results-table th.col-wgn, table.results-table td.col-wgn{ width: auto; }
+    table.results-table th.col-pdf, table.results-table td.col-pdf{ width: auto; }
+    table.results-table th.col-sr{ width: auto; }
+
+    @media (max-width: 700px){
+        table.results-table{ font-size:12.5px; }
+        table.results-table th, table.results-table td{ padding: 7px 8px; }
+    }
+    /* Progressive auto-shrink (applied by JS only if the table would otherwise overflow
+       and need a horizontal scrollbar) — each level is smaller than the last. */
+    table.results-table.shrink-1{ font-size:12px; }
+    table.results-table.shrink-1 th, table.results-table.shrink-1 td{ padding:6px 7px; }
+    table.results-table.shrink-2{ font-size:10.5px; }
+    table.results-table.shrink-2 th, table.results-table.shrink-2 td{ padding:5px 5px; }
+    table.results-table.shrink-3{ font-size:9px; }
+    table.results-table.shrink-3 th, table.results-table.shrink-3 td{ padding:4px 3px; }
+    table.results-table.shrink-4{ font-size:7.5px; }
+    table.results-table.shrink-4 th, table.results-table.shrink-4 td{ padding:2px 2px; }
 
     .gen-row-btn{
         width: 26px; height: 26px; padding: 0; display:inline-flex;
@@ -196,15 +300,18 @@
     }
 
     .charge-box{ text-align:center; margin: 10px 0 16px; }
-    .charge-box .cap{ font-size:12.5px; font-weight:700; margin-bottom:6px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .charge-box .cap{ font-size:12.5px; font-weight:700; margin-bottom:6px; text-transform: uppercase; letter-spacing: 0.4px; color:#000; }
+    /* Plain inline-block layout (NOT flex) -- html2canvas does not reliably paint
+       display:flex/inline-flex with align-items:baseline, which was causing the
+       amount to render fine on screen but come out blank in the generated PDF. */
     .charge-box .amt-wrap{
-        display:inline-flex; align-items:baseline; gap: 10px; min-width: 190px;
+        display:inline-block; min-width: 190px;
         border: 2px solid #000; border-radius: 10px; background: #f7f7f7;
-        padding: 9px 24px;
+        padding: 9px 24px; color:#000; white-space: nowrap;
     }
-    .charge-box .amt{ font-size: 21px; font-weight: 800; letter-spacing: 0.5px; }
-    .charge-box .gst-note{ font-size: 11px; font-weight: 700; color:#333; }
-    .charge-box .amt-words{ margin-top: 6px; font-size: 16px; font-weight:600; font-style: italic; }
+    .charge-box .amt{ display:inline-block; vertical-align:baseline; font-size: 21px; font-weight: 800; letter-spacing: 0.5px; color:#000; }
+    .charge-box .gst-note{ display:inline-block; vertical-align:baseline; margin-left: 10px; font-size: 11px; font-weight: 700; color:#333; }
+    .charge-box .amt-words{ margin-top: 6px; font-size: 16px; font-weight:600; font-style: italic; color:#000; }
 
     .foot-note{
         margin-top: 14px; padding-top: 7px; border-top: 1px dashed #999;
@@ -285,7 +392,7 @@
     .stamp-box .hi{ font-weight:700; margin: 0; line-height: 1.5; white-space: nowrap; }
     .stamp-box .en{ font-weight:700; margin: 0; line-height: 1.5; letter-spacing: 0.3px; white-space: nowrap; }
 
-    .a4-actions{ max-width: 210mm; margin: 0 auto 12px; text-align:center; }
+    .a4-actions{ max-width: 210mm; margin: 12px auto 24px; text-align:center; }
     .a4-actions button{ width:auto; display:inline-block; padding: 9px 20px; }
 
     /* -- Density levels: applied automatically so 60+ wagon rakes still fit one A4 page -- */
@@ -344,26 +451,48 @@
     <div class="card" id="filterCard">
         <div class="filter-grid">
             <div class="field">
-                <label for="stationFrom">Station From</label>
+                <label for="stationFrom">STATION FROM</label>
                 <input list="stationList" id="stationFrom" placeholder="Type or select station">
                 <datalist id="stationList"></datalist>
             </div>
             <div class="field">
-                <label for="consigneeCode">Consignee Code</label>
+                <label for="consigneeCode">CONSIGNEE CODE</label>
                 <input list="consigneeList" id="consigneeCode" placeholder="Type or select consignee">
                 <datalist id="consigneeList"></datalist>
             </div>
             <div class="field">
-                <label for="fromDate">Release Date (From)</label>
-                <input type="text" id="fromDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric">
+                <label for="fromDate">RR DATE (FROM)</label>
+                <div class="date-input-wrap">
+                    <input type="text" id="fromDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" autocomplete="off">
+                    <input type="date" id="fromDatePicker" class="hidden-date-picker" tabindex="-1" aria-hidden="true">
+                    <button type="button" class="date-icon-btn" id="fromDateIconBtn" aria-label="Pick from date">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke-width="1.6"/>
+                            <path d="M3.5 9.5H20.5" stroke-width="1.6"/>
+                            <path d="M8 3V6" stroke-width="1.6" stroke-linecap="round"/>
+                            <path d="M16 3V6" stroke-width="1.6" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="field">
-                <label for="toDate">Release Date (To)</label>
-                <input type="text" id="toDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric">
+                <label for="toDate">RR DATE (TO)</label>
+                <div class="date-input-wrap">
+                    <input type="text" id="toDate" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" autocomplete="off">
+                    <input type="date" id="toDatePicker" class="hidden-date-picker" tabindex="-1" aria-hidden="true">
+                    <button type="button" class="date-icon-btn" id="toDateIconBtn" aria-label="Pick to date">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke-width="1.6"/>
+                            <path d="M3.5 9.5H20.5" stroke-width="1.6"/>
+                            <path d="M8 3V6" stroke-width="1.6" stroke-linecap="round"/>
+                            <path d="M16 3V6" stroke-width="1.6" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="field">
                 <label>&nbsp;</label>
-                <button id="submitBtn" disabled>Submit</button>
+                <button id="submitBtn" disabled>SUBMIT</button>
             </div>
         </div>
     </div>
@@ -376,7 +505,7 @@
             <table class="results-table">
                 <thead>
                     <tr>
-                        <th class="col-sr" rowspan="2">Sr. No.</th>
+                        <th class="col-sr" rowspan="2">Sr.<br>No.</th>
                         <th rowspan="2">From</th>
                         <th rowspan="2">To</th>
                         <th class="col-wgn" rowspan="2">WGN.</th>
@@ -384,10 +513,13 @@
                         <th rowspan="2">RR Date</th>
                         <th rowspan="2">CMDT</th>
                         <th rowspan="2">CNSG</th>
-                        <th rowspan="2">Placement Date &amp; Time</th>
-                        <th rowspan="2">Release Date &amp; Time</th>
+                        <th rowspan="2">Placement<br>Date &amp; Time</th>
+                        <th rowspan="2">Release<br>Date &amp; Time</th>
                         <th colspan="2">Demmurage</th>
                         <th class="col-pdf" rowspan="2">PDF</th>
+                        <th class="col-pdf" rowspan="2">EXCEL</th>
+                        <th class="col-pdf" rowspan="2">PRINT</th>
+                        <th class="col-pdf" rowspan="2">E-MAIL</th>
                     </tr>
                     <tr>
                         <th>Hrs.</th>
@@ -401,9 +533,6 @@
 
     <!-- ===== A4 Statement ===== -->
     <div id="statementWrap">
-        <div class="a4-actions">
-            <button id="printBtn">Print</button>
-        </div>
         <div class="a4-page">
           <div class="a4-content">
             <div class="statement-header">
@@ -507,12 +636,46 @@
             </div>
           </div>
         </div>
+        <div class="a4-actions">
+            <button id="clearStatementBtn" type="button">CLEAR</button>
+        </div>
     </div>
 
+<!-- Email popup: takes the recipient's email, generates the PDF, and sends it
+     via the Apps Script backend (same flow as Print Wagon Summary). -->
+<div class="wsm-overlay" id="emailOverlay">
+    <div class="wsm-box">
+        <div class="wsm-icon">&#9993;</div>
+        <div class="wsm-title">Send Email</div>
+        <div class="wsm-label">To (email address) :</div>
+        <input type="email" id="emailToInput" class="wsm-input" placeholder="example@gmail.com" autocomplete="off">
+        <div class="wsm-label">Password :</div>
+        <input type="password" id="emailPasswordInput" class="wsm-input" placeholder="Enter password" autocomplete="off">
+        <div id="emailModalMsg" class="wsm-error"></div>
+        <div class="wsm-btns">
+            <button class="wsm-btn wsm-btn-cancel" id="emailCancelBtn" type="button">Cancel</button>
+            <button class="wsm-btn wsm-btn-primary" id="emailSendBtn" type="button">Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- Success popup, shown once the email has been sent -->
+<div class="wsm-overlay" id="successOverlay">
+    <div class="wsm-box">
+        <div class="wsm-icon">&#127881;</div>
+        <div class="wsm-title">Success</div>
+        <div class="wsm-msg" id="successMsg"></div>
+        <button class="wsm-btn wsm-btn-primary" id="successOkBtn" type="button">OK</button>
+    </div>
+</div>
+
 <script>
-    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
-    var SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
-    var SHEET_NAME = "IW_data";
+    // Live rake feed (Google Apps Script) — same single-call listAll source used by
+    // Print Wagon Summary. Response shape: { records: [...] }, one object per rake.
+    var SHEET_ID = "1kZF1pTmCnMcjMKwzLvxU6CMoyqkiBEGd2lWOYXSxo64";
+    var SHEET_NAME = "iw_rake_data";
+    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2hFOjiIlfK375_uBK3EQJ-_4KUwflq8AV3gmJtFjDGt-b-KhDm7avaq040OrxonTdTw/exec"
+        + "?action=listAll&sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME);
 
     var statusMsg = document.getElementById('statusMsg');
     var resultsCard = document.getElementById('resultsCard');
@@ -523,10 +686,53 @@
 
     var allRecords = []; // { id, data }
 
-    function buildUrl(params){
-        var url = APPS_SCRIPT_URL + "?sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME);
-        for (var key in params){ url += "&" + key + "=" + encodeURIComponent(params[key]); }
-        return url;
+    // Results-table only: Demmurage Hrs. shown as plain integer (11) not HH:MM (11:00)
+    function fmtHrsInt(v){
+        if (v === "" || v === null || typeof v === "undefined") return "-";
+        var n = parseFloat(v);
+        if (isNaN(n)) return v;
+        return Math.round(n).toString();
+    }
+
+    // Results-table only: Demmurage Amt. shown without decimals
+    function fmtAmtInt(v){
+        if (v === "" || v === null || typeof v === "undefined" || v === "") return "-";
+        var n = parseFloat(v);
+        if (isNaN(n)) return v;
+        return Math.round(n).toLocaleString('en-IN');
+    }
+
+    // Release Date & Time as a sortable Date object (dd/mm/yyyy + HH:MM)
+    function parseReleaseDateTime(d){
+        var dt = parseDMY(d.releaseDate);
+        if (!dt) return null;
+        if (d.releaseTime){
+            var tp = d.releaseTime.toString().split(":");
+            var hh = parseInt(tp[0], 10) || 0, mm = parseInt(tp[1], 10) || 0;
+            dt.setHours(hh, mm, 0, 0);
+        }
+        return dt;
+    }
+
+    // Latest Release Date & Time first, oldest last
+    function sortByReleaseDesc(records){
+        return records.slice().sort(function(a, b){
+            var da = parseReleaseDateTime(a.data) || new Date(0);
+            var db = parseReleaseDateTime(b.data) || new Date(0);
+            return db - da;
+        });
+    }
+
+    // Accepts a bare array, a {records:[...]}/{data:[...]}/{rows:[...]}/{result:[...]} wrapper,
+    // or a single rake object -- normalizes to an array either way.
+    function extractArray(json){
+        if (Array.isArray(json)) return json;
+        if (json && Array.isArray(json.records)) return json.records;
+        if (json && Array.isArray(json.data)) return json.data;
+        if (json && Array.isArray(json.rows)) return json.rows;
+        if (json && Array.isArray(json.result)) return json.result;
+        if (json && typeof json === "object" && Object.prototype.hasOwnProperty.call(json, "rakeId")) return [json];
+        return [];
     }
 
     function setStatus(msg, isError){
@@ -544,35 +750,19 @@
         return new Date(y, m - 1, d);
     }
 
-    // Candidate rake ids: RELEASED (delivery_book) + DELIVERED (placement_memo) status
-    // — dono me placement/release data already bhara hota hai, isliye demmurage bill ban sakta hai.
-    function fetchCandidateIds(){
-        return Promise.all([
-            fetch(buildUrl({ action: "delivery_book" })).then(function(r){ return r.json(); }).catch(function(){ return { status:"error", rakeIds: [] }; }),
-            fetch(buildUrl({ action: "placement_memo" })).then(function(r){ return r.json(); }).catch(function(){ return { status:"error", rakeIds: [] }; })
-        ]).then(function(results){
-            var ids = [];
-            results.forEach(function(res){
-                if (res && res.status === "success" && Array.isArray(res.rakeIds)) ids = ids.concat(res.rakeIds);
-            });
-            return ids.filter(function(v, i){ return ids.indexOf(v) === i; });
-        });
-    }
-
+    // Single call fetches every rake; a demurrage bill only makes sense once a rake
+    // already has placement AND release data filled in AND its STATUS is RELEASED,
+    // so we filter to that subset right here.
     function fetchAllRecords(){
-        return fetchCandidateIds().then(function(ids){
-            if (ids.length === 0) return [];
-            return Promise.all(ids.map(function(id){
-                return fetch(buildUrl({ action: "getRow", rakeId: id }))
-                    .then(function(r){ return r.json(); })
-                    .then(function(res){
-                        if (res.status === "success" && res.found) return { id: id, data: res.data };
-                        return null;
-                    })
-                    .catch(function(){ return null; });
-            }));
-        }).then(function(list){
-            return list.filter(function(x){ return x !== null; });
+        return fetch(APPS_SCRIPT_URL).then(function(r){ return r.json(); }).then(function(json){
+            if (json && json.status === "error") throw new Error(json.message || "Backend error");
+            var arr = extractArray(json);
+            return arr.map(function(d, i){ return { id: (d.rakeId || d.rrNumber || ("rake_" + i)), data: d }; })
+                .filter(function(rec){
+                    var d = rec.data;
+                    var isReleased = d.status && String(d.status).trim().toUpperCase() === "DELIVERED";
+                    return isReleased && !!(d.placementDate && d.releaseDate);
+                });
         });
     }
 
@@ -580,7 +770,7 @@
         var seen = {};
         stationList.innerHTML = "";
         allRecords.forEach(function(rec){
-            var s = rec.data.from;
+            var s = rec.data.stationFrom;
             if (s && !seen[s]){
                 seen[s] = true;
                 var opt = document.createElement('option');
@@ -618,7 +808,34 @@
     function pad2(n){ return n < 10 ? "0" + n : "" + n; }
     function formatDMY(dt){ return pad2(dt.getDate()) + "/" + pad2(dt.getMonth() + 1) + "/" + dt.getFullYear(); }
 
-    // Default filter: current month + previous month (Release Date range)
+    // Wires a cyan calendar-icon button to a hidden native <input type="date">.
+    // The visible text field always keeps/shows DD/MM/YYYY, regardless of what
+    // format the browser's native picker itself uses internally.
+    function wireDatePicker(textId, pickerId, btnId){
+        var textInput = document.getElementById(textId);
+        var pickerInput = document.getElementById(pickerId);
+        var btn = document.getElementById(btnId);
+        if (!textInput || !pickerInput || !btn) return;
+
+        btn.addEventListener('click', function(){
+            var d = parseInputDMY(textInput.value);
+            pickerInput.value = d ? (d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate())) : "";
+            if (typeof pickerInput.showPicker === 'function'){
+                pickerInput.showPicker();
+            } else {
+                pickerInput.focus();
+                pickerInput.click();
+            }
+        });
+
+        pickerInput.addEventListener('change', function(){
+            if (!pickerInput.value) return;
+            var parts = pickerInput.value.split('-'); // yyyy-mm-dd
+            textInput.value = parts[2] + "/" + parts[1] + "/" + parts[0]; // -> dd/mm/yyyy
+        });
+    }
+
+    // Default filter: current month + previous month (RR Date range)
     function setDefaultDateRange(){
         var today = new Date();
         var prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
@@ -631,15 +848,19 @@
         var submitBtn = document.getElementById('submitBtn');
         submitBtn.disabled = true;
         setDefaultDateRange();
+        wireDatePicker('fromDate', 'fromDatePicker', 'fromDateIconBtn');
+        wireDatePicker('toDate', 'toDatePicker', 'toDateIconBtn');
         fetchAllRecords().then(function(records){
             allRecords = records;
             populateStationList();
             populateConsigneeList();
             if (records.length === 0){
-                setStatus("No RELEASED/DELIVERED rakes found.", true);
+                setStatus("No Data Found ...", true);
             } else {
-                setStatus("Data loaded — showing current & previous month by default.");
-                submitFilter();
+                // Default view on page load: latest 10 rows only, newest Release Date & Time first
+                filteredRecords = sortByReleaseDesc(allRecords).slice(0, 10);
+                setStatus("Showing latest " + filteredRecords.length + " rake(s). Use filters above to load any data.");
+                renderResults(filteredRecords);
             }
             submitBtn.disabled = false;
         }).catch(function(err){
@@ -648,47 +869,112 @@
         });
     }
 
+    var pdfIconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#e53935"/>' +
+        '<path d="M14 2v4a1 1 0 0 0 1 1h4" fill="#ff8a80"/>' +
+        '<text x="12" y="16.5" text-anchor="middle" font-size="6.5" font-family="Arial, sans-serif" font-weight="700" fill="#fff">PDF</text>' +
+        '</svg>';
+    var xlsIconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#1e7d32"/>' +
+        '<path d="M14 2v4a1 1 0 0 0 1 1h4" fill="#81c784"/>' +
+        '<text x="12" y="16.5" text-anchor="middle" font-size="6.5" font-family="Arial, sans-serif" font-weight="700" fill="#fff">XLS</text>' +
+        '</svg>';
+    var printIconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<path d="M6 9V3h12v6" stroke="#455a64" stroke-width="1.6" stroke-linejoin="round" fill="none"/>' +
+        '<rect x="4" y="9" width="16" height="7" rx="1" fill="#607d8b"/>' +
+        '<rect x="6" y="15" width="12" height="6" fill="#eceff1" stroke="#455a64" stroke-width="1"/>' +
+        '<circle cx="17" cy="12" r="0.8" fill="#eceff1"/>' +
+        '</svg>';
+    var emailIconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">' +
+        '<rect x="2" y="4" width="20" height="16" rx="2" fill="#1565c0"/>' +
+        '<path d="M3 6l9 7 9-7" stroke="#bbdefb" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '</svg>';
+
     function renderResults(records){
         resultsBody.innerHTML = "";
         if (records.length === 0){
             resultsCard.style.display = "block";
-            resultsBody.innerHTML = '<tr><td colspan="13">No matching rakes found.</td></tr>';
+            resultsBody.innerHTML = '<tr><td colspan="16">No matching rakes found.</td></tr>';
             return;
         }
-        var pdfIconSvg = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">' +
-            '<path d="M6 2h8l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#e53935"/>' +
-            '<path d="M14 2v4a1 1 0 0 0 1 1h4" fill="#ff8a80"/>' +
-            '<text x="12" y="16.5" text-anchor="middle" font-size="6.5" font-family="Arial, sans-serif" font-weight="700" fill="#fff">PDF</text>' +
-            '</svg>';
         records.forEach(function(rec, idx){
             var d = rec.data;
             var tr = document.createElement('tr');
+            var hrsVal = parseFloat(d.demmHrs) || 0;
+            var amtVal = parseFloat(d.demmAmt) || 0;
+            // No demmurage (both 0) -> no bill can be generated -> no action icons
+            var actionCells = (hrsVal === 0 && amtVal === 0)
+                ? '<td class="col-pdf" colspan="4">-</td>'
+                : '<td class="col-pdf"><button type="button" class="gen-row-btn pdf-row-btn" data-idx="' + idx + '" title="Generate &amp; Download PDF Bill">' + pdfIconSvg + '</button></td>' +
+                  '<td class="col-pdf"><button type="button" class="gen-row-btn xls-row-btn" data-idx="' + idx + '" title="Generate &amp; Save Excel">' + xlsIconSvg + '</button></td>' +
+                  '<td class="col-pdf"><button type="button" class="gen-row-btn print-row-btn" data-idx="' + idx + '" title="Print">' + printIconSvg + '</button></td>' +
+                  '<td class="col-pdf"><button type="button" class="gen-row-btn email-row-btn" data-idx="' + idx + '" title="Email">' + emailIconSvg + '</button></td>';
             tr.innerHTML =
                 '<td class="col-sr">' + (idx + 1) + '</td>' +
-                '<td>' + (d.from || "-") + '</td>' +
-                '<td>' + (d.to || "-") + '</td>' +
-                '<td class="col-wgn">' + (d.wagons || "-") + '</td>' +
+                '<td>' + (d.stationFrom || "-") + '</td>' +
+                '<td>' + (d.stationTo || "-") + '</td>' +
+                '<td class="col-wgn">' + (d.wagonCount || "-") + '</td>' +
                 '<td>' + (d.rrNumber || "-") + '</td>' +
                 '<td>' + (d.rrDate || "-") + '</td>' +
-                '<td>' + (d.commodity || "-") + '</td>' +
+                '<td>' + (d.commodityCode || "-") + '</td>' +
                 '<td>' + (d.consignee || "-") + '</td>' +
                 '<td>' + (d.placementDate || "-") + ' ' + (d.placementTime || "-") + '</td>' +
                 '<td>' + (d.releaseDate || "-") + ' ' + (d.releaseTime || "-") + '</td>' +
-                '<td>' + fmtHrsColon(d.demmHrs) + '</td>' +
-                '<td>' + (d.demmAmt || "-") + '</td>' +
-                '<td class="col-pdf"><button type="button" class="gen-row-btn" data-idx="' + idx + '" title="Generate &amp; Download PDF Bill">' + pdfIconSvg + '</button></td>';
+                '<td>' + fmtHrsInt(d.demmHrs) + '</td>' +
+                '<td>' + fmtAmtInt(d.demmAmt) + '</td>' +
+                actionCells;
             resultsBody.appendChild(tr);
         });
         resultsCard.style.display = "block";
 
-        document.querySelectorAll('.gen-row-btn').forEach(function(btn){
+        document.querySelectorAll('.pdf-row-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
+                downloadStatementPdf(rec);
+            });
+        });
+        document.querySelectorAll('.xls-row-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
+                exportStatementExcel(rec);
+            });
+        });
+        document.querySelectorAll('.print-row-btn').forEach(function(btn){
             btn.addEventListener('click', function(){
                 var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
                 generateStatement(rec);
-                setTimeout(function(){ downloadStatementPdf(rec); }, 60);
+                setTimeout(function(){ window.print(); }, 60);
             });
         });
+        document.querySelectorAll('.email-row-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
+                openEmailModal(rec);
+            });
+        });
+
+        fitResultsTable();
     }
+
+    // Progressively shrinks font/padding until the results table fits its container
+    // with NO horizontal scrollbar (falls back to overflow-x:auto only in extreme cases).
+    function fitResultsTable(){
+        var wrap = document.querySelector('#resultsCard .table-wrap');
+        var table = document.querySelector('table.results-table');
+        if (!wrap || !table) return;
+        table.classList.remove('shrink-1', 'shrink-2', 'shrink-3', 'shrink-4');
+        var levels = ['shrink-1', 'shrink-2', 'shrink-3', 'shrink-4'];
+        for (var i = 0; i < levels.length; i++){
+            if (wrap.scrollWidth <= wrap.clientWidth) break;
+            table.classList.add(levels[i]);
+        }
+    }
+
+    var fitResultsTableResizeTimer = null;
+    window.addEventListener('resize', function(){
+        clearTimeout(fitResultsTableResizeTimer);
+        fitResultsTableResizeTimer = setTimeout(fitResultsTable, 150);
+    });
 
     var filteredRecords = [];
 
@@ -700,16 +986,17 @@
 
         filteredRecords = allRecords.filter(function(rec){
             var d = rec.data;
-            if (station && (!d.from || d.from.toLowerCase().indexOf(station) === -1)) return false;
+            if (station && (!d.stationFrom || d.stationFrom.toLowerCase().indexOf(station) === -1)) return false;
             if (consignee && (!d.consignee || d.consignee.toLowerCase().indexOf(consignee) === -1)) return false;
             if (fromD || toD){
-                var rDate = parseDMY(d.releaseDate);
+                var rDate = parseDMY(d.rrDate);
                 if (!rDate) return false;
                 if (fromD && rDate < fromD) return false;
                 if (toD && rDate > toD) return false;
             }
             return true;
         });
+        filteredRecords = sortByReleaseDesc(filteredRecords);
 
         var count = filteredRecords.length;
         setStatus("Record Found : " + (count < 10 ? "0" + count : count) + " Rake" + (count === 1 ? "" : "s"));
@@ -737,6 +1024,10 @@
         leftBody.innerHTML = "";
         rightBody.innerHTML = "";
 
+        // "wagonSummary" arrives as a JSON string like [{"RLY":"SE","TYPE":"BCNAM1","NO":"..."}].
+        if (typeof wagonSummary === "string"){
+            try { wagonSummary = JSON.parse(wagonSummary); } catch (e){ wagonSummary = []; }
+        }
         var list = Array.isArray(wagonSummary) ? wagonSummary : [];
         var rows = list.map(function(w, idx){
             return {
@@ -888,10 +1179,10 @@
 
         document.getElementById('fRrNoDate').textContent = (d.rrNumber || "-") + "   " + (d.rrDate || "");
         document.getElementById('fInvoiceNo').textContent = d.invoiceNo || "-";
-        document.getElementById('fFromStation').textContent = d.from || "-";
+        document.getElementById('fFromStation').textContent = d.stationFrom || "-";
         document.getElementById('fParty').textContent = d.consignee || "-";
-        document.getElementById('fCommodity').textContent = d.commodity || "-";
-        document.getElementById('fWagonCount').textContent = d.wagons || "-";
+        document.getElementById('fCommodity').textContent = d.commodityCode || "-";
+        document.getElementById('fWagonCount').textContent = d.wagonCount || "-";
 
         document.getElementById('fPlacementRelease').innerHTML =
             "PLACEMENT DATE &amp; TIME : " + toHyphenDate(d.placementDate) + " " + (d.placementTime || "-") +
@@ -907,12 +1198,12 @@
         document.getElementById('fDemmAmtWords').textContent = "Rupees " + numberToWordsIndian(amtNum) + " Only";
 
         document.getElementById('fFreeHrs').textContent = fmtHrsColon(d.freeHrs);
-        document.getElementById('fNightInc').textContent = d.nightInc || "0:00";
+        document.getElementById('fNightInc').textContent = d.nightIncentive || "0:00";
         document.getElementById('fDetentionHrs').textContent = d.netDet || "0:00";
         document.getElementById('fTotalDet').textContent = d.totalDet || "0:00";
         document.getElementById('fDemmHrs2').textContent = fmtHrsColon(d.demmHrs);
 
-        renderSlabTable(d.demmHrs, d.wagons);
+        renderSlabTable(d.demmHrs, d.wagonCount);
         renderWagonTable(d.wagonSummary);
 
         statementWrap.style.display = "block";
@@ -922,24 +1213,258 @@
         statementWrap.scrollIntoView({ behavior: "smooth" });
     }
 
-    // PDF icon click par statement screen par dikhta hain AND yahi function usse
-    // seedha PDF file ke roop me download bhi kar deta hain (html2pdf.js library se).
-    function downloadStatementPdf(rec){
-        var page = document.querySelector('.a4-page');
-        if (!page || typeof html2pdf === 'undefined') return;
-        var rrNo = (rec && rec.data && rec.data.rrNumber) ? String(rec.data.rrNumber).replace(/[^a-zA-Z0-9]+/g, '_') : 'statement';
-        var opt = {
-            margin: 0,
-            filename: 'Demmurage_Bill_' + rrNo + '.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-        html2pdf().set(opt).from(page).save();
+    // dd/mm/yyyy or dd-mm-yyyy or dd.mm.yyyy string -> Date object (or null)
+    function parseAnyDMY(raw){
+        if (!raw) return null;
+        var parts = String(raw).trim().split(/[\/\-\.]/);
+        if (parts.length !== 3) return null;
+        var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (!d || !m || !y) return null;
+        return new Date(y, m - 1, d);
+    }
+    // Same as above but hyphen-separated (DD-MM-YYYY) -- used for file names,
+    // since "/" is not a valid character in a file name.
+    function formatDateForFileName(raw){
+        var d = parseAnyDMY(raw);
+        return d ? (pad2(d.getDate()) + "-" + pad2(d.getMonth() + 1) + "-" + d.getFullYear()) : (raw || "-");
     }
 
+    // Base filename shared by the PDF and Excel downloads for one rake --
+    // "INV {INVOICE NO.} {STATION FROM} {STATION TO} {RR DATE} (DEMMURAGE BILL)",
+    // e.g. "INV 01 TCLS HAPA 17-08-2026 (DEMMURAGE BILL)".
+    function buildFileNameForRec(rec){
+        var d = (rec && rec.data) ? rec.data : {};
+        var inv = d.invoiceNo || '-';
+        var from = d.stationFrom || '-';
+        var to = d.stationTo || '-';
+        var rrDate = formatDateForFileName(d.rrDate);
+        return 'INV ' + inv + ' ' + from + ' ' + to + ' ' + rrDate + ' (DEMMURAGE BILL)';
+    }
+
+    // PDF icon click par statement screen par dikhta hain AND yahi function usse
+    // seedha PDF file ke roop me download bhi kar deta hain.
+    function downloadStatementPdf(rec){
+        if (!rec) return;
+        generateStatementPdfBlob(rec).then(function(result){
+            var url = URL.createObjectURL(result.blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = result.fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+            setStatus('"' + result.fileName + '" has been saved to the default Downloads folder.');
+        }).catch(function(err){
+            console.error('downloadStatementPdf error:', err);
+            setStatus('An error occurred while generating the PDF: ' + (err && err.message ? err.message : err), true);
+        });
+    }
+
+    // Builds the PDF as bytes (no save, no download) from the on-screen a4 page --
+    // used by both the PDF button and the Email flow so they share one PDF source.
+    // The image is always scaled to fit within a SINGLE A4 portrait page -- however
+    // tall the statement's content naturally is, it is shrunk (compressed) to fit
+    // on 1 page; it is never split across pages.
+    function generateStatementPdfBlob(rec){
+        return new Promise(function(resolve, reject){
+            generateStatement(rec);
+            setTimeout(function(){
+                var page = document.querySelector('.a4-page');
+                if (!page || typeof html2canvas === 'undefined' || !window.jspdf){
+                    reject(new Error('PDF library not loaded'));
+                    return;
+                }
+                var fileName = buildFileNameForRec(rec) + '.pdf';
+                html2canvas(page, { scale: 3, useCORS: true, backgroundColor: '#ffffff' }).then(function(canvas){
+                    var imgData = canvas.toDataURL('image/jpeg', 0.98);
+                    var jsPDF = window.jspdf.jsPDF;
+                    var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                    var pageW = pdf.internal.pageSize.getWidth();
+                    var pageH = pdf.internal.pageSize.getHeight();
+                    var imgRatio = canvas.height / canvas.width;
+                    var w = pageW;
+                    var h = w * imgRatio;
+                    if (h > pageH){ h = pageH; w = h / imgRatio; }
+                    var x = (pageW - w) / 2;
+                    var y = (pageH - h) / 2;
+                    pdf.addImage(imgData, 'JPEG', x, y, w, h);
+                    resolve({ blob: pdf.output('blob'), fileName: fileName });
+                }).catch(reject);
+            }, 60);
+        });
+    }
+
+    // Excel icon -- builds a workbook with the same statement info, slab breakdown
+    // and wagon list as the PDF/print statement, then downloads it.
+    function exportStatementExcel(rec){
+        if (!rec) return;
+        if (typeof XLSX === 'undefined'){
+            setStatus('Failed to load Excel library -- please check your internet connection.', true);
+            return;
+        }
+        var d = rec.data;
+        var amtNum = Math.round(parseFloat(d.demmAmt) || 0);
+        var breakdown = computeSlabBreakdown(d.demmHrs, d.wagonCount);
+
+        var wsData = [
+            ['DEMURRAGE STATEMENT'],
+            ['HAPA Goods Shed - Rajkot Division (W.R.)'],
+            [],
+            ['RR NO. & DATE : ' + (d.rrNumber || '-') + '  ' + (d.rrDate || '-')],
+            ['INVOICE NO. : ' + (d.invoiceNo || '-')],
+            ['FROM STATION : ' + (d.stationFrom || '-'), '', 'NAME OF PARTY : ' + (d.consignee || '-')],
+            ['COMMODITY : ' + (d.commodityCode || '-'), '', 'NO. OF WAGON : ' + (d.wagonCount || '-')],
+            ['PLACEMENT DATE & TIME : ' + toHyphenDate(d.placementDate) + ' ' + (d.placementTime || '-'), '', 'RELEASE DATE & TIME : ' + toHyphenDate(d.releaseDate) + ' ' + (d.releaseTime || '-')],
+            ['FREE TIME : ' + (d.freeHrs || '0') + ' HRS.', '', 'DEMMURAGE : ' + fmtHrsColon(d.demmHrs) + ' HRS.'],
+            [],
+            ['DEMMURAGE CHARGE (Rs.) : ' + amtNum.toLocaleString('en-IN') + ' (+ 5% G.S.T.)'],
+            [],
+            ['SLAB', 'RATE / WGN.', 'CHG. HRS.', 'DEMM. Rs.']
+        ];
+        breakdown.rows.forEach(function(row){
+            wsData.push([row.label, row.rate, row.chgHrs, row.rs]);
+        });
+        wsData.push(['TOTAL', '---', breakdown.totalChgHrs, breakdown.totalRs]);
+        wsData.push([]);
+        wsData.push(['SR.', 'RLY', 'WAGON TYPE', 'WAGON NO.']);
+
+        var wagonSummary = d.wagonSummary;
+        if (typeof wagonSummary === 'string'){
+            try { wagonSummary = JSON.parse(wagonSummary); } catch (e){ wagonSummary = []; }
+        }
+        var list = Array.isArray(wagonSummary) ? wagonSummary : [];
+        list.forEach(function(w, i){
+            wsData.push([i + 1, pickField(w, ["rly"]) || '-', pickField(w, ["type"]) || '-', pickField(w, ["wgn", "wagon", "no"]) || '-']);
+        });
+
+        var ws = XLSX.utils.aoa_to_sheet(wsData);
+        ws['!cols'] = [{ wch: 26 }, { wch: 14 }, { wch: 14 }, { wch: 16 }];
+
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Demurrage Bill');
+        var wbArray = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        var blob = new Blob([wbArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        var fileName = buildFileNameForRec(rec) + '.xlsx';
+
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        setStatus('"' + fileName + '" has been saved to the default Downloads folder.');
+    }
+
+    // ---------------- Email popup (recipient input -> PDF -> Apps Script -> Gmail) ----------------
+    var currentEmailRec = null;
+
+    function openEmailModal(rec){
+        if (!rec) return;
+        currentEmailRec = rec;
+        document.getElementById('emailToInput').value = '';
+        document.getElementById('emailPasswordInput').value = '';
+        document.getElementById('emailModalMsg').textContent = '';
+        document.getElementById('emailSendBtn').disabled = false;
+        document.getElementById('emailSendBtn').textContent = 'Send';
+        document.getElementById('emailOverlay').style.display = 'flex';
+        document.getElementById('emailToInput').focus();
+    }
+    function closeEmailModal(){
+        document.getElementById('emailOverlay').style.display = 'none';
+    }
+    document.getElementById('emailCancelBtn').addEventListener('click', closeEmailModal);
+    document.getElementById('emailOverlay').addEventListener('click', function(e){
+        if (e.target === this) closeEmailModal();
+    });
+
+    // Blob -> base64 (without the data-URL prefix), so the Apps Script backend's
+    // Utilities.base64Decode() can directly build the PDF bytes.
+    function blobToBase64(blob){
+        return new Promise(function(resolve, reject){
+            var reader = new FileReader();
+            reader.onloadend = function(){
+                var result = reader.result; // "data:application/pdf;base64,...."
+                resolve(result.substring(result.indexOf(',') + 1));
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    function isValidEmail(v){
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+
+    // Same base Apps Script URL as the data feed above, without the listAll query
+    // string -- the "action" for the email send is passed in the POST body instead.
+    var EMAIL_API_URL = APPS_SCRIPT_URL.split('?')[0];
+    var EMAIL_SEND_PASSWORD = "94976";
+
+    async function sendEmailWithPdf(){
+        var toEl = document.getElementById('emailToInput');
+        var passEl = document.getElementById('emailPasswordInput');
+        var msgEl = document.getElementById('emailModalMsg');
+        var sendBtn = document.getElementById('emailSendBtn');
+        var to = toEl.value.trim();
+
+        if (!currentEmailRec){ msgEl.textContent = 'Please select a rake first.'; return; }
+        if (passEl.value !== EMAIL_SEND_PASSWORD){ msgEl.textContent = 'Incorrect password.'; return; }
+        if (!to || !isValidEmail(to)){ msgEl.textContent = 'Please enter a valid email address.'; return; }
+
+        msgEl.textContent = '';
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Preparing PDF...';
+
+        try {
+            var result = await generateStatementPdfBlob(currentEmailRec);
+            sendBtn.textContent = 'Sending...';
+            var pdfBase64 = await blobToBase64(result.blob);
+
+            var resp = await fetch(EMAIL_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+                body: JSON.stringify({
+                    action: 'sendEmail',
+                    to: to,
+                    subject: result.fileName.replace(/\.pdf$/i, ''),
+                    fileName: result.fileName,
+                    pdfBase64: pdfBase64
+                })
+            });
+            var res = await resp.json();
+            if (res.status !== 'success'){
+                throw new Error(res.message || 'Unknown error from server.');
+            }
+            closeEmailModal();
+            showSuccessPopup('&#128231; Email sent to <strong>' + to + '</strong> &#9989;');
+        } catch (err){
+            console.error('sendEmailWithPdf error:', err);
+            msgEl.textContent = 'An error occurred while sending the email: ' + (err && err.message ? err.message : err);
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+        }
+    }
+    document.getElementById('emailSendBtn').addEventListener('click', sendEmailWithPdf);
+
+    function showSuccessPopup(msgHtml){
+        document.getElementById('successMsg').innerHTML = msgHtml;
+        document.getElementById('successOverlay').style.display = 'flex';
+    }
+    function hideSuccessPopup(){
+        document.getElementById('successOverlay').style.display = 'none';
+    }
+    document.getElementById('successOkBtn').addEventListener('click', hideSuccessPopup);
+    document.getElementById('successOverlay').addEventListener('click', function(e){
+        if (e.target === this) hideSuccessPopup();
+    });
+
     document.getElementById('submitBtn').addEventListener('click', submitFilter);
-    document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+    document.getElementById('clearStatementBtn').addEventListener('click', function(){
+        statementWrap.style.display = "none";
+    });
     window.addEventListener('beforeprint', function(){ fitToOnePage(); equalizeFooterHeights(); fitToOnePage(); });
 
     init();

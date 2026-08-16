@@ -1,112 +1,18 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WAGON TRANSFER REGISTER (WTR)</title>
+<link rel="stylesheet" href="../iw_css/common.css">
 
 <style>
-:root {
-  --navy-deep: #050b18;
-  --navy: #0a1630;
-  --navy-mid: #0f2148;
-  --cyan: #00e5ff;
-  --cyan-soft: #7ff5ff;
-  --glass: rgba(255,255,255,0.05);
-  --glass-border: rgba(0,229,255,0.25);
-  --text: #eaf6ff;
-  --text-dim: #8fa9c2;
-}
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  color: var(--text);
-  padding: 28px 16px;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(0,229,255,0.12), transparent 40%),
-    radial-gradient(circle at 85% 90%, rgba(0,120,255,0.15), transparent 45%),
-    linear-gradient(160deg, var(--navy-deep), var(--navy) 55%, var(--navy-mid));
-  background-attachment: fixed;
-}
-
-.container {
-  max-width: 560px;
-  margin: auto;
-  background: var(--glass);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  padding: 24px 20px;
-  border-radius: 20px;
-  border: 1px solid var(--glass-border);
-  box-shadow:
-    0 8px 40px rgba(0,0,0,0.45),
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 0 40px rgba(0,229,255,0.06);
-}
-
-h2 {
-  text-align: center;
-  color: var(--cyan-soft);
-  letter-spacing: 4px;
-  font-weight: 700;
-  margin: 0 0 20px 0;
-  text-shadow: 0 0 18px rgba(0,229,255,0.5);
-}
-
-button {
-  padding: 8px 14px;
-  background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(0,120,255,0.12));
-  border: 1px solid rgba(0,229,255,0.35);
-  color: var(--cyan-soft);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-button:hover {
-  background: linear-gradient(135deg, rgba(0,229,255,0.35), rgba(0,120,255,0.22));
-  box-shadow: 0 0 16px rgba(0,229,255,0.35);
-  transform: translateY(-1px);
-}
-
-button:active { transform: translateY(0); }
-
-button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.station-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 20px;
-}
-
-.station-row label {
-  color: var(--cyan-soft);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 1.5px;
-}
-
-.station-row input,
 .station-row select {
-  width: 90px;
+  width: 220px;
   text-align: center;
   padding: 8px;
   border: 1px solid var(--glass-border);
-  background: rgba(255,255,255,0.04);
+  background: rgba(10,22,48,0.95);
   color: var(--text);
   border-radius: 8px;
   font-size: 14px;
@@ -114,30 +20,11 @@ button:disabled {
   letter-spacing: 2px;
 }
 
-.station-row select {
-  background: rgba(10,22,48,0.95);
-}
-
-.station-row input:focus,
 .station-row select:focus {
   outline: none;
   border-color: var(--cyan);
   box-shadow: 0 0 12px rgba(0,229,255,0.35);
 }
-
-.submit-btn {
-  padding: 10px 34px;
-  background: linear-gradient(135deg, var(--cyan), #0090c8);
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  color: #001824;
-  letter-spacing: 1px;
-  box-shadow: 0 0 20px rgba(0,229,255,0.4);
-}
-
-.submit-btn:hover { box-shadow: 0 0 28px rgba(0,229,255,0.6); }
 
 .mini-info-table {
   width: 100%;
@@ -171,48 +58,88 @@ button:disabled {
 
 .mini-info-table tr:last-child td { border-bottom: none; }
 
-.form-row {
+.date-time-wrap {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.form-row label {
-  color: var(--cyan-soft);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  flex: 1 1 auto;
-}
-
-.form-row .small-note {
-  display: block;
-  font-size: 9px;
-  font-weight: 400;
-  color: var(--text-dim);
-  letter-spacing: 0.3px;
-}
-
-.form-row input {
-  padding: 8px 6px;
-  border: 1px solid var(--glass-border);
-  background: rgba(255,255,255,0.04);
-  color: var(--text);
-  border-radius: 8px;
-  font-size: 13px;
-  width: 35%;
+  gap: 4px;
   flex: 0 0 35%;
-  text-align: right;
   min-width: 0;
 }
 
-.form-row input:focus {
-  outline: none;
-  border-color: var(--cyan);
-  box-shadow: 0 0 12px rgba(0,229,255,0.35);
+.date-time-wrap input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  padding: 7px 4px;
+  font-size: 11px;
+  text-align: right;
+}
+
+.pick-btn {
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  font-size: 11px;
+  line-height: 1;
+  background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(0,120,255,0.12));
+  border: 1px solid rgba(0,229,255,0.35);
+  color: var(--cyan-soft);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.hidden-picker {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.status-arriving { color: #ff2b2b; }
+.status-placed   { color: #c9a300; }
+.status-released { color: #1f9d55; }
+
+/* ---------------- Generic centered modal overlay (validation warnings) ---------------- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-box {
+  background: #0a1830;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 20px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-box h3 {
+  margin: 0 0 14px 0;
+  color: var(--cyan-soft);
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.modal-box p {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
 }
 
 </style>
@@ -225,7 +152,7 @@ button:disabled {
     <div id="update-section">
         <div class="station-row">
             <label>SELECT RAKE ID HERE :</label>
-            <select id="rakeIdSelect" style="width:220px;">
+            <select id="rakeIdSelect" style="width:220px;" tabindex="1">
                 <option value=""></option>
             </select>
         </div>
@@ -241,95 +168,103 @@ button:disabled {
 
         <div id="entryForm" style="display:none;">
             <div class="form-row">
-                <label>RR NUMBER :</label>
-                <input type="text" id="rrNumber">
-            </div>
-            <div class="form-row">
-                <label>RR DATE <span class="small-note">(DD/MM/YYYY)</span></label>
-                <input type="text" id="rrDate" inputmode="numeric" placeholder="DD/MM/YYYY">
-            </div>
-            <div class="form-row">
-                <label>CHARGE WEIGHT <span class="small-note">(IN TONNE)</span></label>
-                <input type="text" id="chargeWeight" inputmode="decimal" placeholder="e.g. 3852.2">
-            </div>
-            <div class="form-row">
-                <label>FREIGHT <span class="small-note">(EXCLUDING G.S.T.)</span></label>
-                <input type="number" step="0.01" id="freightExclGst">
-            </div>
-            <div class="form-row">
-                <label>G.S.T.</label>
-                <input type="number" step="0.01" id="gst">
-            </div>
-            <div class="form-row">
-                <label>TOTAL FREIGHT <span class="small-note">(INCLUDING G.S.T.)</span></label>
-                <input type="number" step="0.01" id="totalFreightInclGst" readonly style="opacity:0.75;">
-            </div>
-            <div class="form-row">
                 <label>PLACEMENT DATE <span class="small-note">(DD/MM/YYYY)</span></label>
-                <input type="text" id="placementDate" inputmode="numeric" placeholder="DD/MM/YYYY">
+                <div class="date-time-wrap">
+                    <input type="text" id="placementDate" inputmode="numeric" placeholder="__/__/____" tabindex="2">
+                    <button type="button" class="pick-btn" onclick="openNativePicker('placementDatePicker')">📅</button>
+                    <input type="date" id="placementDatePicker" class="hidden-picker" tabindex="-1">
+                </div>
             </div>
             <div class="form-row">
                 <label>PLACEMENT TIME <span class="small-note">(24 HR)</span></label>
-                <input type="text" id="placementTime" inputmode="numeric" placeholder="HH:MM">
+                <div class="date-time-wrap">
+                    <input type="text" id="placementTime" inputmode="numeric" placeholder="HH:MM" tabindex="3">
+                    <button type="button" class="pick-btn" onclick="openNativePicker('placementTimePicker','placementDate')">🕐</button>
+                    <input type="time" id="placementTimePicker" class="hidden-picker" tabindex="-1">
+                </div>
             </div>
             <div class="form-row">
                 <label>RELEASE DATE <span class="small-note">(DD/MM/YYYY)</span></label>
-                <input type="text" id="releaseDate" inputmode="numeric" placeholder="DD/MM/YYYY">
+                <div class="date-time-wrap">
+                    <input type="text" id="releaseDate" inputmode="numeric" placeholder="__/__/____" tabindex="4">
+                    <button type="button" class="pick-btn" onclick="openNativePicker('releaseDatePicker')">📅</button>
+                    <input type="date" id="releaseDatePicker" class="hidden-picker" tabindex="-1">
+                </div>
             </div>
             <div class="form-row">
                 <label>RELEASE TIME <span class="small-note">(24 HR)</span></label>
-                <input type="text" id="releaseTime" inputmode="numeric" placeholder="HH:MM">
+                <div class="date-time-wrap">
+                    <input type="text" id="releaseTime" inputmode="numeric" placeholder="HH:MM" tabindex="5">
+                    <button type="button" class="pick-btn" onclick="openNativePicker('releaseTimePicker','releaseDate')">🕐</button>
+                    <input type="time" id="releaseTimePicker" class="hidden-picker" tabindex="-1">
+                </div>
             </div>
             <div class="form-row">
                 <label>TOTAL DET. <span class="small-note">(AUTO CALCULATED)</span></label>
-                <input type="text" id="totalDetDisplay" readonly style="opacity:0.75;">
+                <input type="text" id="totalDetDisplay" readonly style="opacity:0.75;" tabindex="-1">
             </div>
             <div class="form-row">
-                <label>FREE HRS. <span class="small-note">(AUTO CALCULATED)</span></label>
-                <input type="text" id="freeHrsDisplay" readonly style="opacity:0.75;">
+                <label>FREE HRS.</label>
+                <input type="text" id="freeHrsDisplay" readonly style="opacity:0.75;" tabindex="-1">
             </div>
             <div class="form-row">
                 <label>NIGHT INCENTIVE <span class="small-note">(AUTO CALCULATED)</span></label>
-                <input type="text" id="nightIncDisplay" readonly style="opacity:0.75;">
+                <input type="text" id="nightIncDisplay" readonly style="opacity:0.75;" tabindex="-1">
             </div>
             <div class="form-row">
                 <label>NET DET. <span class="small-note">(AUTO CALCULATED)</span></label>
-                <input type="text" id="netDetDisplay" readonly style="opacity:0.75;">
+                <input type="text" id="netDetDisplay" readonly style="opacity:0.75;" tabindex="-1">
             </div>
             <div class="form-row">
                 <label>DEMM. HRS. <span class="small-note">(AUTO CALCULATED)</span></label>
-                <input type="text" id="demmHrsDisplay" readonly style="opacity:0.75;">
+                <input type="text" id="demmHrsDisplay" readonly style="opacity:0.75;" tabindex="-1">
             </div>
             <div class="form-row">
                 <label>DEMM. AMT. <span class="small-note">(AUTO CALCULATED)</span></label>
-                <input type="text" id="demmAmtDisplay" readonly style="opacity:0.75;">
+                <input type="text" id="demmAmtDisplay" readonly style="opacity:0.75;" tabindex="-1">
             </div>
             <div class="form-row">
                 <label>STATUS</label>
-                <input type="text" id="statusDisplay" readonly style="opacity:0.75;">
+                <span id="statusValueCell" class="status-badge status-arriving">ARRIVING</span>
             </div>
             <div style="text-align:center; margin-top:6px;">
-                <button class="submit-btn" id="updateSubmitBtn" onclick="submitUpdateEntry()">SUBMIT</button>
+                <button class="submit-btn" id="updateSubmitBtn" onclick="submitUpdateEntry()" tabindex="6">SUBMIT</button>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
-const SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
-const SHEET_NAME = "IW_Data";
+<!-- Validation warning popup for invalid / future date & time entries -->
+<div class="modal-overlay" id="dateWarningOverlay">
+    <div class="modal-box">
+        <h3 id="dateWarningTitle">INVALID ENTRY</h3>
+        <p id="dateWarningMessage"></p>
+        <div class="modal-actions">
+            <button type="button" class="submit-btn" id="dateWarningOkBtn" onclick="closeDateWarningModal()">OK</button>
+        </div>
+    </div>
+</div>
 
-function loadPendingRakeIds() {
+<script>
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2hFOjiIlfK375_uBK3EQJ-_4KUwflq8AV3gmJtFjDGt-b-KhDm7avaq040OrxonTdTw/exec";
+const SHEET_ID = "1kZF1pTmCnMcjMKwzLvxU6CMoyqkiBEGd2lWOYXSxo64";
+const SHEET_NAME = "iw_rake_data";
+
+let selectedRakeId = "";
+let selectedWagonCount = 0;
+
+// On page load, only Rake IDs whose STATUS is currently "ARRIVING" in the
+// Google Sheet will appear in the dropdown (column A = rakeId, column B = JSON data)
+function loadArrivingRakeIds() {
     let selectEl = document.getElementById("rakeIdSelect");
-    let currentValue = selectEl.value; // agar koi ID abhi selected hain (edit ke dauraan), usko refresh ke baad bhi selected rakhna hain
+    let currentValue = selectEl.value;
 
     selectEl.innerHTML = "";
     let placeholderOpt = document.createElement("option");
     placeholderOpt.value = "";
     selectEl.appendChild(placeholderOpt);
 
-    let url = APPS_SCRIPT_URL + "?action=wtr&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
+    let url = APPS_SCRIPT_URL + "?action=listArriving&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
 
     fetch(url)
         .then(r => r.json())
@@ -341,32 +276,12 @@ function loadPendingRakeIds() {
                     opt.textContent = id;
                     selectEl.appendChild(opt);
                 });
-                // Currently open Rake ID ko dropdown me dobara select kar do (agar wo ab bhi list me hain)
                 if (currentValue && res.rakeIds.indexOf(currentValue) !== -1) {
                     selectEl.value = currentValue;
                 }
             }
         })
-        .catch(err => {
-            console.error(err);
-        });
-}
-
-let selectedRakeId = "";
-let selectedWagonCount = 0;
-let freeHrsNeedsBackfill = false; // true jab Sheet ke Y column me FREE HRS khali mile aur hum yahin se calculate karke fill karein
-
-// Inward Tally.html jaisa hi FREE HRS fallback logic (sirf tab chalega jab Sheet me Y column khali ho,
-// jaise purani entries jo is feature se pehle ki hain)
-function computeFreeHoursFallback(rakeType, wagonCount) {
-    let type = (rakeType || "").toString().trim().toUpperCase();
-    let n = parseInt(wagonCount) || 0;
-    if (type === "M") return 5;
-    if (n < 21) return 5;
-    if (n > 20 && n < 31) return 7;
-    if (n > 30 && n < 45) return 9;
-    if (n > 45) return 11;
-    return 5;
+        .catch(err => console.error(err));
 }
 
 document.getElementById("rakeIdSelect").addEventListener("change", handleRakeIdSelected);
@@ -376,68 +291,45 @@ function handleRakeIdSelected() {
     if (!rakeId) {
         document.getElementById("rakeInfoTable").style.display = "none";
         document.getElementById("entryForm").style.display = "none";
-        document.getElementById("totalDetDisplay").value = "";
-        document.getElementById("freeHrsDisplay").value = "";
-        document.getElementById("nightIncDisplay").value = "";
-        document.getElementById("netDetDisplay").value = "";
-        document.getElementById("demmHrsDisplay").value = "";
-        document.getElementById("demmAmtDisplay").value = "";
-        document.getElementById("statusDisplay").value = "";
+        clearDerivedFields();
         selectedRakeId = "";
         selectedWagonCount = 0;
         return;
     }
 
-    let url = APPS_SCRIPT_URL + "?action=getRow&rakeId=" + encodeURIComponent(rakeId)
+    let url = APPS_SCRIPT_URL + "?action=getRake&rakeId=" + encodeURIComponent(rakeId)
         + "&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
 
     fetch(url)
         .then(r => r.json())
         .then(res => {
-            console.log("WTR getRow response:", res);
+            console.log("WTR getRake response:", res);
             if (res.status === "success" && res.found) {
+                let data = res.data;
                 selectedRakeId = rakeId;
-                selectedWagonCount = parseInt(res.data.wagons) || 0;
-                document.getElementById("infoFrom").innerText = res.data.from;
-                document.getElementById("infoTo").innerText = res.data.to;
-                document.getElementById("infoWagons").innerText = res.data.wagons;
-                document.getElementById("infoCommodity").innerText = res.data.commodity;
+                selectedWagonCount = parseInt(data.wagonCount) || 0;
+
+                document.getElementById("infoFrom").innerText = data.stationFrom || "";
+                document.getElementById("infoTo").innerText = data.stationTo || "";
+                document.getElementById("infoWagons").innerText = data.wagonCount || "";
+                document.getElementById("infoCommodity").innerText = data.commodityCode || "";
                 document.getElementById("rakeInfoTable").style.display = "table";
                 document.getElementById("entryForm").style.display = "block";
 
-                // Pehle se maujood data prefill karo, jo nahi hain wo khali/default rahega
-                document.getElementById("rrNumber").value = res.data.rrNumber || "";
-                document.getElementById("rrDate").value = res.data.rrDate || todayDMY();
-                document.getElementById("chargeWeight").value = res.data.chargeWeight || "";
-                document.getElementById("freightExclGst").value = res.data.freightExclGst || "";
-                document.getElementById("gst").value = res.data.gst || "";
-                document.getElementById("placementDate").value = res.data.placementDate || "";
-                document.getElementById("placementTime").value = res.data.placementTime || "";
-                document.getElementById("releaseDate").value = res.data.releaseDate || "";
-                document.getElementById("releaseTime").value = res.data.releaseTime || "";
+                document.getElementById("placementDate").value = data.placementDate || "";
+                document.getElementById("placementTime").value = data.placementTime || "";
+                document.getElementById("releaseDate").value = data.releaseDate || "";
+                document.getElementById("releaseTime").value = data.releaseTime || "";
 
-                // FREE HRS Sheet ke Y column se load karo. Agar wahan khali mila
-                // (jaise purani entries is feature se pehle ki), to yahin se
-                // calculate karke dikha do aur SAVE ke time Sheet me bhi bhar do.
-                let freeHrsFromSheet = parseFloat(res.data.freeHrs);
-                if (!isNaN(freeHrsFromSheet) && freeHrsFromSheet > 0) {
-                    document.getElementById("freeHrsDisplay").value = freeHrsFromSheet;
-                    freeHrsNeedsBackfill = false;
-                } else {
-                    let fallback = computeFreeHoursFallback(res.data.rakeType, res.data.wagons);
-                    document.getElementById("freeHrsDisplay").value = fallback;
-                    freeHrsNeedsBackfill = true;
-                    console.warn("FREE HRS Google Sheet (Y column) me khali tha is Rake ID ke liye. Calculate karke bhar diya:", fallback);
-                }
+                // FREE HRS is loaded from the Google Sheet (already filled in at the time of Inward Tally submission)
+                document.getElementById("freeHrsDisplay").value = data.freeHrs || "";
 
-                document.getElementById("statusDisplay").value = res.data.status || "";
-                calculateTotalFreight();
                 refreshDerivedFields();
             } else {
                 selectedRakeId = "";
                 document.getElementById("rakeInfoTable").style.display = "none";
                 document.getElementById("entryForm").style.display = "none";
-                alert("Ye Rake ID Google Sheet me nahi mila!");
+                alert("This Rake ID was not found in the Google Sheet!");
             }
         })
         .catch(err => {
@@ -446,27 +338,89 @@ function handleRakeIdSelected() {
         });
 }
 
-document.getElementById("chargeWeight").addEventListener("input", function() {
-    this.value = this.value.replace(/[^0-9.]/g, '');
-    let parts = this.value.split('.');
-    if (parts.length > 2) this.value = parts[0] + '.' + parts.slice(1).join('');
-    parts = this.value.split('.');
-    if (parts[1] && parts[1].length > 1) {
-        this.value = parts[0] + '.' + parts[1].substring(0, 1);
-    }
-});
-
-function calculateTotalFreight() {
-    let freight = parseFloat(document.getElementById("freightExclGst").value) || 0;
-    let gst = parseFloat(document.getElementById("gst").value) || 0;
-    document.getElementById("totalFreightInclGst").value = (freight + gst).toFixed(2);
+function clearDerivedFields() {
+    ["placementDate","placementTime","releaseDate","releaseTime","totalDetDisplay",
+     "freeHrsDisplay","nightIncDisplay","netDetDisplay","demmHrsDisplay","demmAmtDisplay"]
+    .forEach(id => document.getElementById(id).value = "");
+    setStatusBadge("ARRIVING");
 }
 
-document.getElementById("freightExclGst").addEventListener("input", calculateTotalFreight);
-document.getElementById("gst").addEventListener("input", calculateTotalFreight);
+// Opens the native calendar/clock as soon as the 📅 / 🕐 button is pressed; whatever
+// date/time is picked is always written back into the text field in DD/MM/YYYY
+// and 24 HR HH:MM format - the format never changes, on mobile or PC.
+// dateId (optional, time pickers only): if the linked date is TODAY, the clock
+// picker will not allow selecting a time later than the current time
+function openNativePicker(pickerId, dateId) {
+    let picker = document.getElementById(pickerId);
+    if (picker.type === "date") {
+        picker.max = todayISO(); // calendar me aaj se aage ki date disable
+    } else if (picker.type === "time" && dateId) {
+        let dVal = document.getElementById(dateId).value.trim();
+        if (dVal === todayDMY()) picker.max = nowHM(); // aaj ki date hai to abhi tak ka hi time
+        else picker.removeAttribute("max");
+    }
+    if (picker.showPicker) picker.showPicker();
+    else picker.click();
+}
 
-// DD/MM/YYYY (jo ab hamesha date fields me dikhta/store hota hain) -> YYYY-MM-DD,
-// sirf JS Date object banane ke liye internally use hota hain
+document.getElementById("placementDatePicker").addEventListener("change", function () {
+    if (!this.value) return;
+    let parts = this.value.split("-"); // yyyy-mm-dd
+    document.getElementById("placementDate").value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    enforceDateNotFuture("placementDate");
+    enforceTimeNotFuture("placementTime", "placementDate");
+    refreshDerivedFields();
+});
+
+document.getElementById("releaseDatePicker").addEventListener("change", function () {
+    if (!this.value) return;
+    let parts = this.value.split("-");
+    document.getElementById("releaseDate").value = `${parts[2]}/${parts[1]}/${parts[0]}`;
+    enforceDateNotFuture("releaseDate");
+    enforceTimeNotFuture("releaseTime", "releaseDate");
+    refreshDerivedFields();
+});
+
+document.getElementById("placementTimePicker").addEventListener("change", function () {
+    if (!this.value) return; // native time input value hamesha 24hr HH:MM hota hai
+    document.getElementById("placementTime").value = this.value;
+    enforceTimeNotFuture("placementTime", "placementDate");
+    refreshDerivedFields();
+});
+
+document.getElementById("releaseTimePicker").addEventListener("change", function () {
+    if (!this.value) return;
+    document.getElementById("releaseTime").value = this.value;
+    enforceTimeNotFuture("releaseTime", "releaseDate");
+    refreshDerivedFields();
+});
+
+// STATUS badge: background is always white, font color changes based on state
+// ARRIVING (default) = Red, ARRIVED (placement filled) = Yellow, RELEASED (release also filled) = Green
+function setStatusBadge(status) {
+    let badge = document.getElementById("statusValueCell");
+    badge.innerText = status;
+    badge.className = "status-badge " +
+        (status === "RELEASED" ? "status-released" :
+         status === "ARRIVED" ? "status-placed" : "status-arriving");
+}
+
+function updateStatusBadge() {
+    let pDate = document.getElementById("placementDate").value.trim();
+    let pTime = document.getElementById("placementTime").value.trim();
+    let rDate = document.getElementById("releaseDate").value.trim();
+    let rTime = document.getElementById("releaseTime").value.trim();
+
+    if (rDate && rTime) {
+        setStatusBadge("RELEASED");
+    } else if (pDate && pTime) {
+        setStatusBadge("ARRIVED");
+    } else {
+        setStatusBadge("ARRIVING");
+    }
+}
+
+// DD/MM/YYYY -> YYYY-MM-DD, used internally only to build a JS Date object
 function dmyToISO(dmy) {
     if (!dmy) return "";
     let p = dmy.split("/");
@@ -474,21 +428,111 @@ function dmyToISO(dmy) {
     let dd = p[0].padStart(2, "0");
     let mm = p[1].padStart(2, "0");
     let yyyy = p[2];
+    if (yyyy.length !== 4) return "";
     return `${yyyy}-${mm}-${dd}`;
 }
 
-// Aaj ki date DD/MM/YYYY format me
+// Today's date in DD/MM/YYYY format
 function todayDMY() {
-    let d = new Date();
-    let dd = String(d.getDate()).padStart(2, "0");
-    let mm = String(d.getMonth() + 1).padStart(2, "0");
-    return `${dd}/${mm}/${d.getFullYear()}`;
+    let t = new Date();
+    return `${String(t.getDate()).padStart(2, "0")}/${String(t.getMonth() + 1).padStart(2, "0")}/${t.getFullYear()}`;
 }
 
-// Text input ko type karte hi DD/MM/YYYY me auto-format karta hain (sirf ank allowed,
-// "/" khud-ba-khud lag jata hain) — isse mobile ya PC, device ki locale ka koi farak
-// nahi padta, hamesha DD/MM/YYYY hi dikhega
-function attachDateMask(id) {
+// Today's date in YYYY-MM-DD format (for the native date picker's "max" attribute)
+function todayISO() {
+    let t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
+// Current time in HH:MM (24 HR) format
+function nowHM() {
+    let t = new Date();
+    return `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`;
+}
+
+// DD/MM/YY -> DD/MM/YYYY (auto-expands a 2-digit year, always assuming 20YY)
+function normalizeDateYear(dmy) {
+    let p = dmy.split("/");
+    if (p.length !== 3 || p[2].length !== 2) return dmy;
+    return `${p[0]}/${p[1]}/20${p[2]}`;
+}
+
+// Strict DD/MM/YYYY validator - the date must be exactly a 2-digit day, a
+// 2-digit month and a full 4-digit year, and must resolve to a real calendar
+// date. Anything shorter, longer, or malformed (e.g. "09/08/6") is invalid.
+function isValidStrictDMY(dmy) {
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dmy)) return false;
+    let p = dmy.split("/");
+    let dd = parseInt(p[0], 10), mm = parseInt(p[1], 10), yyyy = parseInt(p[2], 10);
+    let d = new Date(yyyy, mm - 1, dd);
+    return d.getFullYear() === yyyy && d.getMonth() === mm - 1 && d.getDate() === dd;
+}
+
+// Styled replacement for the native alert() popup, used for every date/time
+// validation warning (navy blue / cyan themed, matches the app's modal style).
+function showDateWarningModal(title, message, focusEl) {
+    document.getElementById("dateWarningTitle").innerText = title;
+    document.getElementById("dateWarningMessage").innerText = message;
+    window._dateWarningFocusEl = focusEl || null;
+    document.getElementById("dateWarningOverlay").classList.add("open");
+}
+function closeDateWarningModal() {
+    document.getElementById("dateWarningOverlay").classList.remove("open");
+    if (window._dateWarningFocusEl) {
+        let el = window._dateWarningFocusEl;
+        window._dateWarningFocusEl = null;
+        setTimeout(function () { el.focus(); }, 0);
+    }
+}
+
+// Every date field must always hold a complete, valid DD/MM/YYYY date. A
+// 2-digit year is auto-expanded to 20YY as a convenience; anything else that
+// doesn't resolve to a full, real DD/MM/YYYY date (missing digits, a short
+// year like "09/08/6", an impossible day/month, etc.) is rejected and the
+// field is cleared for re-entry. Future dates are rejected the same way.
+function enforceDateNotFuture(dateId) {
+    let el = document.getElementById(dateId);
+    if (!el || !el.value) return;
+    let val = el.value;
+    let parts = val.split("/");
+    if (parts.length === 3 && parts[2].length === 2) {
+        val = normalizeDateYear(val);
+    }
+    if (!isValidStrictDMY(val)) {
+        showDateWarningModal("INVALID DATE", "Please enter a complete, valid date in DD/MM/YYYY format (e.g. " + todayDMY() + ").", el);
+        el.value = "";
+        return;
+    }
+    el.value = val;
+    let iso = dmyToISO(val);
+    let entered = new Date(iso + "T00:00:00");
+    let today = new Date(dmyToISO(todayDMY()) + "T00:00:00");
+    if (entered.getTime() > today.getTime()) {
+        showDateWarningModal("FUTURE DATE NOT ALLOWED", "Future dates are not allowed. Please enter today's date (" + todayDMY() + ") or an earlier date.", el);
+        el.value = "";
+    }
+}
+
+// Future time is not allowed in time fields - BUT only when its linked date
+// is TODAY's date. If the date is earlier than today, any time is allowed.
+function enforceTimeNotFuture(timeId, dateId) {
+    let el = document.getElementById(timeId);
+    if (!el || !el.value || !dateId) return;
+    let dateEl = document.getElementById(dateId);
+    let dVal = dateEl ? dateEl.value.trim() : "";
+    if (dVal === todayDMY()) {
+        let cur = nowHM();
+        if (el.value > cur) {
+            showDateWarningModal("FUTURE TIME NOT ALLOWED", "Future time is not allowed. Please enter a time up to the current time (" + cur + ").", el);
+            el.value = "";
+        }
+    }
+}
+
+// Auto-formats the text input into DD/MM/YYYY as the user types
+// linkedTimeId (optional): on leaving the field, also re-validates its paired
+// time field (in case the date change made it a future time)
+function attachDateMask(id, linkedTimeId) {
     let el = document.getElementById(id);
     el.setAttribute("maxlength", "10");
     el.addEventListener("input", function () {
@@ -498,12 +542,17 @@ function attachDateMask(id) {
         else if (digits.length > 2) out = digits.substring(0, 2) + "/" + digits.substring(2);
         this.value = out;
     });
+    el.addEventListener("blur", function () {
+        enforceDateNotFuture(id);
+        if (linkedTimeId) enforceTimeNotFuture(linkedTimeId, id);
+        this.dispatchEvent(new Event("change"));
+    });
 }
 
-// Text input ko type karte hi 24 HR HH:MM me auto-format karta hain (":" khud-ba-khud
-// lag jata hain, ghante 23 se aur minute 59 se zyada nahi jaa sakte) — AM/PM device
-// locale ka yahan koi role nahi, hamesha 24 hr HH:MM hi dikhega
-function attachTimeMask(id) {
+// Auto-formats the text input into 24 HR HH:MM as the user types
+// linkedDateId: if its date field is TODAY's date, a time later than the
+// current time is not allowed
+function attachTimeMask(id, linkedDateId) {
     let el = document.getElementById(id);
     el.setAttribute("maxlength", "5");
     el.addEventListener("input", function () {
@@ -522,94 +571,22 @@ function attachTimeMask(id) {
             if (parts[1].length === 1) parts[1] = "0" + parts[1];
             this.value = parts[0] + ":" + parts[1];
         }
+        enforceTimeNotFuture(id, linkedDateId);
+        this.dispatchEvent(new Event("change"));
     });
 }
 
-["rrDate", "placementDate", "releaseDate"].forEach(attachDateMask);
-["placementTime", "releaseTime"].forEach(attachTimeMask);
+attachDateMask("placementDate", "placementTime");
+attachDateMask("releaseDate", "releaseTime");
+attachTimeMask("placementTime", "placementDate");
+attachTimeMask("releaseTime", "releaseDate");
 
-function submitUpdateEntry() {
-    if (!selectedRakeId) { alert("Pehle ek valid Rake ID select karo!"); return; }
-
-    let totalDet = computeTotalDet(
-        document.getElementById("placementDate").value,
-        document.getElementById("placementTime").value,
-        document.getElementById("releaseDate").value,
-        document.getElementById("releaseTime").value
-    );
-
-    let updateData = [
-        document.getElementById("rrNumber").value.trim(),
-        document.getElementById("rrDate").value.trim(),
-        document.getElementById("chargeWeight").value,
-        document.getElementById("freightExclGst").value,
-        document.getElementById("gst").value,
-        document.getElementById("totalFreightInclGst").value,
-        document.getElementById("placementDate").value.trim(),
-        document.getElementById("placementTime").value.trim(),
-        document.getElementById("releaseDate").value.trim(),
-        document.getElementById("releaseTime").value.trim(),
-        totalDet                                                       // X - TOTAL DET. (HH:MM)
-    ];
-
-    let btn = document.getElementById("updateSubmitBtn");
-    btn.disabled = true;
-    btn.innerText = "SUBMITTING...";
-
-    let nightIncentive = document.getElementById("nightIncDisplay").value;
-    let netDet = document.getElementById("netDetDisplay").value;
-    let demmHrs = document.getElementById("demmHrsDisplay").value;
-    let demmAmt = document.getElementById("demmAmtDisplay").value;
-
-    let payload = {
-        action: "updateEntry",
-        sheetId: SHEET_ID,
-        sheetName: SHEET_NAME,
-        rakeId: selectedRakeId,
-        data: updateData,
-        nightIncentive: nightIncentive,
-        netDet: netDet,
-        demmHrs: demmHrs,
-        demmAmt: demmAmt
-    };
-
-    // Agar Sheet ke Y column me FREE HRS pehle se khali tha, to abhi jo humne
-    // calculate karke dikhaya hain wahi bhej rahe hain taaki Sheet me bhi bhar jaaye.
-    // (Normal case me FREE HRS Inward Tally.html submit ke time hi bhar chuka hota hain,
-    // to yeh field tab bheja hi nahi jaata aur Sheet ka Y column touch nahi hota.)
-    if (freeHrsNeedsBackfill) {
-        payload.freeHrs = document.getElementById("freeHrsDisplay").value;
-    }
-
-    console.log("WTR SAVE payload:", payload);
-
-    fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify(payload)
-    })
-    .then(r => r.json())
-    .then(res => {
-        if (res.status === "success") {
-            alert("DATA UPDATE SUCCESSFULLY !!!");
-            location.reload();
-            handleRakeIdSelected(); // STATUS aur baaki fields ko latest data se refresh karo
-            loadPendingRakeIds();   // Dropdown se DONE ho chuki rake id hata do
-        } else {
-            alert("ERROR: " + (res.message || "Update nahi ho paaya."));
-        }
-    })
-    .catch(err => {
-        console.error(err);
-        alert("ERROR: Check console.");
-    })
-    .finally(() => {
-        btn.disabled = false;
-        btn.innerText = "SUBMIT";
-    });
-}
+["placementDate", "placementTime", "releaseDate", "releaseTime"].forEach(id => {
+    document.getElementById(id).addEventListener("input", refreshDerivedFields);
+    document.getElementById(id).addEventListener("change", refreshDerivedFields);
+});
 
 // TOTAL DET. logic: (Release Date+Time) - (Placement Date+Time), formatted as HH:MM
-// e.g. 45 hrs 10 min => "45:10"
 function computeTotalDet(pDate, pTime, rDate, rTime) {
     if (!pDate || !pTime || !rDate || !rTime) return "";
     let placement = new Date(`${dmyToISO(pDate)}T${pTime}:00`);
@@ -623,23 +600,8 @@ function computeTotalDet(pDate, pTime, rDate, rTime) {
     return `${hours}:${minutes.toString().padStart(2, "0")}`;
 }
 
-function updateTotalDetDisplay() {
-    let pDate = document.getElementById("placementDate").value;
-    let pTime = document.getElementById("placementTime").value;
-    let rDate = document.getElementById("releaseDate").value;
-    let rTime = document.getElementById("releaseTime").value;
-    document.getElementById("totalDetDisplay").value = computeTotalDet(pDate, pTime, rDate, rTime);
-}
-
-["placementDate", "placementTime", "releaseDate", "releaseTime"].forEach(id => {
-    document.getElementById(id).addEventListener("input", refreshDerivedFields);
-    document.getElementById(id).addEventListener("change", refreshDerivedFields);
-});
-
-// NIGHT INCENTIVE logic:
-// Placement Date+Time + Free Hrs. = "free window end" (till jab tak unloading free hain)
-// Is window (Placement -> Placement+FreeHrs) ke andar jo bhi hours 22:00 se 06:00 (raat) ke beech aate hain,
-// unka 50% NIGHT INCENTIVE ke roop me diya jata hain.
+// NIGHT INCENTIVE logic: within the window from Placement -> Placement+FreeHrs,
+// whichever hours fall in the 22:00-06:00 (night) band get a 50% incentive
 function computeNightIncentive(pDate, pTime, freeHrs) {
     if (!pDate || !pTime) return "";
     let hrs = parseFloat(freeHrs);
@@ -653,12 +615,12 @@ function computeNightIncentive(pDate, pTime, freeHrs) {
     let totalNightMinutes = 0;
     let cursor = new Date(placement);
     cursor.setHours(0, 0, 0, 0);
-    cursor.setDate(cursor.getDate() - 1); // ek din pehle se check shuru karo (raat ka overlap na chhute)
+    cursor.setDate(cursor.getDate() - 1);
 
     while (cursor <= windowEnd) {
         let nightStart = new Date(cursor);
         nightStart.setHours(22, 0, 0, 0);
-        let nightEnd = new Date(nightStart.getTime() + 8 * 3600000); // 22:00 se agle din 06:00 tak = 8 hrs
+        let nightEnd = new Date(nightStart.getTime() + 8 * 3600000);
 
         let overlapStart = new Date(Math.max(placement.getTime(), nightStart.getTime()));
         let overlapEnd = new Date(Math.min(windowEnd.getTime(), nightEnd.getTime()));
@@ -669,17 +631,10 @@ function computeNightIncentive(pDate, pTime, freeHrs) {
         cursor.setDate(cursor.getDate() + 1);
     }
 
-    let incentiveMinutes = Math.round(totalNightMinutes * 0.5); // night hours ka 50%
+    let incentiveMinutes = Math.round(totalNightMinutes * 0.5);
     let ihrs = Math.floor(incentiveMinutes / 60);
     let imin = incentiveMinutes % 60;
     return `${ihrs.toString().padStart(2, "0")}:${imin.toString().padStart(2, "0")}`;
-}
-
-function updateNightIncDisplay() {
-    let pDate = document.getElementById("placementDate").value;
-    let pTime = document.getElementById("placementTime").value;
-    let freeHrs = document.getElementById("freeHrsDisplay").value;
-    document.getElementById("nightIncDisplay").value = computeNightIncentive(pDate, pTime, freeHrs);
 }
 
 // HH:MM string -> total minutes
@@ -700,7 +655,7 @@ function minutesToHHMM(totalMinutes) {
     return `${h}:${m.toString().padStart(2, "0")}`;
 }
 
-// NET DET. logic: TOTAL DET. (X) - FREE HRS. (Y) - NIGHT INCENTIVE (Z), HH:MM format
+// NET DET. logic: TOTAL DET. - FREE HRS. - NIGHT INCENTIVE
 function computeNetDet(totalDetStr, freeHrs, nightIncStr) {
     let totalMin = parseHHMMToMinutes(totalDetStr);
     let freeMin = (parseFloat(freeHrs) || 0) * 60;
@@ -708,8 +663,7 @@ function computeNetDet(totalDetStr, freeHrs, nightIncStr) {
     return minutesToHHMM(totalMin - freeMin - nightMin);
 }
 
-// DEMM. HRS. logic: NET DET. ko agle poore ghante me round off karo
-// (koi bhi minute ho to +1 hr, jaise 05:50 => 6, 06:01 => 7, 06:00 => 6)
+// DEMM. HRS. logic: round NET DET. up to the next full hour
 function computeDemmHrs(netDetStr) {
     let parts = (netDetStr || "0:00").split(":");
     let h = parseInt(parts[0], 10) || 0;
@@ -717,14 +671,14 @@ function computeDemmHrs(netDetStr) {
     return m > 0 ? h + 1 : h;
 }
 
-// DEMM. AMT. logic: slab-wise rate per wagon x No. of wagons (F column)
+// DEMM. AMT. logic: slab-wise rate per wagon x No. of wagons
 const DEMM_SLABS = [
-    { hrs: 6,        rate: 150 },    // UPTO 6 HRS.
-    { hrs: 6,        rate: 165 },    // 7 TO 12 HRS.
-    { hrs: 12,       rate: 187.5 },  // 13 TO 24 HRS.
-    { hrs: 24,       rate: 225 },    // 25 TO 48 HRS.
-    { hrs: 24,       rate: 300 },    // 49 TO 72 HRS.
-    { hrs: Infinity, rate: 450 }     // ABOVE 72 HRS.
+    { hrs: 6,        rate: 150 },
+    { hrs: 6,        rate: 165 },
+    { hrs: 12,       rate: 187.5 },
+    { hrs: 24,       rate: 225 },
+    { hrs: 24,       rate: 300 },
+    { hrs: Infinity, rate: 450 }
 ];
 
 function computeDemmAmount(wagonCount, demmHrs) {
@@ -740,23 +694,77 @@ function computeDemmAmount(wagonCount, demmHrs) {
 
 // Master refresh: TOTAL DET. -> NIGHT INCENTIVE -> NET DET. -> DEMM. HRS. -> DEMM. AMT.
 function refreshDerivedFields() {
-    updateTotalDetDisplay();
-    updateNightIncDisplay();
-
-    let totalDet = document.getElementById("totalDetDisplay").value;
+    let pDate = document.getElementById("placementDate").value;
+    let pTime = document.getElementById("placementTime").value;
+    let rDate = document.getElementById("releaseDate").value;
+    let rTime = document.getElementById("releaseTime").value;
     let freeHrs = document.getElementById("freeHrsDisplay").value;
-    let nightInc = document.getElementById("nightIncDisplay").value;
 
+    let totalDet = computeTotalDet(pDate, pTime, rDate, rTime);
+    let nightInc = computeNightIncentive(pDate, pTime, freeHrs);
     let netDet = computeNetDet(totalDet, freeHrs, nightInc);
     let demmHrs = computeDemmHrs(netDet);
     let demmAmt = computeDemmAmount(selectedWagonCount, demmHrs);
 
+    document.getElementById("totalDetDisplay").value = totalDet;
+    document.getElementById("nightIncDisplay").value = nightInc;
     document.getElementById("netDetDisplay").value = netDet;
     document.getElementById("demmHrsDisplay").value = demmHrs;
     document.getElementById("demmAmtDisplay").value = demmAmt.toFixed(2);
+
+    updateStatusBadge();
 }
 
-loadPendingRakeIds();
+function submitUpdateEntry() {
+    if (!selectedRakeId) { alert("Please select a valid Rake ID first!"); return; }
+
+    let status = document.getElementById("statusValueCell").innerText;
+
+    let payload = {
+        action: "updateWtr",
+        sheetId: SHEET_ID,
+        sheetName: SHEET_NAME,
+        rakeId: selectedRakeId,
+        placementDate: document.getElementById("placementDate").value.trim(),
+        placementTime: document.getElementById("placementTime").value.trim(),
+        releaseDate: document.getElementById("releaseDate").value.trim(),
+        releaseTime: document.getElementById("releaseTime").value.trim(),
+        totalDet: document.getElementById("totalDetDisplay").value,
+        nightIncentive: document.getElementById("nightIncDisplay").value,
+        netDet: document.getElementById("netDetDisplay").value,
+        demmHrs: document.getElementById("demmHrsDisplay").value,
+        demmAmt: document.getElementById("demmAmtDisplay").value,
+        status: status
+    };
+
+    let btn = document.getElementById("updateSubmitBtn");
+    btn.disabled = true;
+    btn.innerText = "SENDING...";
+
+    fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.status === "success") {
+            alert("DATA SENT SUCCESSFULLY !!!");
+            location.reload();
+        } else {
+            alert("ERROR: " + (res.message || "Error..."));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("ERROR: Check console.");
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerText = "SUBMIT";
+    });
+}
+
+loadArrivingRakeIds();
 </script>
 </body>
 </html>

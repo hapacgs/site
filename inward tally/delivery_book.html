@@ -1,108 +1,12 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DELIVERY BOOK</title>
+<link rel="stylesheet" href="../iw_css/common.css">
 
 <style>
-:root {
-  --navy-deep: #050b18;
-  --navy: #0a1630;
-  --navy-mid: #0f2148;
-  --cyan: #00e5ff;
-  --cyan-soft: #7ff5ff;
-  --glass: rgba(255,255,255,0.05);
-  --glass-border: rgba(0,229,255,0.25);
-  --text: #eaf6ff;
-  --text-dim: #8fa9c2;
-  --amber: #ffb020;
-  --amber-soft: #ffd479;
-  --amber-border: rgba(255,176,32,0.35);
-}
-
-* { box-sizing: border-box; }
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  color: var(--text);
-  padding: 28px 16px;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(0,229,255,0.12), transparent 40%),
-    radial-gradient(circle at 85% 90%, rgba(0,120,255,0.15), transparent 45%),
-    linear-gradient(160deg, var(--navy-deep), var(--navy) 55%, var(--navy-mid));
-  background-attachment: fixed;
-}
-
-.container {
-  max-width: 560px;
-  margin: auto;
-  background: var(--glass);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
-  padding: 24px 20px;
-  border-radius: 20px;
-  border: 1px solid var(--glass-border);
-  box-shadow:
-    0 8px 40px rgba(0,0,0,0.45),
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 0 40px rgba(0,229,255,0.06);
-}
-
-h2 {
-  text-align: center;
-  color: var(--cyan-soft);
-  letter-spacing: 4px;
-  font-weight: 700;
-  margin: 0 0 20px 0;
-  text-shadow: 0 0 18px rgba(0,229,255,0.5);
-}
-
-button {
-  padding: 8px 14px;
-  background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(0,120,255,0.12));
-  border: 1px solid rgba(0,229,255,0.35);
-  color: var(--cyan-soft);
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.2s ease;
-}
-
-button:hover {
-  background: linear-gradient(135deg, rgba(0,229,255,0.35), rgba(0,120,255,0.22));
-  box-shadow: 0 0 16px rgba(0,229,255,0.35);
-  transform: translateY(-1px);
-}
-
-button:active { transform: translateY(0); }
-
-button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-.station-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 18px;
-}
-
-.station-row label {
-  color: var(--cyan-soft);
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 1.5px;
-}
-
 .station-row select {
   width: 220px;
   text-align: center;
@@ -334,67 +238,6 @@ button:disabled {
 
 /* ---------------- ENTRY FORM (WTR-style: label left, small input right) ---------------- */
 
-.form-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.form-row label {
-  color: var(--cyan-soft);
-  font-weight: 700;
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  flex: 1 1 auto;
-}
-
-.form-row input {
-  padding: 8px 6px;
-  border: 1px solid var(--glass-border);
-  background: rgba(255,255,255,0.04);
-  color: var(--text);
-  border-radius: 8px;
-  font-size: 13px;
-  width: 35%;
-  flex: 0 0 35%;
-  text-align: right;
-  min-width: 0;
-}
-
-.form-row input:focus {
-  outline: none;
-  border-color: var(--cyan);
-  box-shadow: 0 0 12px rgba(0,229,255,0.35);
-}
-
-.form-row input[readonly] { opacity: 0.75; }
-
-.radio-row {
-  display: flex;
-  gap: 16px;
-  flex: 0 0 35%;
-  justify-content: flex-end;
-}
-
-.radio-option {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.radio-option input[type="radio"] {
-  accent-color: var(--cyan);
-  width: 15px;
-  height: 15px;
-  cursor: pointer;
-}
-
 /* Shunting rate strip */
 .rate-strip {
   display: flex;
@@ -428,21 +271,65 @@ button:disabled {
   border-radius: 6px;
 }
 
+/* Page-specific override: this submit button is centered inside the form,
+   unlike the default inline-block .submit-btn from common.css */
 .submit-btn {
   display: block;
   margin: 6px auto 0 auto;
-  padding: 10px 34px;
-  background: linear-gradient(135deg, var(--cyan), #0090c8);
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  color: #001824;
-  letter-spacing: 1px;
-  box-shadow: 0 0 20px rgba(0,229,255,0.4);
 }
 
-.submit-btn:hover { box-shadow: 0 0 28px rgba(0,229,255,0.6); }
+.status-released  { color: #1f9d55; }
+.status-delivered { color: #0f2148; }
+
+/* ---------------- Generic centered modal overlay (confirm-before-submit) ---------------- */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal-box {
+  background: #0a1830;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 20px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.modal-box h3 {
+  margin: 0 0 14px 0;
+  color: var(--cyan-soft);
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.modal-box p {
+  margin: 0 0 10px 0;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.modal-box ul {
+  margin: 0 0 10px 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--cyan-soft);
+  font-weight: 700;
+}
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
 
 </style>
 </head>
@@ -453,7 +340,7 @@ button:disabled {
 
     <div class="station-row">
         <label>SELECT RAKE ID HERE :</label>
-        <select id="rakeIdSelect">
+        <select id="rakeIdSelect" tabindex="1">
             <option value=""></option>
         </select>
     </div>
@@ -527,27 +414,12 @@ button:disabled {
 
     <div id="entryForm" style="display:none;">
         <div class="form-row">
-            <label>LOCAL / FOREIGN</label>
-            <div class="radio-row">
-                <label class="radio-option"><input type="radio" name="localForeign" value="LOCAL" checked> LOCAL</label>
-                <label class="radio-option"><input type="radio" name="localForeign" value="FOREIGN"> FOREIGN</label>
-            </div>
-        </div>
-        <div class="form-row">
-            <label>DELIVERY NO. <span style="font-size:9px;color:var(--text-dim);font-weight:400;">(AUTO)</span></label>
-            <input type="text" id="deliveryNo" readonly>
-        </div>
-        <div class="form-row">
-            <label>CLASS</label>
-            <input type="text" id="deliveryClass">
-        </div>
-        <div class="form-row">
             <label>WHARFAGE AMOUNT</label>
-            <input type="number" step="0.01" id="wharfageAmount" placeholder="0">
+            <input type="number" step="0.01" id="wharfageAmount" placeholder="0" tabindex="2">
         </div>
         <div class="form-row">
             <label>SHUNTING HRS.</label>
-            <input type="text" id="shuntingHrs" placeholder="e.g. 2:30">
+            <input type="text" id="shuntingHrs" placeholder="e.g. 2:30" tabindex="3">
         </div>
         <div class="rate-strip" id="rateStripView">
             <span>RATE PER HR. : Rs. <span class="rate-val" id="rateValueDisplay">10620</span>/-</span>
@@ -567,28 +439,43 @@ button:disabled {
         </div>
         <div class="form-row">
             <label>SHUNTING AMOUNT <span style="font-size:9px;color:var(--text-dim);font-weight:400;">(AUTO)</span></label>
-            <input type="text" id="shuntingAmount" readonly>
+            <input type="text" id="shuntingAmount" readonly tabindex="-1">
         </div>
         <div class="form-row">
             <label>STATUS</label>
-            <input type="text" id="statusDisplay" readonly>
+            <span id="statusValueCell" class="status-badge status-released">RELEASED</span>
         </div>
 
-        <button class="submit-btn" id="submitBtn" onclick="submitDeliveryEntry()">SUBMIT</button>
+        <button class="submit-btn" id="submitBtn" onclick="submitDeliveryEntry()" tabindex="4">SUBMIT</button>
+    </div>
+</div>
+
+<!-- Confirmation before submitting with missing WHARFAGE AMOUNT / SHUNTING HRS -->
+<div class="modal-overlay" id="missingFieldsOverlay">
+    <div class="modal-box">
+        <h3>MISSING FIELDS</h3>
+        <p>You have not entered:</p>
+        <ul id="missingFieldsList"></ul>
+        <p>If you submit without filling these, they will be set to 0 and the STATUS will become DELIVERED. After that, this Rake ID will no longer appear in this list.</p>
+        <p>Do you still want to submit?</p>
+        <div class="modal-actions">
+            <button type="button" class="submit-btn" id="missingFieldsProceedBtn" onclick="proceedDeliveryEntry()">SUBMIT ANYWAY</button>
+            <button type="button" class="submit-btn" onclick="closeMissingFieldsModal()">GO BACK &amp; EDIT</button>
+        </div>
     </div>
 </div>
 
 <script>
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
-const SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
-const SHEET_NAME = "IW_Data";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2hFOjiIlfK375_uBK3EQJ-_4KUwflq8AV3gmJtFjDGt-b-KhDm7avaq040OrxonTdTw/exec";
+const SHEET_ID = "1kZF1pTmCnMcjMKwzLvxU6CMoyqkiBEGd2lWOYXSxo64";
+const SHEET_NAME = "iw_rake_data";
 
 let selectedRakeId = "";
-let selectedWagonCount = 0;
+let selectedLocalForeign = "";
 let currentShuntingRate = 10620;
 let rateUnlocked = false;
 
-// RELEASED status wali saari Rake IDs load karo dropdown me
+// Load all Rake IDs with RELEASED status into the dropdown
 function loadReleasedRakeIds() {
     let selectEl = document.getElementById("rakeIdSelect");
     let currentValue = selectEl.value;
@@ -598,7 +485,7 @@ function loadReleasedRakeIds() {
     placeholderOpt.value = "";
     selectEl.appendChild(placeholderOpt);
 
-    let url = APPS_SCRIPT_URL + "?action=delivery_book&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
+    let url = APPS_SCRIPT_URL + "?action=listReleased&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
 
     fetch(url)
         .then(r => r.json())
@@ -618,21 +505,6 @@ function loadReleasedRakeIds() {
         .catch(err => console.error(err));
 }
 
-// Abhi ka SHUNTING rate load karo (Script Properties se)
-function loadShuntingRate() {
-    let url = APPS_SCRIPT_URL + "?action=getShuntingRate&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
-    fetch(url)
-        .then(r => r.json())
-        .then(res => {
-            if (res.status === "success" && typeof res.rate !== "undefined") {
-                currentShuntingRate = parseFloat(res.rate) || 10620;
-                document.getElementById("rateValueDisplay").innerText = currentShuntingRate;
-                recomputeShuntingAmount();
-            }
-        })
-        .catch(err => console.error(err));
-}
-
 document.getElementById("rakeIdSelect").addEventListener("change", handleRakeIdSelected);
 
 function handleRakeIdSelected() {
@@ -641,31 +513,35 @@ function handleRakeIdSelected() {
     if (!rakeId) {
         hideAllPanels();
         selectedRakeId = "";
-        selectedWagonCount = 0;
+        selectedLocalForeign = "";
         return;
     }
 
-    let url = APPS_SCRIPT_URL + "?action=getRow&rakeId=" + encodeURIComponent(rakeId)
+    let url = APPS_SCRIPT_URL + "?action=getRake&rakeId=" + encodeURIComponent(rakeId)
         + "&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
 
     fetch(url)
         .then(r => r.json())
         .then(res => {
             if (res.status === "success" && res.found) {
+                let d = res.data;
                 selectedRakeId = rakeId;
-                selectedWagonCount = parseInt(res.data.wagons) || 0;
-                renderHero(rakeId, res.data);
-                renderPairs(res.data);
-                renderDemurrage(res.data);
+                selectedLocalForeign = d.localForeign || "LOCAL";
+
+                renderHero(rakeId, d);
+                renderPairs(d);
+                renderDemurrage(d);
                 document.getElementById("rakeHero").style.display = "block";
                 document.getElementById("pairSection").style.display = "block";
                 document.getElementById("demmPanel").style.display = "block";
                 document.getElementById("entryForm").style.display = "block";
-                resetEntryForm(res.data);
+
+                resetEntryForm(d);
             } else {
                 hideAllPanels();
                 selectedRakeId = "";
-                alert("Ye Rake ID Google Sheet me nahi mila!");
+                selectedLocalForeign = "";
+                alert("This Rake ID was not found in the Google Sheet!");
             }
         })
         .catch(err => {
@@ -684,15 +560,15 @@ function hideAllPanels() {
 function renderHero(rakeId, d) {
     document.getElementById("heroRakeId").innerText = rakeId;
     document.getElementById("heroWagonType").innerText = d.wagonType || "-";
-    document.getElementById("heroWagons").innerText = d.wagons || "-";
-    document.getElementById("heroCommodity").innerText = d.commodity || "-";
+    document.getElementById("heroWagons").innerText = d.wagonCount || "-";
+    document.getElementById("heroCommodity").innerText = d.commodityCode || "-";
 }
 
 function val(v) { return (v === undefined || v === null || v === "") ? "-" : v; }
 
 function renderPairs(d) {
-    document.getElementById("pFrom").innerText = val(d.from);
-    document.getElementById("pTo").innerText = val(d.to);
+    document.getElementById("pFrom").innerText = val(d.stationFrom);
+    document.getElementById("pTo").innerText = val(d.stationTo);
     document.getElementById("pRrNo").innerText = val(d.rrNumber);
     document.getElementById("pRrDate").innerText = val(d.rrDate);
     document.getElementById("pInvNo").innerText = val(d.invoiceNo);
@@ -706,45 +582,39 @@ function renderPairs(d) {
 }
 
 function renderDemurrage(d) {
-    document.getElementById("dWagons").innerText = val(d.wagons);
+    document.getElementById("dWagons").innerText = val(d.wagonCount);
     document.getElementById("dFreeHrs").innerText = val(d.freeHrs);
     document.getElementById("dTotalDet").innerText = val(d.totalDet);
-    document.getElementById("dNightInc").innerText = val(d.nightInc);
+    document.getElementById("dNightInc").innerText = val(d.nightIncentive);
     document.getElementById("dNetDet").innerText = val(d.netDet);
     document.getElementById("dDemmHrs").innerText = val(d.demmHrs);
     document.getElementById("dDemmAmt").innerText = "Rs. " + val(d.demmAmt) + "/-";
 }
 
+// Reset the entry form and fetch the Delivery No. as soon as a rake is selected
 function resetEntryForm(d) {
-    document.querySelector('input[name="localForeign"][value="LOCAL"]').checked = true;
-    document.getElementById("deliveryClass").value = (d && d.suggestedClass) ? d.suggestedClass : "130A";
-    document.getElementById("wharfageAmount").value = "";
-    document.getElementById("shuntingHrs").value = "";
-    document.getElementById("shuntingAmount").value = "0.00";
-    document.getElementById("statusDisplay").value = (d && d.status) ? d.status : "";
-    fetchNextDeliveryNo("LOCAL");
+    document.getElementById("wharfageAmount").value = (d && d.wharfageAmount) ? d.wharfageAmount : "";
+    document.getElementById("shuntingHrs").value = (d && d.shuntingHrs) ? d.shuntingHrs : "";
+    recomputeShuntingAmount();
+    updateStatusBadge();
 }
 
-document.querySelectorAll('input[name="localForeign"]').forEach(r => {
-    r.addEventListener("change", function() {
-        fetchNextDeliveryNo(this.value);
-    });
-});
-
-function fetchNextDeliveryNo(type) {
-    let url = APPS_SCRIPT_URL + "?action=lastDeliveryNo&type=" + encodeURIComponent(type)
-        + "&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
+// Load the current SHUNTING rate (from Script Properties)
+function loadShuntingRate() {
+    let url = APPS_SCRIPT_URL + "?action=getShuntingRate&sheetId=" + SHEET_ID + "&sheetName=" + SHEET_NAME;
     fetch(url)
         .then(r => r.json())
         .then(res => {
-            if (res.status === "success" && typeof res.nextDeliveryNo !== "undefined") {
-                document.getElementById("deliveryNo").value = res.nextDeliveryNo;
+            if (res.status === "success" && typeof res.rate !== "undefined") {
+                currentShuntingRate = parseFloat(res.rate) || 10620;
+                document.getElementById("rateValueDisplay").innerText = currentShuntingRate;
+                recomputeShuntingAmount();
             }
         })
         .catch(err => console.error(err));
 }
 
-// SHUNTING HRS. ("H:MM" ya seedha number) ko decimal hours me convert karta hain
+// Converts SHUNTING HRS. (either "H:MM" or a plain number) into decimal hours
 function parseHrsMinToDecimal(str) {
     if (!str) return 0;
     str = str.toString().trim();
@@ -765,9 +635,32 @@ function recomputeShuntingAmount() {
     document.getElementById("shuntingAmount").value = amt.toFixed(2);
 }
 
-document.getElementById("shuntingHrs").addEventListener("input", recomputeShuntingAmount);
+document.getElementById("shuntingHrs").addEventListener("input", function () {
+    recomputeShuntingAmount();
+    updateStatusBadge();
+});
+document.getElementById("wharfageAmount").addEventListener("input", updateStatusBadge);
 
-// ---- SHUNTING rate ko password se edit karna ----
+// STATUS badge: background is always white, font color changes based on state.
+// Default is RELEASED (green). Becomes DELIVERED (navy blue) once both WHARFAGE AMOUNT and SHUNTING HRS. are filled.
+function setStatusBadge(status) {
+    let badge = document.getElementById("statusValueCell");
+    badge.innerText = status;
+    badge.className = "status-badge " + (status === "DELIVERED" ? "status-delivered" : "status-released");
+}
+
+function updateStatusBadge() {
+    let wharfage = document.getElementById("wharfageAmount").value.trim();
+    let shunting = document.getElementById("shuntingHrs").value.trim();
+
+    if (wharfage !== "" && shunting !== "") {
+        setStatusBadge("DELIVERED");
+    } else {
+        setStatusBadge("RELEASED");
+    }
+}
+
+// ---- Edit SHUNTING rate with password protection ----
 function startRateEdit() {
     document.getElementById("rateStripView").style.display = "none";
     document.getElementById("rateStripPassword").style.display = "flex";
@@ -785,7 +678,7 @@ function cancelRateEdit() {
 function confirmRatePassword() {
     let pwd = document.getElementById("ratePasswordInput").value.trim();
     if (pwd !== "94976") {
-        alert("Galat password!");
+        alert("Incorrect password!");
         return;
     }
     rateUnlocked = true;
@@ -795,9 +688,9 @@ function confirmRatePassword() {
 }
 
 function saveNewRate() {
-    if (!rateUnlocked) { alert("Pehle password verify karo!"); return; }
+    if (!rateUnlocked) { alert("Please verify the password first!"); return; }
     let newRate = parseFloat(document.getElementById("rateNewValueInput").value);
-    if (isNaN(newRate) || newRate < 0) { alert("Sahi rate daalo!"); return; }
+    if (isNaN(newRate) || newRate < 0) { alert("Please enter a valid rate!"); return; }
 
     let payload = {
         action: "setShuntingRate",
@@ -818,9 +711,9 @@ function saveNewRate() {
             document.getElementById("rateValueDisplay").innerText = currentShuntingRate;
             recomputeShuntingAmount();
             cancelRateEdit();
-            alert("RATE UPDATE HO GAYA !!!");
+            alert("RATE UPDATED SUCCESSFULLY !!!");
         } else {
-            alert("ERROR: " + (res.message || "Rate update nahi ho paaya."));
+            alert("ERROR: " + (res.message || "Rate update failed."));
         }
     })
     .catch(err => {
@@ -829,23 +722,54 @@ function saveNewRate() {
     });
 }
 
+// SUBMIT button click hote hi seedhe database me nahi jaate - agar WHARFAGE
+// AMOUNT ya SHUNTING HRS. khaali hain to pehle ek confirmation popup dikhate
+// hain (native browser confirm() ki jagah styled modal), taaki accidental
+// zero-value DELIVERED entry na ho jaaye.
 function submitDeliveryEntry() {
-    if (!selectedRakeId) { alert("Pehle ek valid Rake ID select karo!"); return; }
+    if (!selectedRakeId) { alert("Please select a valid Rake ID first!"); return; }
 
-    let localForeign = document.querySelector('input[name="localForeign"]:checked').value;
-    let wharfageAmount = document.getElementById("wharfageAmount").value;
+    let wharfageAmount = document.getElementById("wharfageAmount").value.trim();
     let shuntingHrs = document.getElementById("shuntingHrs").value.trim();
+
+    let missing = [];
+    if (wharfageAmount === "") missing.push("WHARFAGE AMOUNT");
+    if (shuntingHrs === "") missing.push("SHUNTING HRS.");
+
+    if (missing.length > 0) {
+        let list = document.getElementById("missingFieldsList");
+        list.innerHTML = missing.map(m => `<li>${m}</li>`).join("");
+        document.getElementById("missingFieldsOverlay").classList.add("open");
+        return;
+    }
+
+    proceedDeliveryEntry();
+}
+
+function closeMissingFieldsModal() {
+    document.getElementById("missingFieldsOverlay").classList.remove("open");
+}
+
+// Missing-fields popup me "SUBMIT ANYWAY" dabane ke baad, ya seedhe (jab koi
+// field missing na ho), asli database call yahan se jaati hain.
+function proceedDeliveryEntry() {
+    closeMissingFieldsModal();
+
+    let wharfageAmount = document.getElementById("wharfageAmount").value.trim();
+    let shuntingHrs = document.getElementById("shuntingHrs").value.trim();
+
+    setStatusBadge("DELIVERED");
+    let status = "DELIVERED";
 
     let payload = {
         action: "updateDelivery",
         sheetId: SHEET_ID,
         sheetName: SHEET_NAME,
         rakeId: selectedRakeId,
-        localForeign: localForeign,
-        deliveryNo: document.getElementById("deliveryNo").value,
-        deliveryClass: document.getElementById("deliveryClass").value.trim() || "130A",
         wharfageAmount: wharfageAmount === "" ? 0 : wharfageAmount,
-        shuntingHrs: shuntingHrs === "" ? "0:00" : shuntingHrs
+        shuntingHrs: shuntingHrs === "" ? "0:00" : shuntingHrs,
+        shuntingAmount: document.getElementById("shuntingAmount").value,
+        status: status
     };
 
     let btn = document.getElementById("submitBtn");
@@ -860,11 +784,9 @@ function submitDeliveryEntry() {
     .then(res => {
         if (res.status === "success") {
             alert("DATA UPDATED SUCCESSFULLY !!!");
-            document.getElementById("statusDisplay").value = "DELIVERED";
             location.reload();
-            loadReleasedRakeIds(); // is Rake ID ko dropdown se hata do (ab DELIVERED ho chuka hain)
         } else {
-            alert("ERROR: " + (res.message || "Kuch galat ho gaya."));
+            alert("ERROR: " + (res.message || "Something went wrong."));
         }
     })
     .catch(err => {

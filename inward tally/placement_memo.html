@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Placement Memo - Goods Shed</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
   --navy-deep: #050b18;
@@ -104,11 +107,11 @@ h1 {
 }
 .station-row input[type="date"] { color-scheme: dark; }
 
-/* Native <input type="date"> ka display format (MM/DD/YYYY vs DD/MM/YYYY) mobile
-   ke device locale par depend karta hai, HTML/CSS se seedha control nahi hota.
-   Isliye humne asli input ke andar ka text transparent kar diya hain aur upar
-   se apna khud ka formatted "DD-MM-YYYY" text dikha rahe hain (JS se update hota
-   hain) — taaki format hamesha same rahe, chahe phone ki language/region kuch bhi ho. */
+/* The native <input type="date"> display format (MM/DD/YYYY vs DD/MM/YYYY) depends
+   on the mobile device's locale and cannot be controlled directly via HTML/CSS.
+   So we make the actual input's text transparent and overlay our own formatted
+   "DD-MM-YYYY" text on top (updated via JS) — this keeps the format consistent
+   regardless of the phone's language/region settings. */
 .date-field-wrap { position: relative; display: inline-block; }
 .date-field-wrap input[type="date"] {
   width: 100%;
@@ -155,8 +158,8 @@ h1 {
   overflow-x: auto;
   margin-bottom: 14px;
 }
-/* table-layout: auto (nahi fixed) — taaki har column sirf apni content jitni hi
-   jagah le, aur beech me bekar ka khaali gap na bane */
+/* table-layout: auto (not fixed) — so each column only takes as much space as
+   its content needs, avoiding unnecessary empty gaps in between */
 table { width: 100%; margin: 0; border-collapse: collapse; table-layout: auto; font-size: 10px; }
 thead th {
   background: rgba(0,229,255,0.1);
@@ -188,15 +191,54 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
   color: var(--text);
   background: rgba(10,22,48,0.95);
 }
-/* TIME box sirf 5 character (HH:MM) jitni hi chahiye, LINE box sirf "LOOSE-3"
-   (sabse lambe option) jitni hi — dono ab fixed compact size me hain, poori
-   column ko stretch nahi karte */
+/* TIME box only needs to fit 5 characters (HH:MM), LINE box only needs to fit
+   "LOOSE-3" (the longest option) — both now have a fixed compact size and
+   don't stretch the whole column */
 .pl-time-input { width: 42px; }
 .line-select { width: 66px; padding: 3px 1px; }
 .pl-time-input:focus, .line-select:focus {
   outline: none;
   border-color: var(--cyan);
   box-shadow: 0 0 8px rgba(0,229,255,0.35);
+}
+
+/* Per-row DATE field — transparent text on the native date input (for the picker),
+   with our own DD/MM/YY formatted text overlaid on top, kept compact like TIME/LINE. */
+.row-date-wrap { position: relative; display: inline-block; width: 54px; }
+.row-date-wrap input[type="date"] {
+  width: 100%;
+  padding: 3px 1px;
+  border: 1px solid var(--glass-border);
+  border-radius: 5px;
+  font-size: 9.5px;
+  text-align: center;
+  color: transparent;
+  background: rgba(10,22,48,0.95);
+  color-scheme: dark;
+}
+.row-date-wrap input[type="date"]::-webkit-datetime-edit,
+.row-date-wrap input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+.row-date-wrap input[type="date"]::-webkit-datetime-edit-text,
+.row-date-wrap input[type="date"]::-webkit-datetime-edit-month-field,
+.row-date-wrap input[type="date"]::-webkit-datetime-edit-day-field,
+.row-date-wrap input[type="date"]::-webkit-datetime-edit-year-field {
+  color: transparent;
+}
+.row-date-wrap input[type="date"]:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 8px rgba(0,229,255,0.35);
+}
+.row-date-display {
+  position: absolute;
+  left: 0; top: 0; right: 12px; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 9px;
 }
 
 .pltime-cell { display: flex; align-items: center; justify-content: center; gap: 2px; }
@@ -220,24 +262,162 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
 .col-type { font-family: 'Consolas', monospace; letter-spacing: -0.2px; }
 .col-no   { font-family: 'Consolas', monospace; letter-spacing: -0.2px; }
 
-.submit-bar { display: flex; justify-content: center; margin-top: 4px; }
-.submit-btn {
-  padding: 11px 30px;
+.submit-bar { display: flex; justify-content: center; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
   background: linear-gradient(135deg, var(--cyan), #0090c8);
   border: none;
   border-radius: 8px;
   font-weight: 700;
-  font-size: 13.5px;
+  font-size: 12px;
   cursor: pointer;
   color: #001824;
-  letter-spacing: 0.6px;
-  box-shadow: 0 0 20px rgba(0,229,255,0.4);
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 16px rgba(0,229,255,0.35);
 }
-.submit-btn:hover { box-shadow: 0 0 28px rgba(0,229,255,0.6); }
-.submit-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.action-btn:hover { box-shadow: 0 0 24px rgba(0,229,255,0.55); }
+.action-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-icon { font-size: 15px; line-height: 1; }
+.email-btn { background: linear-gradient(135deg, #7ff5ff, #4aa9c9); }
 
-/* ---------- PRINT AREA (hidden on screen, shown only for printing) ---------- */
+/* ---------- Themed warning popup (future date/time) ---------- */
+.warn-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,16,0.72);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 20px;
+}
+.warn-box {
+  background: linear-gradient(160deg, var(--navy-deep), var(--navy) 60%, var(--navy-mid));
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 22px 20px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 50px rgba(0,0,0,0.6), 0 0 40px rgba(0,229,255,0.15);
+}
+.warn-icon { font-size: 30px; color: var(--cyan); text-shadow: 0 0 14px rgba(0,229,255,0.6); margin-bottom: 6px; }
+.warn-title { color: var(--cyan-soft); font-weight: 800; letter-spacing: 1.5px; font-size: 13px; margin-bottom: 10px; text-transform: uppercase; }
+.warn-msg { color: var(--text); font-size: 13px; line-height: 1.55; margin-bottom: 18px; }
+.warn-ok-btn {
+  padding: 9px 28px;
+  background: linear-gradient(135deg, var(--cyan), #0090c8);
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #001824;
+  cursor: pointer;
+  box-shadow: 0 0 16px rgba(0,229,255,0.4);
+}
+
+/* ---------- Email popup extras (input + two-button row) ---------- */
+.email-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0,20,32,0.6);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  margin-bottom: 4px;
+}
+.email-input:focus { border-color: var(--cyan); box-shadow: 0 0 10px rgba(0,229,255,0.35); }
+.email-modal-msg { min-height: 16px; font-size: 12px; color: #ff6b6b; margin: 6px 0 4px; text-align: left; }
+.email-modal-btns { display: flex; gap: 10px; justify-content: center; margin-top: 6px; }
+.email-cancel-btn { background: linear-gradient(135deg, #5a6b7a, #33414d); box-shadow: none; }
+.warn-ok-btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+
+/* ---------- Success popup (same cyan/navy theme, shown after a successful email send) ---------- */
+.success-box { box-shadow: 0 10px 50px rgba(0,0,0,0.6), 0 0 55px rgba(0,229,255,0.22); }
+.success-icon { font-size: 34px; }
+.success-title { color: var(--cyan-soft); }
+#successMsg { font-size: 14px; }
+
+/* ---------- PRINT/PDF COPY CONTENT (shared by native print AND off-screen PDF capture) ---------- */
 #printArea { display: none; }
+/* When generating a PDF directly via the PDF button, this class renders
+   printArea off-canvas (off-screen) at full size so html2canvas can capture
+   it correctly — a display:none element cannot be screenshotted. */
+#printArea.pdf-capture-mode {
+    display: flex !important;
+    position: fixed;
+    left: -20000px;
+    top: 0;
+    width: 1200px;
+    background: #fff;
+    gap: 6mm;
+}
+
+.copy-block {
+    flex: 1;
+    border: 1px solid #000;
+    padding: 3mm;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+    color: #000 !important;
+    background: #fff;
+}
+/* Both copies (CYM / CGS) print side-by-side on the same page and are later
+   cut apart by hand — so we show a dashed cut-line to keep the cutting straight. */
+.cut-line {
+    flex: 0 0 auto;
+    width: 0;
+    border-left: 1.5px dashed #000 !important;
+    align-self: stretch;
+    position: relative;
+}
+.cut-line::before {
+    content: "\2702";
+    position: absolute;
+    top: -4mm;
+    left: 50%;
+    transform: translateX(-50%) rotate(90deg);
+    font-size: 9px;
+    background: #fff;
+    padding: 0 2px;
+    color: #000 !important;
+}
+.copy-header-wrap { text-align: center; margin-bottom: 2px; }
+/* "PLACEMENT MEMO" is now written in a black-background / bold-white box */
+.copy-header-box {
+    display: inline-block;
+    background: #000 !important;
+    color: #fff !important;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    padding: 2px 12px;
+    border-radius: 2px;
+}
+/* FROM/TO station is now shown without labels, directly in a distinct,
+   comparatively larger font style like "MALB TO HAPA" — kept larger than
+   PLACEMENT MEMO so the route stands out clearly */
+.copy-route {
+    text-align: center;
+    font-weight: 800;
+    font-family: Georgia, 'Times New Roman', serif;
+    letter-spacing: 1.5px;
+    margin: 6px 0 6px 0;
+    color: #000 !important;
+}
+.copy-subcols { display: flex; gap: 2mm; }
+.copy-subcols > div { flex: 1; min-width: 0; }
+.copy-table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #000 !important; }
+.copy-table th, .copy-table td { border: 1px solid #000; text-align: center; overflow: hidden; white-space: nowrap; color: #000 !important; }
+/* Header font size is the same as the data rows — distinguished only by bold + a light grey highlight */
+.copy-table th { font-weight: 800; background: #d9d9d9 !important; }
+.copy-footer { display: flex; justify-content: space-between; margin-top: 4px; color: #000 !important; }
+.copy-label { text-align: center; font-weight: bold; margin-top: 5px; color: #000 !important; }
 
 @media print {
     html, body { height: auto !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
@@ -249,28 +429,9 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     }
     @page { size: A4 landscape; margin: 6mm; }
 
-    /* Print me background print ho (header highlight) aur text hamesha pure
-       black rahe — kisi bhi browser/OS "dark print" mode se bhi na badle */
+    /* Ensures backgrounds print (header highlight) and text always stays pure
+       black — unaffected by any browser/OS "dark print" mode */
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-
-    .copy-block {
-        flex: 1;
-        border: 1px solid #000;
-        padding: 3mm;
-        font-family: Arial, sans-serif;
-        overflow: hidden;
-        color: #000 !important;
-    }
-    .copy-header { text-align: center; font-weight: bold; margin-bottom: 3px; color: #000 !important; }
-    .copy-meta { display: flex; justify-content: space-between; margin-bottom: 4px; color: #000 !important; }
-    .copy-subcols { display: flex; gap: 2mm; }
-    .copy-subcols > div { flex: 1; min-width: 0; }
-    .copy-table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #000 !important; }
-    .copy-table th, .copy-table td { border: 1px solid #000; text-align: center; overflow: hidden; white-space: nowrap; color: #000 !important; }
-    /* Header ka font size data row jitna hi — sirf bold + halka grey highlight se alag dikhta hain */
-    .copy-table th { font-weight: 800; background: #d9d9d9 !important; }
-    .copy-footer { display: flex; justify-content: space-between; margin-top: 4px; color: #000 !important; }
-    .copy-label { text-align: center; font-weight: bold; margin-top: 5px; color: #000 !important; }
 }
 </style>
 </head>
@@ -286,14 +447,6 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         </select>
     </div>
 
-    <div class="station-row">
-        <label for="placementDate">PLACEMENT DATE :</label>
-        <div class="date-field-wrap">
-            <input type="date" id="placementDate">
-            <span class="date-display" id="placementDateDisplay">DD-MM-YYYY</span>
-        </div>
-    </div>
-
     <div class="route-line" id="routeLine" style="display:none;"></div>
 
     <div id="msgBox"></div>
@@ -306,6 +459,7 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
                     <th class="col-rly">RLY</th>
                     <th class="col-type">TYPE</th>
                     <th class="col-no">NO.</th>
+                    <th class="col-date">DATE</th>
                     <th class="col-pltime">TIME</th>
                     <th class="col-line">LINE</th>
                 </tr>
@@ -315,36 +469,79 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     </div>
 
     <div class="submit-bar" id="submitBar" style="display:none;">
-        <button class="submit-btn" id="submitBtn">Generate PDF</button>
+        <button class="action-btn" id="pdfBtn" type="button"><span class="btn-icon">&#128196;</span> PDF</button>
+        <button class="action-btn" id="printBtn" type="button"><span class="btn-icon">&#128424;</span> PRINT</button>
+        <button class="action-btn" id="excelBtn" type="button"><span class="btn-icon">&#128202;</span> EXCEL</button>
+        <button class="action-btn email-btn" id="emailBtn" type="button"><span class="btn-icon">&#9993;</span> EMAIL</button>
     </div>
 </div>
 
     <!-- Print-only content, built at submit time -->
     <div id="printArea"></div>
 
+    <!-- Themed warning popup (future date / future time entries) -->
+    <div class="warn-overlay" id="warnOverlay">
+        <div class="warn-box">
+            <div class="warn-icon">&#9888;</div>
+            <div class="warn-title">Warning</div>
+            <div class="warn-msg" id="warnMsg"></div>
+            <button class="warn-ok-btn" id="warnOkBtn" type="button">OK</button>
+        </div>
+    </div>
+
+    <!-- Email popup: takes the recipient's email, generates the PDF, and sends it
+         via the Apps Script backend (authorized under the user's Gmail account) -->
+    <div class="warn-overlay" id="emailOverlay">
+        <div class="warn-box">
+            <div class="warn-icon">&#9993;</div>
+            <div class="warn-title">Send Email</div>
+            <div class="warn-msg" style="text-align:left; margin-bottom:8px;">To (email address) :</div>
+            <input type="email" id="emailToInput" class="email-input" placeholder="example@gmail.com" autocomplete="off">
+            <div class="warn-msg" style="text-align:left; margin-bottom:8px;">Password :</div>
+            <input type="password" id="emailPasswordInput" class="email-input" placeholder="Enter password" autocomplete="off">
+            <div id="emailModalMsg" class="email-modal-msg"></div>
+            <div class="email-modal-btns">
+                <button class="warn-ok-btn email-cancel-btn" id="emailCancelBtn" type="button">Cancel</button>
+                <button class="warn-ok-btn" id="emailSendBtn" type="button">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success popup (cyan/navy theme with emoji), shown once the email has been sent -->
+    <div class="warn-overlay" id="successOverlay">
+        <div class="warn-box success-box">
+            <div class="warn-icon success-icon">&#127881;</div>
+            <div class="warn-title success-title">Success</div>
+            <div class="warn-msg" id="successMsg"></div>
+            <button class="warn-ok-btn" id="successOkBtn" type="button">OK</button>
+        </div>
+    </div>
+
 <script>
-    var API_URL = "https://script.google.com/macros/s/AKfycbxNwUvzpg0NtvMEWcaHzKK5jN7xu_nanojP1bHFNijzfibY_8hRRfFnq6E8zCsUGmKT/exec";
-    var SHEET_ID = "1lvGHvGO_sxHMG2RGCQFF4MyCw5COunN_jtg8_gFwqws";
-    var SHEET_NAME = "IW_Data";
+    // Rake list dropdown AND wagon detail lookup, both now come from the same source:
+    // the iw_rake_data sheet, via its Apps Script backend.
+    var RAKE_LIST_API_URL = "https://script.google.com/macros/s/AKfycby2hFOjiIlfK375_uBK3EQJ-_4KUwflq8AV3gmJtFjDGt-b-KhDm7avaq040OrxonTdTw/exec";
+    // Email is deployed from a separate Apps Script project (placement_memo_email.gs),
+    // so it has its own separate URL — unrelated to the rake data URL.
+    var EMAIL_API_URL = "https://script.google.com/macros/s/AKfycby2hFOjiIlfK375_uBK3EQJ-_4KUwflq8AV3gmJtFjDGt-b-KhDm7avaq040OrxonTdTw/exec";
+    var RAKE_LIST_SHEET_ID = "1kZF1pTmCnMcjMKwzLvxU6CMoyqkiBEGd2lWOYXSxo64";
+    var RAKE_LIST_SHEET_NAME = "iw_rake_data";
+
     var MAX_WAGONS = 59;
 
-    var LINE_OPTIONS = ["", "I/W", "O/W", "LOOSE-3"];
+    var LINE_OPTIONS = ["I/W", "O/W", "LOOSE-3"];
     var currentRakeData = null;
     var currentWagons = [];
 
-    // Native date input ka asli text transparent kar rakha hain (CSS), yahan se
-    // hamesha DD-MM-YYYY format me apna display update karte hain — mobile ke
-    // locale/region setting se format kabhi nahi badalta.
-    function updateDateDisplay() {
-        var val = document.getElementById('placementDate').value; // yyyy-mm-dd
-        var disp = document.getElementById('placementDateDisplay');
-        if (!val) { disp.textContent = 'DD-MM-YYYY'; return; }
-        var parts = val.split('-'); // [yyyy, mm, dd]
-        disp.textContent = parts[2] + '-' + parts[1] + '-' + parts[0];
+    // Converts a row's date (yyyy-mm-dd, from the native <input type="date">) to
+    // DD/MM/YY — shown in this format in both the screen table and the PDF
+    // (takes up less space).
+    function ddmmyyFromIso(iso) {
+        if (!iso) return '';
+        var p = iso.split('-'); // [yyyy, mm, dd]
+        if (p.length !== 3) return '';
+        return p[2] + '/' + p[1] + '/' + p[0].slice(2);
     }
-    document.getElementById('placementDate').addEventListener('input', updateDateDisplay);
-    document.getElementById('placementDate').addEventListener('change', updateDateDisplay);
-    updateDateDisplay();
 
     function showMsg(text, type) {
         var box = document.getElementById('msgBox');
@@ -352,34 +549,126 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     }
     function clearMsg() { document.getElementById('msgBox').innerHTML = ''; }
 
-    // ---------------- Load Rake ID dropdown (status = Arrived) ----------------
+    // ---------------- Themed (cyan/navy) warning popup ----------------
+    function showWarningPopup(msg) {
+        document.getElementById('warnMsg').textContent = msg;
+        document.getElementById('warnOverlay').style.display = 'flex';
+    }
+    function hideWarningPopup() {
+        document.getElementById('warnOverlay').style.display = 'none';
+    }
+    document.getElementById('warnOkBtn').addEventListener('click', hideWarningPopup);
+    document.getElementById('warnOverlay').addEventListener('click', function (e) {
+        if (e.target === this) hideWarningPopup();
+    });
+
+    // ---------------- Success popup (cyan/navy theme, shown after a successful email send) ----------------
+    function showSuccessPopup(msgHtml) {
+        document.getElementById('successMsg').innerHTML = msgHtml;
+        document.getElementById('successOverlay').style.display = 'flex';
+    }
+    function hideSuccessPopup() {
+        document.getElementById('successOverlay').style.display = 'none';
+    }
+    document.getElementById('successOkBtn').addEventListener('click', hideSuccessPopup);
+    document.getElementById('successOverlay').addEventListener('click', function (e) {
+        if (e.target === this) hideSuccessPopup();
+    });
+
+    // ---------------- Future date / future time validation ----------------
+    // Today's date in "yyyy-mm-dd" format — kept in this format so it can be
+    // directly string-compared with the <input type="date"> value format.
+    function getTodayISODate() {
+        var d = new Date();
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        return d.getFullYear() + '-' + mm + '-' + dd;
+    }
+    // Current time as "HH:MM" (24-hour, zero-padded) — pl-time-input is filled in
+    // this same format, so a direct string-compare works.
+    function getNowHHMM() {
+        var d = new Date();
+        var hh = String(d.getHours()).padStart(2, '0');
+        var mi = String(d.getMinutes()).padStart(2, '0');
+        return hh + ':' + mi;
+    }
+
+    // Future dates aren't allowed in any row — only today's date or an earlier date is valid.
+    function validateRowDate(inputEl) {
+        var today = getTodayISODate();
+        if (inputEl.value && inputEl.value > today) {
+            showWarningPopup('Future date is not allowed. You can only enter today\'s date (' + ddmmyyFromIso(today) + ') or an earlier date.');
+            inputEl.value = '';
+            updateRowDateDisplay(inputEl);
+        }
+    }
+
+    // Time is only restricted when the row's date is "today" (or currently empty,
+    // which we treat as today) — if the date is in the past, any time on that day
+    // is allowed, regardless of the current clock time.
+    function validateRowTime(rowEl) {
+        var timeInput = rowEl.querySelector('.pl-time-input');
+        var dateInput = rowEl.querySelector('.row-date-input');
+        if (!timeInput || !timeInput.value || timeInput.value.length < 5) return;
+        var rowDate = dateInput ? dateInput.value : '';
+        var today = getTodayISODate();
+        if (rowDate && rowDate !== today) return; // past date (future already blocked by validateRowDate) → no restriction on time
+        var now = getNowHHMM();
+        if (timeInput.value > now) {
+            showWarningPopup('Future time is not allowed. The current time is ' + now + ' — for today\'s date you cannot enter a time later than this.');
+            timeInput.value = '';
+        }
+    }
+
+    // ---------------- Load Rake ID dropdown (new source, status = ARRIVING or blank) ----------------
+    // Backend's "listArriving" action returns both ARRIVING and ARRIVED rakes, so we use
+    // "listAll" instead (full records with a status field) and filter to ARRIVING (or blank/nil
+    // status, treated as ARRIVING) here.
     function loadPendingRakes() {
-        var url = API_URL + "?action=placement_memo&sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME);
+        var sel = document.getElementById('rakeSelect');
+        var url = RAKE_LIST_API_URL + "?action=listAll&sheetId=" + encodeURIComponent(RAKE_LIST_SHEET_ID) + "&sheetName=" + encodeURIComponent(RAKE_LIST_SHEET_NAME);
         fetch(url)
             .then(function (r) { return r.json(); })
             .then(function (res) {
-                var sel = document.getElementById('rakeSelect');
                 if (res.status !== "success") {
                     sel.innerHTML = '<option value="">-- Error loading --</option>';
-                    showMsg('Rake list load karne me error: ' + (res.message || ''), 'error');
+                    showMsg('Error loading rake list: ' + (res.message || ''), 'error');
                     return;
                 }
-                if (!res.rakeIds || res.rakeIds.length === 0) {
-                    sel.innerHTML = '<option value="">-- Koi Arrived rake nahi --</option>';
+
+                var records = res.records || [];
+                var arriving = records.filter(function (rec) {
+                    var st = (rec.status || '').toString().trim().toUpperCase();
+                    return st === 'ARRIVING' || st === '';
+                });
+
+                if (arriving.length === 0) {
+                    sel.innerHTML = '<option value="">-- No Arriving rake --</option>';
                     return;
                 }
                 var html = '<option value="">-- Select Rake ID --</option>';
-                res.rakeIds.forEach(function (id) {
-                    html += '<option value="' + id + '">' + id + '</option>';
+                arriving.forEach(function (rec) {
+                    html += '<option value="' + rec.rakeId + '">' + rec.rakeId + '</option>';
                 });
                 sel.innerHTML = html;
             })
             .catch(function (err) {
+                sel.innerHTML = '<option value="">-- Error loading --</option>';
                 showMsg('Network error: ' + err.message, 'error');
             });
     }
 
     // ---------------- Load rake details on selection ----------------
+    // Field names inside the data can vary (e.g. "from" or "stationFrom") — this
+    // helper finds and returns the first non-empty value among the given candidate keys.
+    function pickField(data, candidates) {
+        for (var i = 0; i < candidates.length; i++) {
+            var v = data[candidates[i]];
+            if (v !== undefined && v !== null && v !== '') return v;
+        }
+        return '';
+    }
+
     function loadRakeDetails(rakeId) {
         document.getElementById('routeLine').style.display = 'none';
         document.getElementById('tableWrap').style.display = 'none';
@@ -387,30 +676,69 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         clearMsg();
         if (!rakeId) return;
 
-        var url = API_URL + "?action=getRow&sheetId=" + encodeURIComponent(SHEET_ID) + "&sheetName=" + encodeURIComponent(SHEET_NAME) + "&rakeId=" + encodeURIComponent(rakeId);
+        var url = RAKE_LIST_API_URL + "?action=getRake&sheetId=" + encodeURIComponent(RAKE_LIST_SHEET_ID) + "&sheetName=" + encodeURIComponent(RAKE_LIST_SHEET_NAME) + "&rakeId=" + encodeURIComponent(rakeId);
         fetch(url)
             .then(function (r) { return r.json(); })
             .then(function (res) {
                 if (res.status !== "success" || !res.found) {
-                    showMsg('Is Rake ID ka data nahi mila.', 'error');
+                    showMsg('No data found for this Rake ID.', 'error');
                     return;
                 }
-                currentRakeData = res.data;
 
-                // FROM aur TO dono hi Google Sheet (IW_Data, column D aur E) se aa rahe hain -
-                // TO station kabhi hardcode nahi karna, jo bhi sheet me ho wahi dikhega.
-                // Chota, ek-line route text: "<FROM> TO <TO>"
+                var raw = res.data;
+                var st = (raw.status || '').toString().trim().toUpperCase();
+                if (st !== 'ARRIVING' && st !== '') {
+                    showMsg('This Rake ID\'s status is not ARRIVING (current status: ' + (raw.status || 'unknown') + ').', 'error');
+                    return;
+                }
+
+                // The wagonSummary value coming from the Google Sheet column is sometimes a
+                // JSON *string* (rather than an already-parsed array/object). In that case,
+                // calling .length directly on the string returns a character count (e.g. 2671)
+                // instead of an array length — which was causing an incorrect "exceeds
+                // MAX_WAGONS" error. So we parse it first, and if the parsed value itself
+                // contains a "wagonSummary" key (meaning the whole JSON object ended up in
+                // the column), we extract just that field.
+                var wagonSummaryRaw = raw.wagonSummary || raw.WagonSummary || raw.wagon_summary || [];
+                if (typeof wagonSummaryRaw === 'string') {
+                    try {
+                        var parsedWS = JSON.parse(wagonSummaryRaw);
+                        wagonSummaryRaw = (parsedWS && !Array.isArray(parsedWS) && parsedWS.wagonSummary)
+                            ? parsedWS.wagonSummary
+                            : parsedWS;
+                    } catch (e) {
+                        showMsg('Failed to parse wagonSummary field JSON: ' + e.message, 'error');
+                        wagonSummaryRaw = [];
+                    }
+                } else if (wagonSummaryRaw && !Array.isArray(wagonSummaryRaw) && wagonSummaryRaw.wagonSummary) {
+                    // Already-parsed object but the full raw JSON object — extract the inner array from it
+                    wagonSummaryRaw = wagonSummaryRaw.wagonSummary;
+                }
+
+                currentRakeData = {
+                    from: pickField(raw, ['from', 'stationFrom', 'fromStation', 'FROM']),
+                    to: pickField(raw, ['to', 'stationTo', 'toStation', 'TO']),
+                    wagonSummary: Array.isArray(wagonSummaryRaw) ? wagonSummaryRaw : [],
+                    // The actual field name in the sheet's JSON is "commodityCode", so it's
+                    // given first priority (the remaining candidates are kept as fallbacks).
+                    commodity: pickField(raw, ['commodityCode', 'CommodityCode', 'COMMODITY_CODE', 'commodity', 'Commodity', 'COMMODITY']),
+                    consignee: pickField(raw, ['consignee', 'party', 'Consignee', 'CONSIGNEE']),
+                    invoiceNo: pickField(raw, ['invoiceNo', 'invoiceNumber', 'INVOICE_NO', 'invoice_no'])
+                };
+
+                // FROM and TO both come from the sheet's data — TO station is never
+                // hardcoded, whatever is in the sheet is shown as-is.
                 var routeEl = document.getElementById('routeLine');
                 routeEl.textContent = (currentRakeData.from || '-') + '  TO  ' + (currentRakeData.to || '-');
                 routeEl.style.display = 'block';
 
                 var wagons = currentRakeData.wagonSummary;
                 if (!wagons || wagons.length === 0) {
-                    showMsg('Is rake ke liye wagon summary (M column) data nahi mila. Apps Script me "wagonSummary" field add hua hain ya nahi check kar lijiye.', 'error');
+                    showMsg('Wagon summary data not found for this rake. Please check whether the "wagonSummary" field exists in the sheet\'s data.', 'error');
                     return;
                 }
                 if (wagons.length > MAX_WAGONS) {
-                    showMsg('Wagon count (' + wagons.length + ') MAX_WAGONS (' + MAX_WAGONS + ') se zyada hain.', 'error');
+                    showMsg('Wagon count (' + wagons.length + ') exceeds MAX_WAGONS (' + MAX_WAGONS + ').', 'error');
                 }
                 currentWagons = wagons;
                 renderTable(wagons);
@@ -442,10 +770,16 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
                 '<td class="col-rly">' + (w.RLY || '') + '</td>' +
                 '<td class="col-type">' + (w.TYPE || '') + '</td>' +
                 '<td class="col-no">' + (w.NO || '') + '</td>' +
+                '<td class="col-date">' +
+                    '<div class="row-date-wrap">' +
+                        '<input type="date" class="row-date-input" data-row="' + i + '">' +
+                        '<span class="row-date-display">DD/MM/YY</span>' +
+                    '</div>' +
+                '</td>' +
                 '<td class="col-pltime">' +
                     '<div class="pltime-cell">' +
                         '<input type="text" class="pl-time-input" data-row="' + i + '" placeholder="HH:MM" maxlength="5" value="">' +
-                        '<button type="button" class="filldown-btn" data-row="' + i + '" title="Neeche ke sabhi rows me yahi bhar do">&#8681;</button>' +
+                        '<button type="button" class="filldown-btn" data-row="' + i + '" title="Fill this value into all rows below">&#8681;</button>' +
                     '</div>' +
                 '</td>' +
                 '<td class="col-line">' + buildLineSelectHTML(i) + '</td>' +
@@ -454,9 +788,32 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         tbody.innerHTML = rowsHtml;
         attachFillDownHandlers();
         attachTimeFormatting();
+        attachRowDateHandlers();
     }
 
-    // Placement Time ko hamesha HH:MM format me rakhta hain (digits only, colon auto-insert)
+    // Updates the DD/MM/YY display above the field as soon as the row's date input changes
+    function updateRowDateDisplay(inputEl) {
+        var disp = inputEl.parentNode.querySelector('.row-date-display');
+        if (!disp) return;
+        disp.textContent = ddmmyyFromIso(inputEl.value) || 'DD/MM/YY';
+    }
+
+    function attachRowDateHandlers() {
+        var inputs = document.querySelectorAll('.row-date-input');
+        inputs.forEach(function (inp) {
+            inp.addEventListener('input', function () { updateRowDateDisplay(inp); });
+            inp.addEventListener('change', function () {
+                updateRowDateDisplay(inp);
+                validateRowDate(inp);
+                // Changing the date can also change whether it's past or today, so
+                // re-check the time already filled in for that same row.
+                var rowEl = inp.closest('tr');
+                if (rowEl) validateRowTime(rowEl);
+            });
+        });
+    }
+
+    // Keeps Placement Time always in HH:MM format (digits only, colon auto-inserted)
     function formatTimeValue(raw) {
         var digits = raw.replace(/[^0-9]/g, '').slice(0, 4);
         if (digits.length <= 2) return digits;
@@ -468,19 +825,24 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         inputs.forEach(function (inp) {
             inp.addEventListener('input', function () {
                 inp.value = formatTimeValue(inp.value);
+                if (inp.value.length === 5) {
+                    var rowEl = inp.closest('tr');
+                    if (rowEl) validateRowTime(rowEl);
+                }
             });
         });
     }
 
-    // Current row ka PL. TIME aur LINE, usi row se neeche ke sabhi rows me copy kar deta hain.
-    // (F7 key mobile par kaam nahi karti, isliye har row me ek chhota "fill-down" button
-    // diya hain jo tap karne par yahi kaam karta hain.)
+    // Copies the current row's PL. TIME and LINE into all rows below it.
+    // (The F7 key doesn't work on mobile, so each row has a small "fill-down"
+    // button that does the same thing on tap.)
     function fillDownFrom(rowIndex) {
         var tbody = document.getElementById('wagonTableBody');
         var currentRowEl = tbody.querySelector('tr[data-row="' + rowIndex + '"]');
         if (!currentRowEl) return;
         var plTimeVal = currentRowEl.querySelector('.pl-time-input').value;
         var lineVal = currentRowEl.querySelector('.line-select').value;
+        var dateVal = currentRowEl.querySelector('.row-date-input').value;
 
         var allRows = tbody.querySelectorAll('tr');
         allRows.forEach(function (rowEl) {
@@ -488,6 +850,9 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
             if (idx >= rowIndex) {
                 rowEl.querySelector('.pl-time-input').value = plTimeVal;
                 rowEl.querySelector('.line-select').value = lineVal;
+                var dInput = rowEl.querySelector('.row-date-input');
+                dInput.value = dateVal;
+                updateRowDateDisplay(dInput);
                 rowEl.classList.add('just-filled');
                 setTimeout(function (r) { return function () { r.classList.remove('just-filled'); }; }(rowEl), 600);
             }
@@ -497,7 +862,7 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     function attachFillDownHandlers() {
         var tbody = document.getElementById('wagonTableBody');
 
-        // Tap/click se fill-down (mobile ke liye) — button.filldown-btn
+        // Tap/click to fill down (for mobile) — button.filldown-btn
         tbody.addEventListener('click', function (e) {
             var btn = e.target.closest ? e.target.closest('.filldown-btn') : null;
             if (!btn) return;
@@ -506,7 +871,7 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
             fillDownFrom(rowIndex);
         });
 
-        // Physical keyboard (desktop) ke liye F7 bhi kaam karta rehta hain
+        // F7 still works too, for physical keyboards (desktop)
         tbody.addEventListener('keydown', function (e) {
             if (e.key !== 'F7') return;
             e.preventDefault();
@@ -517,25 +882,21 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     }
 
     // ---------------- Build print copy + trigger print ----------------
-    function formatDateForPrint(isoDate) {
-        if (!isoDate) return '';
-        var parts = isoDate.split('-'); // yyyy-mm-dd
-        if (parts.length !== 3) return isoDate;
-        return parts[2] + '-' + parts[1] + '-' + parts[0];
-    }
 
-    // Har sub-column me max itni hi rows dikhayenge (sample PDF ki tarah 1-30, 31-59 baju-baju me).
+    // Maximum rows to show per sub-column (like the sample PDF, 1-30 and 31-59 side by side).
     var ROWS_PER_SUBCOL = 30;
 
-    // Ek hi fixed compact scale — kyunki ab har sub-column me max 30 hi rows hoti hain
-    // (chahe wagon count 5 ho ya 59), font kabhi bahot chhota nahi karna padta.
-    // headFont data font (font) ke SAME rakha hain — header ko sirf bold + halka grey
-    // highlight (.copy-table th CSS) se alag dikhaya jaata hain, size bada karke nahi.
+    // A single fixed compact scale — since each sub-column now holds a max of 30
+    // rows (whether the wagon count is 5 or 59), the font never needs to shrink much.
+    // headFont is kept the SAME as the data font — the header is distinguished only
+    // by bold + a light grey highlight (.copy-table th CSS), not by a larger size.
     function computeScale() {
-        return { font: 8.3, pad: "1.4px 3px", headFont: 8.3, metaFont: 9, labelFont: 10.5, footFont: 9 };
+        // routeFont (for a route line like "MALB TO HAPA") is deliberately kept
+        // larger than labelFont (PLACEMENT MEMO), so the route stands out clearly.
+        return { font: 8.3, pad: "1.4px 3px", headFont: 8.3, labelFont: 9.5, routeFont: 14, footFont: 9 };
     }
 
-    // Poore wagon number ki jagah sirf last 6 digit/char dikhata hain (jagah bachane ke liye)
+    // Shows only the last 6 digits/characters of the full wagon number (to save space)
     function last6(no) {
         no = (no || '').toString().trim();
         return no.length > 6 ? no.slice(-6) : no;
@@ -544,7 +905,6 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     function buildCopyHTML(copyLabel, scale) {
         var tbody = document.getElementById('wagonTableBody');
         var rows = tbody.querySelectorAll('tr');
-        var dateVal = formatDateForPrint(document.getElementById('placementDate').value);
 
         var rowsData = [];
         rows.forEach(function (rowEl) {
@@ -553,12 +913,13 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
                 rly: rowEl.querySelector('.col-rly').textContent,
                 type: rowEl.querySelector('.col-type').textContent,
                 no: last6(rowEl.querySelector('.col-no').textContent),
+                date: ddmmyyFromIso(rowEl.querySelector('.row-date-input').value),
                 plTime: rowEl.querySelector('.pl-time-input').value,
                 line: rowEl.querySelector('.line-select').value
             });
         });
 
-        // rowsData ko 30-30 ke chunks me todo, taaki har chunk apne sub-column me jaaye
+        // Splits rowsData into chunks of 30, so each chunk goes into its own sub-column
         var chunks = [];
         for (var i = 0; i < rowsData.length; i += ROWS_PER_SUBCOL) {
             chunks.push(rowsData.slice(i, i + ROWS_PER_SUBCOL));
@@ -575,15 +936,17 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
                     '<td style="padding:' + scale.pad + ';">' + r.type + '</td>' +
                     '<td style="padding:' + scale.pad + ';">' + r.no + '</td>' +
                     '<td style="padding:' + scale.pad + ';">' + r.line + '</td>' +
+                    '<td style="padding:' + scale.pad + ';">' + r.date + '</td>' +
                     '<td style="padding:' + scale.pad + ';">' + r.plTime + '</td>' +
                     '</tr>';
             });
             subcolsHtml += '<div>' +
                 '<table class="copy-table" style="font-size:' + scale.font + 'px;">' +
                     '<thead><tr style="font-size:' + scale.headFont + 'px;">' +
-                        '<th style="padding:' + scale.pad + '; width:10%;">NO.</th><th style="padding:' + scale.pad + '; width:14%;">RLY</th>' +
-                        '<th style="padding:' + scale.pad + '; width:20%;">TYPE</th><th style="padding:' + scale.pad + '; width:20%;">WGN.</th>' +
-                        '<th style="padding:' + scale.pad + '; width:20%;">LINE</th><th style="padding:' + scale.pad + '; width:16%;">TIME</th>' +
+                        '<th style="padding:' + scale.pad + '; width:8%;">NO.</th><th style="padding:' + scale.pad + '; width:11%;">RLY</th>' +
+                        '<th style="padding:' + scale.pad + '; width:14%;">TYPE</th><th style="padding:' + scale.pad + '; width:14%;">WGN.</th>' +
+                        '<th style="padding:' + scale.pad + '; width:14%;">LINE</th><th style="padding:' + scale.pad + '; width:20%;">DATE</th>' +
+                        '<th style="padding:' + scale.pad + '; width:19%;">TIME</th>' +
                     '</tr></thead>' +
                     '<tbody>' + rowsHtml + '</tbody>' +
                 '</table>' +
@@ -592,16 +955,14 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
 
         var commodity = currentRakeData ? (currentRakeData.commodity || '') : '';
         var party = currentRakeData ? (currentRakeData.consignee || '') : '';
-        // TO STATION bhi hamesha sheet ke data (column E) se hi le rahe hain, kabhi hardcode nahi.
+        // TO STATION is also always taken from the sheet's data (column E), never hardcoded.
         var toStation = currentRakeData ? (currentRakeData.to || '') : '';
 
+        var fromStation = currentRakeData ? (currentRakeData.from || '') : '';
+
         return '<div class="copy-block">' +
-            '<div class="copy-header" style="font-size:' + (scale.labelFont) + 'px;">PLACEMENT MEMO</div>' +
-            '<div class="copy-meta" style="font-size:' + scale.metaFont + 'px;">' +
-                '<span>FROM STATION : ' + (currentRakeData ? currentRakeData.from : '') + '</span>' +
-                '<span>TO STATION : ' + toStation + '</span>' +
-                '<span>PLACEMENT DT. : ' + dateVal + '</span>' +
-            '</div>' +
+            '<div class="copy-header-wrap"><span class="copy-header-box" style="font-size:' + scale.labelFont + 'px;">PLACEMENT MEMO</span></div>' +
+            '<div class="copy-route" style="font-size:' + scale.routeFont + 'px;">' + fromStation + ' TO ' + toStation + '</div>' +
             '<div class="copy-subcols">' + subcolsHtml + '</div>' +
             '<div class="copy-footer" style="font-size:' + scale.footFont + 'px;">' +
                 '<span>NAME OF PARTY : ' + party + '</span>' +
@@ -611,36 +972,168 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
             '</div>';
     }
 
-    // "Save as PDF" karte waqt browser print-dialog default filename document.title
-    // se leta hain, isliye print se pehle title ko required naam me badal dete hain.
+    // When using "Save as PDF", the browser's print dialog takes its default
+    // filename from document.title, so we set the title to the required name
+    // before printing. There's no global Placement Date field anymore — for the
+    // filename we use the date from the first row that has one filled in,
+    // otherwise today's date.
+    function pickFilenameIsoDate() {
+        var inputs = document.querySelectorAll('.row-date-input');
+        for (var i = 0; i < inputs.length; i++) {
+            if (inputs[i].value) return inputs[i].value; // yyyy-mm-dd
+        }
+        var today = new Date();
+        var mm = String(today.getMonth() + 1).padStart(2, '0');
+        var dd = String(today.getDate()).padStart(2, '0');
+        return today.getFullYear() + '-' + mm + '-' + dd;
+    }
+
+    function isoToDDMMYYYY(iso) {
+        var p = iso.split('-');
+        if (p.length !== 3) return iso;
+        return p[2] + '-' + p[1] + '-' + p[0];
+    }
+
     function buildPdfFileName() {
         var inv = (currentRakeData && currentRakeData.invoiceNo) ? currentRakeData.invoiceNo : '';
         var from = (currentRakeData && currentRakeData.from) ? currentRakeData.from : '';
         var to = (currentRakeData && currentRakeData.to) ? currentRakeData.to : '';
-        var dateVal = formatDateForPrint(document.getElementById('placementDate').value);
-        return '01 INV ' + inv + ' ' + from + ' - ' + to + ' ' + dateVal + ' - PLACEMENT MEMO';
+        var dateVal = isoToDDMMYYYY(pickFilenameIsoDate());
+        // Removed the Sr. no. ("01 ") prefix — the filename now starts directly with "INV ...".
+        return 'INV ' + inv + ' ' + from + ' - ' + to + ' ' + dateVal + ' - PLACEMENT MEMO';
     }
 
-    function generatePDF() {
+    // A single shared "save this blob" helper — lets the user choose a save
+    // location via the File System Access API (where the browser supports it);
+    // otherwise falls back to <a download>, saving to the browser's default
+    // Downloads folder. Shows a clear success/failure message in both cases
+    // (some errors used to be silently ignored before — now every real error is shown).
+    async function saveBlobToFile(blob, fileName, mimeType, pickerDescription, pickerExt) {
+        if (window.showSaveFilePicker) {
+            try {
+                var accept = {};
+                accept[mimeType] = [pickerExt];
+                var handle = await window.showSaveFilePicker({
+                    suggestedName: fileName,
+                    types: [{ description: pickerDescription, accept: accept }]
+                });
+                var writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                showMsg(fileName + ' has been saved.', 'info');
+                return true;
+            } catch (err) {
+                if (err && err.name === 'AbortError') {
+                    // The user cancelled the save dialog themselves — this is not an error.
+                    return false;
+                }
+                console.error('saveBlobToFile error:', err);
+                showMsg('An error occurred while saving the file: ' + (err && err.message ? err.message : err) + '. If this page is open inside an app/preview (embedded webview), please open it directly in your Chrome/Edge browser tab and try again.', 'error');
+                return false;
+            }
+        } else {
+            // Fallback for browsers that don't support the File System Access API
+            // (e.g. Firefox, Safari, or mobile browsers) — in this case choosing a
+            // save location isn't possible, the file goes straight to the default
+            // Downloads folder.
+            try {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+                showMsg('Your browser does not support choosing a save location — "' + fileName + '" has been saved to the default Downloads folder.', 'info');
+                return true;
+            } catch (err) {
+                console.error('saveBlobToFile fallback error:', err);
+                showMsg('An error occurred while downloading the file: ' + (err && err.message ? err.message : err), 'error');
+                return false;
+            }
+        }
+    }
+
+    // Common prep: validate a rake is selected, warn about empty cells, and build
+    // the two print-copy blocks (with a cut-line between them) into #printArea.
+    // Returns false if nothing was prepared (so the caller should stop).
+    function prepareCopies() {
         clearMsg();
-        if (!currentRakeData) { showMsg('Pehle Rake ID select kijiye.', 'error'); return; }
-        if (!document.getElementById('placementDate').value) { showMsg('Placement Date bhariye.', 'error'); return; }
+        if (!currentRakeData) { showMsg('Please select a Rake ID first.', 'error'); return false; }
 
         var rows = document.querySelectorAll('#wagonTableBody tr');
         var incomplete = false;
         rows.forEach(function (rowEl) {
             var plTime = rowEl.querySelector('.pl-time-input').value.trim();
             var line = rowEl.querySelector('.line-select').value;
-            if (!plTime || !line) incomplete = true;
+            var dateV = rowEl.querySelector('.row-date-input').value;
+            if (!plTime || !line || !dateV) incomplete = true;
         });
         if (incomplete) {
-            showMsg('Kuch rows me PL. Time ya Line No. khali hain. Fir bhi PDF banayenge, khali cells print me blank rahenge.', 'info');
+            showMsg('Date, PL. Time or Line No. is empty in some rows. Those cells will be left blank.', 'info');
         }
 
         var scale = computeScale();
         var printArea = document.getElementById('printArea');
-        printArea.innerHTML = buildCopyHTML('CYM', scale) + buildCopyHTML('CGS', scale);
+        printArea.innerHTML = buildCopyHTML('CYM', scale) + '<div class="cut-line"></div>' + buildCopyHTML('CGS', scale);
+        return true;
+    }
 
+    // PDF generation no longer depends on window.print()'s native "Save as PDF"
+    // dialog (which doesn't save reliably on many devices/embedded webviews) —
+    // instead we build a real PDF file (bytes) ourselves (via html2canvas + jsPDF)
+    // and save it using the same reliable save-dialog flow as Excel.
+    // generatePdfBlob() only builds/returns the PDF bytes (no save, no download) —
+    // this lets both the PDF button and the Email button get their PDF from one place.
+    async function generatePdfBlob() {
+        if (!prepareCopies()) return null;
+        if (typeof html2canvas === 'undefined' || !window.jspdf) {
+            showMsg('Failed to load PDF library — please check your internet connection.', 'error');
+            return null;
+        }
+
+        var printArea = document.getElementById('printArea');
+        printArea.classList.add('pdf-capture-mode');
+        try {
+            var canvas = await html2canvas(printArea, { scale: 2, backgroundColor: '#ffffff' });
+            var imgData = canvas.toDataURL('image/png');
+
+            var jsPDF = window.jspdf.jsPDF;
+            var pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            var pageW = pdf.internal.pageSize.getWidth();
+            var pageH = pdf.internal.pageSize.getHeight();
+            var imgRatio = canvas.height / canvas.width;
+            var w = pageW;
+            var h = w * imgRatio;
+            if (h > pageH) { h = pageH; w = h / imgRatio; }
+            var x = (pageW - w) / 2;
+            var y = (pageH - h) / 2;
+            pdf.addImage(imgData, 'PNG', x, y, w, h);
+
+            var blob = pdf.output('blob');
+            var fileName = buildPdfFileName() + '.pdf';
+            return { blob: blob, fileName: fileName };
+        } catch (err) {
+            console.error('generatePdfBlob error:', err);
+            showMsg('An error occurred while generating the PDF: ' + (err && err.message ? err.message : err), 'error');
+            return null;
+        } finally {
+            printArea.classList.remove('pdf-capture-mode');
+        }
+    }
+
+    async function doGeneratePDF() {
+        showMsg('Preparing PDF...', 'info');
+        var result = await generatePdfBlob();
+        if (!result) return;
+        await saveBlobToFile(result.blob, result.fileName, 'application/pdf', 'PDF Document', '.pdf');
+    }
+
+    // The Print button goes straight to the OS/browser print dialog (for sending
+    // to a printer) — this is not a "save" action, so it's kept separate from the PDF button.
+    function doPrint() {
+        if (!prepareCopies()) return;
         var originalTitle = document.title;
         document.title = buildPdfFileName();
         var restoreTitle = function () {
@@ -648,14 +1141,188 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
             window.removeEventListener('afterprint', restoreTitle);
         };
         window.addEventListener('afterprint', restoreTitle);
-
         window.print();
     }
+
+    // Collects the wagon table's data into rows for the Excel export
+    // (directly from the screen table, so whatever is filled in gets exported).
+    function buildWagonRowsForExport() {
+        var tbody = document.getElementById('wagonTableBody');
+        var rows = tbody.querySelectorAll('tr');
+        var data = [];
+        rows.forEach(function (rowEl) {
+            data.push([
+                rowEl.querySelector('.col-sr').textContent,
+                rowEl.querySelector('.col-rly').textContent,
+                rowEl.querySelector('.col-type').textContent,
+                rowEl.querySelector('.col-no').textContent,
+                ddmmyyFromIso(rowEl.querySelector('.row-date-input').value),
+                rowEl.querySelector('.pl-time-input').value,
+                rowEl.querySelector('.line-select').value
+            ]);
+        });
+        return data;
+    }
+
+    // Excel export also lets the user choose the save location themselves (via
+    // the File System Access API, where the browser supports it) — not an auto-download.
+    async function doExportExcel() {
+        clearMsg();
+        if (!currentRakeData) { showMsg('Please select a Rake ID first.', 'error'); return; }
+        if (typeof XLSX === 'undefined') { showMsg('Failed to load Excel library — please check your internet connection.', 'error'); return; }
+
+        var party = currentRakeData.consignee || '';
+        var commodity = currentRakeData.commodity || '';
+        var route = (currentRakeData.from || '') + ' TO ' + (currentRakeData.to || '');
+
+        // Party/Commodity are written as "LABEL : value" in a single cell (instead of
+        // separate label/value cells) — so the text never gets cut off even at a
+        // smaller column width, regardless of whether the next cell is empty.
+        var wsData = [
+            ['PLACEMENT MEMO'],
+            [route],
+            [],
+            ['NAME OF PARTY : ' + party, '', '', '', 'COMMODITY : ' + commodity],
+            [],
+            ['NO', 'RLY', 'TYPE', 'WGN NO', 'DATE', 'TIME', 'LINE']
+        ];
+        wsData = wsData.concat(buildWagonRowsForExport());
+
+        var ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Give each column enough width that no header/label/value is ever
+        // truncated/overlapped (WGN NO is sized for the longest wagon numbers).
+        ws['!cols'] = [
+            { wch: 6 },   // NO
+            { wch: 8 },   // RLY
+            { wch: 12 },  // TYPE
+            { wch: 16 },  // WGN NO
+            { wch: 12 },  // DATE
+            { wch: 8 },   // TIME
+            { wch: 10 }   // LINE
+        ];
+
+        // Merged the title / route / party-commodity rows across the full width (7
+        // columns), so they appear centered as a continuous line, with the text
+        // never cut off at a column border.
+        ws['!merges'] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, // PLACEMENT MEMO
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } }, // MALB TO HAPA
+            { s: { r: 3, c: 0 }, e: { r: 3, c: 3 } }, // NAME OF PARTY : ...
+            { s: { r: 3, c: 4 }, e: { r: 3, c: 6 } }  // COMMODITY : ...
+        ];
+
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Placement Memo');
+        var wbArray = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        var blob = new Blob([wbArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        var fileName = buildPdfFileName() + '.xlsx';
+
+        await saveBlobToFile(blob, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Excel Workbook', '.xlsx');
+    }
+
+    // ---------------- Email popup (recipient input -> PDF -> Apps Script -> Gmail) ----------------
+    function openEmailModal() {
+        if (!currentRakeData) { showMsg('Please select a Rake ID first.', 'error'); return; }
+        document.getElementById('emailToInput').value = '';
+        document.getElementById('emailPasswordInput').value = '';
+        document.getElementById('emailModalMsg').textContent = '';
+        document.getElementById('emailSendBtn').disabled = false;
+        document.getElementById('emailSendBtn').textContent = 'Send';
+        document.getElementById('emailOverlay').style.display = 'flex';
+        document.getElementById('emailToInput').focus();
+    }
+    function closeEmailModal() {
+        document.getElementById('emailOverlay').style.display = 'none';
+    }
+    document.getElementById('emailCancelBtn').addEventListener('click', closeEmailModal);
+    document.getElementById('emailOverlay').addEventListener('click', function (e) {
+        if (e.target === this) closeEmailModal();
+    });
+
+    // Blob -> base64 (without the data-URL prefix), so the Apps Script backend's
+    // Utilities.base64Decode() can directly build the PDF bytes.
+    function blobToBase64(blob) {
+        return new Promise(function (resolve, reject) {
+            var reader = new FileReader();
+            reader.onloadend = function () {
+                var result = reader.result; // "data:application/pdf;base64,...."
+                resolve(result.substring(result.indexOf(',') + 1));
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    function isValidEmail(v) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+    }
+
+    var EMAIL_SEND_PASSWORD = "94976";
+
+    async function sendEmailWithPdf() {
+        var toEl = document.getElementById('emailToInput');
+        var passEl = document.getElementById('emailPasswordInput');
+        var msgEl = document.getElementById('emailModalMsg');
+        var sendBtn = document.getElementById('emailSendBtn');
+        var to = toEl.value.trim();
+
+        if (passEl.value !== EMAIL_SEND_PASSWORD) {
+            msgEl.textContent = 'Incorrect password.';
+            return;
+        }
+        if (!to || !isValidEmail(to)) {
+            msgEl.textContent = 'Please enter a valid email address.';
+            return;
+        }
+        msgEl.textContent = '';
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Preparing PDF...';
+
+        var result = await generatePdfBlob();
+        if (!result) {
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+            return;
+        }
+
+        try {
+            sendBtn.textContent = 'Sending...';
+            var pdfBase64 = await blobToBase64(result.blob);
+
+            var resp = await fetch(EMAIL_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+                body: JSON.stringify({
+                    action: 'sendEmail',
+                    to: to,
+                    subject: result.fileName.replace(/\.pdf$/i, ''),
+                    fileName: result.fileName,
+                    pdfBase64: pdfBase64
+                })
+            });
+            var res = await resp.json();
+            if (res.status !== 'success') {
+                throw new Error(res.message || 'Unknown error from server.');
+            }
+            closeEmailModal();
+            showSuccessPopup('&#128231; Email sent to <strong>' + to + '</strong> &#9989;');
+        } catch (err) {
+            console.error('sendEmailWithPdf error:', err);
+            msgEl.textContent = 'An error occurred while sending the email: ' + (err && err.message ? err.message : err);
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+        }
+    }
+    document.getElementById('emailSendBtn').addEventListener('click', sendEmailWithPdf);
 
     document.getElementById('rakeSelect').addEventListener('change', function (e) {
         loadRakeDetails(e.target.value);
     });
-    document.getElementById('submitBtn').addEventListener('click', generatePDF);
+    document.getElementById('pdfBtn').addEventListener('click', doGeneratePDF);
+    document.getElementById('printBtn').addEventListener('click', doPrint);
+    document.getElementById('excelBtn').addEventListener('click', doExportExcel);
+    document.getElementById('emailBtn').addEventListener('click', openEmailModal);
 
     loadPendingRakes();
 </script>
