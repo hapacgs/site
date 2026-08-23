@@ -516,7 +516,7 @@
             return arr.map(function(d, i){ return { id: (d.rakeId || d.rrNumber || ("rake_" + i)), data: d }; })
                 .filter(function(rec){
                     var d = rec.data;
-                    var isReleased = d.status && String(d.status).trim().toUpperCase() === "RELEASED";
+                    var isReleased = d.status && String(d.status).trim().toUpperCase() === "DELIVERED";
                     return isReleased && !!(d.placementDate && d.releaseDate);
                 });
         });
