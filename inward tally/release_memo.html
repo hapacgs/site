@@ -516,7 +516,7 @@
             return arr.map(function(d, i){ return { id: (d.rakeId || d.rrNumber || ("rake_" + i)), data: d }; })
                 .filter(function(rec){
                     var d = rec.data;
-                    var isReleased = d.status && String(d.status).trim().toUpperCase() === "DELIVERED";
+                    var isReleased = d.status && String(d.status).trim().toUpperCase() === "RELEASED";
                     return isReleased && !!(d.placementDate && d.releaseDate);
                 });
         });
@@ -787,7 +787,7 @@
         var extraLine = extraRemark ? ('<br>&nbsp;&nbsp;&nbsp;&nbsp;3. ' + escapeHtml(extraRemark)) : '';
         return '' +
             '<div class="copy-tag">' + tag + '</div>' +
-            '<div class="memo-title">Placement / Release Memo</div>' +
+            '<div class="memo-title">Release Memo</div>' +
             '<div class="memo-row"><div class="f"><span class="memo-num">1.</span><span class="lbl">From Station :</span><span class="val">' + (d.stationFrom || "") + '</span></div>' +
                 '<div class="f"><span class="lbl">To Station :</span><span class="val">' + (d.stationTo || TO_STATION) + '</span></div></div>' +
             '<div class="memo-row"><div class="f"><span class="memo-num">2.</span><span class="lbl">Placement Time :</span><span class="val">' + (d.placementTime || "") + '</span></div>' +
@@ -884,20 +884,50 @@
         });
     }
 
-    // PDF icon click par memo screen par dikhta hain AND yahi function usse
-    // seedha PDF file ke roop me download bhi kar deta hain.
+    // ---------------- Save-As helper (asks user WHERE to save, instead of auto-downloading) ----------------
+    // Uses the native File System Access API's Save dialog when the browser supports it
+    // (Chrome / Edge desktop) so the user can pick the folder + confirm/rename the file.
+    // Falls back to the old auto-download-to-Downloads-folder behaviour on browsers that
+    // don't support it yet (Firefox, Safari, most mobile browsers).
+    function saveBlobAskingPath(blob, suggestedName, pickerTypes){
+        if (window.showSaveFilePicker){
+            return window.showSaveFilePicker({ suggestedName: suggestedName, types: pickerTypes })
+                .then(function(handle){ return handle.createWritable(); })
+                .then(function(writable){ return writable.write(blob).then(function(){ return writable.close(); }); })
+                .then(function(){
+                    setStatus('"' + suggestedName + '" has been saved.');
+                })
+                .catch(function(err){
+                    if (err && err.name === 'AbortError'){ return; } // user cancelled the Save dialog -- do nothing
+                    console.error('saveBlobAskingPath error, falling back to direct download:', err);
+                    downloadBlobDirect(blob, suggestedName);
+                });
+        }
+        // Browser doesn't support the Save dialog -- fall back to the previous behaviour.
+        downloadBlobDirect(blob, suggestedName);
+        return Promise.resolve();
+    }
+    function downloadBlobDirect(blob, fileName){
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        setStatus('"' + fileName + '" has been saved to the default Downloads folder.');
+    }
+
+    // PDF icon click par memo screen par dikhta hain AND yahi function user se
+    // save location puchh kar PDF file save bhi kar deta hain.
     function downloadMemoPdf(rec){
         if (!rec) return;
         generateMemoPdfBlob(rec).then(function(result){
-            var url = URL.createObjectURL(result.blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = result.fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-            setStatus('"' + result.fileName + '" has been saved to the default Downloads folder.');
+            return saveBlobAskingPath(result.blob, result.fileName, [{
+                description: 'PDF Document',
+                accept: { 'application/pdf': ['.pdf'] }
+            }]);
         }).catch(function(err){
             console.error('downloadMemoPdf error:', err);
             setStatus('An error occurred while generating the PDF: ' + (err && err.message ? err.message : err), true);
@@ -952,15 +982,10 @@
         var blob = new Blob([wbArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         var fileName = buildFileNameForRec(rec) + '.xlsx';
 
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-        setStatus('"' + fileName + '" has been saved to the default Downloads folder.');
+        saveBlobAskingPath(blob, fileName, [{
+            description: 'Excel Workbook',
+            accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
+        }]);
     }
 
     // ---------------- Email popup (recipient input -> PDF -> Apps Script -> Gmail) ----------------

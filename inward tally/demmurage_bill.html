@@ -1241,20 +1241,50 @@
         return 'INV ' + inv + ' ' + from + ' ' + to + ' ' + rrDate + ' (DEMMURAGE BILL)';
     }
 
-    // PDF icon click par statement screen par dikhta hain AND yahi function usse
-    // seedha PDF file ke roop me download bhi kar deta hain.
+    // ---------------- Save-As helper (asks user WHERE to save, instead of auto-downloading) ----------------
+    // Uses the native File System Access API's Save dialog when the browser supports it
+    // (Chrome / Edge desktop) so the user can pick the folder + confirm/rename the file.
+    // Falls back to the old auto-download-to-Downloads-folder behaviour on browsers that
+    // don't support it yet (Firefox, Safari, most mobile browsers).
+    function saveBlobAskingPath(blob, suggestedName, pickerTypes){
+        if (window.showSaveFilePicker){
+            return window.showSaveFilePicker({ suggestedName: suggestedName, types: pickerTypes })
+                .then(function(handle){ return handle.createWritable(); })
+                .then(function(writable){ return writable.write(blob).then(function(){ return writable.close(); }); })
+                .then(function(){
+                    setStatus('"' + suggestedName + '" has been saved.');
+                })
+                .catch(function(err){
+                    if (err && err.name === 'AbortError'){ return; } // user cancelled the Save dialog -- do nothing
+                    console.error('saveBlobAskingPath error, falling back to direct download:', err);
+                    downloadBlobDirect(blob, suggestedName);
+                });
+        }
+        // Browser doesn't support the Save dialog -- fall back to the previous behaviour.
+        downloadBlobDirect(blob, suggestedName);
+        return Promise.resolve();
+    }
+    function downloadBlobDirect(blob, fileName){
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        setStatus('"' + fileName + '" has been saved to the default Downloads folder.');
+    }
+
+    // PDF icon click par statement screen par dikhta hain AND yahi function user se
+    // save location puchh kar PDF file save bhi kar deta hain.
     function downloadStatementPdf(rec){
         if (!rec) return;
         generateStatementPdfBlob(rec).then(function(result){
-            var url = URL.createObjectURL(result.blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = result.fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-            setStatus('"' + result.fileName + '" has been saved to the default Downloads folder.');
+            return saveBlobAskingPath(result.blob, result.fileName, [{
+                description: 'PDF Document',
+                accept: { 'application/pdf': ['.pdf'] }
+            }]);
         }).catch(function(err){
             console.error('downloadStatementPdf error:', err);
             setStatus('An error occurred while generating the PDF: ' + (err && err.message ? err.message : err), true);
@@ -1347,15 +1377,10 @@
         var blob = new Blob([wbArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         var fileName = buildFileNameForRec(rec) + '.xlsx';
 
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-        setStatus('"' + fileName + '" has been saved to the default Downloads folder.');
+        saveBlobAskingPath(blob, fileName, [{
+            description: 'Excel Workbook',
+            accept: { 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'] }
+        }]);
     }
 
     // ---------------- Email popup (recipient input -> PDF -> Apps Script -> Gmail) ----------------
