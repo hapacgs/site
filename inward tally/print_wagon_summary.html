@@ -330,15 +330,14 @@
         return [];
     }
 
-    // Only rakes whose STATUS column is "ARRIVING" (any case) are loaded/shown --
-    // every other status is dropped right here, before the list even reaches the page.
+    // NOTE: previously this only kept rakes whose STATUS was "ARRIVING". That
+    // status filter has been removed -- every record from the sheet is now kept
+    // regardless of its status value, so the page loads and shows data no matter
+    // what status each row has.
     function fetchAllRecords(){
         return fetch(APPS_SCRIPT_URL).then(function(r){ return r.json(); }).then(function(json){
             if (json && json.status === "error") throw new Error(json.message || "Backend error");
             var arr = extractArray(json);
-            arr = arr.filter(function(d){
-                return d && d.status && String(d.status).trim().toUpperCase() === "ARRIVING";
-            });
             return arr.map(function(d, i){ return { id: (d.rakeId || d.rrNumber || ("rake_" + i)), data: d }; });
         });
     }
