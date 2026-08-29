@@ -112,6 +112,7 @@
     table.results-table.shrink-4{ font-size:7.5px; }
     table.results-table.shrink-4 th, table.results-table.shrink-4 td{ padding:2px 2px; }
 
+    .no-shunt-cell{ color:#ffb74d; font-weight:700; letter-spacing:0.5px; font-size:11.5px; white-space:nowrap; text-transform:uppercase; }
     .gen-row-btn{ width: 26px; height: 26px; padding: 0; display:inline-flex; align-items:center; justify-content:center; border-radius: 6px; }
     .gen-row-btn svg{ pointer-events:none; width:14px; height:14px; }
     .hint{ font-size:11px; color:var(--muted); text-align:center; max-width:1000px; margin:0 auto 14px; }
@@ -283,7 +284,7 @@
     </div>
 
     <div class="status-msg" id="statusMsg">Data is Loading... Please Wait</div>
-    <div class="hint">Shunting Details, Wagon Count &amp; Placement Particulars must be filled in manually on the memo before printing / saving.</div>
+    <div class="hint">Commencement &amp; Completion Date/Time is entered via a popup before each Print / PDF / Excel / Email action. Wagon Count (Inward/Outward/Loose-3 Line) is auto-filled from Placement data; only Type of Wagons needs manual entry on the memo.</div>
 
     <!-- ===== Results (Demmurage Bill format) ===== -->
     <div class="card" id="resultsCard" style="display:none;">
@@ -337,6 +338,54 @@
         <div class="wsm-btns">
             <button class="wsm-btn wsm-btn-cancel" id="emailCancelBtn" type="button">Cancel</button>
             <button class="wsm-btn wsm-btn-primary" id="emailSendBtn" type="button">Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- Shunting Timing popup — asked before every PDF / Excel / Print / Email action -->
+<div class="wsm-overlay" id="shuntTimeOverlay">
+    <div class="wsm-box" style="max-width:340px;">
+        <div class="wsm-icon">&#9202;</div>
+        <div class="wsm-title">Shunting Timing</div>
+
+        <div class="wsm-label">Commencement Date (DD/MM/YYYY) :</div>
+        <div class="date-input-wrap" style="margin-bottom:12px;">
+            <input type="text" id="shuntCommDateInput" class="wsm-input" style="margin-bottom:0;" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" autocomplete="off">
+            <input type="date" id="shuntCommDatePicker" class="hidden-date-picker" tabindex="-1" aria-hidden="true">
+            <button type="button" class="date-icon-btn" id="shuntCommDateIconBtn" aria-label="Pick commencement date">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke-width="1.6"/>
+                    <path d="M3.5 9.5H20.5" stroke-width="1.6"/>
+                    <path d="M8 3V6" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M16 3V6" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="wsm-label">Commencement Time (24 Hrs., HH:MM) :</div>
+        <input type="text" id="shuntCommTimeInput" class="wsm-input" placeholder="HH:MM" maxlength="5" inputmode="numeric" autocomplete="off">
+
+        <div class="wsm-label">Completion Date (DD/MM/YYYY) :</div>
+        <div class="date-input-wrap" style="margin-bottom:12px;">
+            <input type="text" id="shuntCompDateInput" class="wsm-input" style="margin-bottom:0;" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" autocomplete="off">
+            <input type="date" id="shuntCompDatePicker" class="hidden-date-picker" tabindex="-1" aria-hidden="true">
+            <button type="button" class="date-icon-btn" id="shuntCompDateIconBtn" aria-label="Pick completion date">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3.5" y="5" width="17" height="15.5" rx="2" stroke-width="1.6"/>
+                    <path d="M3.5 9.5H20.5" stroke-width="1.6"/>
+                    <path d="M8 3V6" stroke-width="1.6" stroke-linecap="round"/>
+                    <path d="M16 3V6" stroke-width="1.6" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="wsm-label">Completion Time (24 Hrs., HH:MM) :</div>
+        <input type="text" id="shuntCompTimeInput" class="wsm-input" placeholder="HH:MM" maxlength="5" inputmode="numeric" autocomplete="off">
+
+        <div id="shuntTimeModalMsg" class="wsm-error"></div>
+        <div class="wsm-btns">
+            <button class="wsm-btn wsm-btn-cancel" id="shuntTimeCancelBtn" type="button">Cancel</button>
+            <button class="wsm-btn wsm-btn-primary" id="shuntTimeSaveBtn" type="button">Save &amp; Continue</button>
         </div>
     </div>
 </div>
@@ -582,6 +631,13 @@
         records.forEach(function(rec, idx){
             var d = rec.data;
             var tr = document.createElement('tr');
+            var noShunting = Number(d.shuntingHrs) === 0 || isNaN(parseFloat(d.shuntingHrs));
+            var actionCellsHtml = noShunting
+                ? '<td class="col-pdf no-shunt-cell" colspan="4">NO SHUNTING CHARGE</td>'
+                : '<td class="col-pdf"><button type="button" class="gen-row-btn pdf-row-btn" data-idx="' + idx + '" title="Generate &amp; Download PDF Memo">' + pdfIconSvg + '</button></td>' +
+                  '<td class="col-pdf"><button type="button" class="gen-row-btn xls-row-btn" data-idx="' + idx + '" title="Generate &amp; Save Excel">' + xlsIconSvg + '</button></td>' +
+                  '<td class="col-pdf"><button type="button" class="gen-row-btn print-row-btn" data-idx="' + idx + '" title="Print">' + printIconSvg + '</button></td>' +
+                  '<td class="col-pdf"><button type="button" class="gen-row-btn email-row-btn" data-idx="' + idx + '" title="Email">' + emailIconSvg + '</button></td>';
             tr.innerHTML =
                 '<td class="col-sr">' + (idx + 1) + '</td>' +
                 '<td>' + (d.stationFrom || "-") + '</td>' +
@@ -593,10 +649,7 @@
                 '<td>' + (d.consignee || "-") + '</td>' +
                 '<td>' + toDMY(d.placementDate) + ' ' + (d.placementTime || "-") + '</td>' +
                 '<td>' + toDMY(d.releaseDate) + ' ' + (d.releaseTime || "-") + '</td>' +
-                '<td class="col-pdf"><button type="button" class="gen-row-btn pdf-row-btn" data-idx="' + idx + '" title="Generate &amp; Download PDF Memo">' + pdfIconSvg + '</button></td>' +
-                '<td class="col-pdf"><button type="button" class="gen-row-btn xls-row-btn" data-idx="' + idx + '" title="Generate &amp; Save Excel">' + xlsIconSvg + '</button></td>' +
-                '<td class="col-pdf"><button type="button" class="gen-row-btn print-row-btn" data-idx="' + idx + '" title="Print">' + printIconSvg + '</button></td>' +
-                '<td class="col-pdf"><button type="button" class="gen-row-btn email-row-btn" data-idx="' + idx + '" title="Email">' + emailIconSvg + '</button></td>';
+                actionCellsHtml;
             resultsBody.appendChild(tr);
         });
         resultsCard.style.display = "block";
@@ -604,29 +657,25 @@
         document.querySelectorAll('.pdf-row-btn').forEach(function(btn){
             btn.addEventListener('click', function(){
                 var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
-                ensureMemoFor(rec);
-                downloadShuntingPdf(rec);
+                openShuntTimeModal(rec, 'pdf');
             });
         });
         document.querySelectorAll('.xls-row-btn').forEach(function(btn){
             btn.addEventListener('click', function(){
                 var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
-                ensureMemoFor(rec);
-                exportShuntingExcel(rec);
+                openShuntTimeModal(rec, 'excel');
             });
         });
         document.querySelectorAll('.print-row-btn').forEach(function(btn){
             btn.addEventListener('click', function(){
                 var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
-                ensureMemoFor(rec);
-                setTimeout(function(){ window.print(); }, 60);
+                openShuntTimeModal(rec, 'print');
             });
         });
         document.querySelectorAll('.email-row-btn').forEach(function(btn){
             btn.addEventListener('click', function(){
                 var rec = filteredRecords[parseInt(btn.getAttribute('data-idx'), 10)];
-                ensureMemoFor(rec);
-                openEmailModal(rec);
+                openShuntTimeModal(rec, 'email');
             });
         });
 
@@ -679,7 +728,25 @@
         return pickField(d, ["wagontype", "wagon & type", "wgntype"]) || (d.wagonCount || "");
     }
 
+    // Placement Particulars ke teeno line-wise wagon counts ab manually nahi bharne — ye
+    // rake ke saved d.placementData (Placement Memo se, per-wagon "line" field: I/W / O/W /
+    // Loose-3) se hi ginkar nikalte hain, taaki system me already available data dobara type
+    // na karna pade.
+    function placementLineCounts(d){
+        var counts = { inward: 0, outward: 0, loose3: 0 };
+        var arr = Array.isArray(d.placementData) ? d.placementData : [];
+        arr.forEach(function(w){
+            var line = (w && w.line ? w.line.toString() : "").trim().toUpperCase();
+            if (line.indexOf("I/W") !== -1 || line.indexOf("INWARD") !== -1) counts.inward++;
+            else if (line.indexOf("O/W") !== -1 || line.indexOf("OUTWARD") !== -1) counts.outward++;
+            else if (line.indexOf("LOOSE") !== -1) counts.loose3++;
+        });
+        counts.total = counts.inward + counts.outward + counts.loose3;
+        return counts;
+    }
+
     function copyHtml(d, tag){
+        var lc = placementLineCounts(d);
         return '<div class="scale-wrap">' +
             '<div class="copy-tag">' + tag + '</div>' +
             '<div class="memo-title">Shunting Charge Memo</div>' +
@@ -690,11 +757,11 @@
             '<div class="shunt-box">' +
                 '<div class="sd-title">:: Shunting Details ::</div>' +
                 '<div class="sd-row"><span class="lbl">Commencement Date &amp; Time :</span>' +
-                    '<span class="val-date manual-field" contenteditable="true" data-role="commDate" data-ph="DD/MM/YYYY" data-tooltip="Manual entry required" inputmode="numeric"></span>' +
-                    '<span class="val-time manual-field" contenteditable="true" data-role="commTime" data-ph="HH:MM" data-tooltip="Manual entry required" inputmode="numeric"></span></div>' +
+                    '<span class="val-date" data-role="commDate">' + (d.commDate || "") + '</span>' +
+                    '<span class="val-time" data-role="commTime">' + (d.commTime || "") + '</span></div>' +
                 '<div class="sd-row"><span class="lbl">Completion Date &amp; Time :</span>' +
-                    '<span class="val-date manual-field" contenteditable="true" data-role="compDate" data-ph="DD/MM/YYYY" data-tooltip="Manual entry required" inputmode="numeric"></span>' +
-                    '<span class="val-time manual-field" contenteditable="true" data-role="compTime" data-ph="HH:MM" data-tooltip="Manual entry required" inputmode="numeric"></span></div>' +
+                    '<span class="val-date" data-role="compDate">' + (d.compDate || "") + '</span>' +
+                    '<span class="val-time" data-role="compTime">' + (d.compTime || "") + '</span></div>' +
                 '<div class="sd-row"><span class="lbl">Total Time Taken :</span>' +
                     '<span class="val-time" data-role="totalTime">-</span>' +
                     '<span class="roundoff" data-role="roundOff"></span></div>' +
@@ -702,10 +769,10 @@
             '<div class="table-cap">3. Placement Particulars :</div>' +
             '<table class="line-table"><thead><tr><th style="width:16%;">Sr No.</th><th>Line No.</th><th style="width:26%;">Total Wagon</th></tr></thead>' +
             '<tbody>' +
-                '<tr><td>1</td><td>Inward Line</td><td class="manual-field" contenteditable="true" data-role="wagonCount" data-ph="0" data-tooltip="Manual entry required" inputmode="numeric"></td></tr>' +
-                '<tr><td>2</td><td>Outward Line</td><td class="manual-field" contenteditable="true" data-role="wagonCount" data-ph="0" data-tooltip="Manual entry required" inputmode="numeric"></td></tr>' +
-                '<tr><td>3</td><td>Loose-3 Line</td><td class="manual-field" contenteditable="true" data-role="wagonCount" data-ph="0" data-tooltip="Manual entry required" inputmode="numeric"></td></tr>' +
-                '<tr><td colspan="2" style="font-weight:800;">Total</td><td data-role="wagonTotal" style="font-weight:800;">0</td></tr>' +
+                '<tr><td>1</td><td>Inward Line</td><td data-role="wagonCount" data-line="inward">' + lc.inward + '</td></tr>' +
+                '<tr><td>2</td><td>Outward Line</td><td data-role="wagonCount" data-line="outward">' + lc.outward + '</td></tr>' +
+                '<tr><td>3</td><td>Loose-3 Line</td><td data-role="wagonCount" data-line="loose3">' + lc.loose3 + '</td></tr>' +
+                '<tr><td colspan="2" style="font-weight:800;">Total</td><td data-role="wagonTotal" style="font-weight:800;">' + lc.total + '</td></tr>' +
             '</tbody></table>' +
             '<div class="remarks"><span class="rlabel">4. Remarks :</span> Please collect Shunting Charges as per rules.</div>' +
             '<div class="memo-footer">' +
@@ -800,48 +867,23 @@
         inputEl.value = out;
     }
 
-    // Copy 2 is auto-filled from Copy 1 — user never has to enter anything twice
+    // Copy 2 is auto-filled from Copy 1 — user never has to enter anything twice.
+    // Commencement/Completion Date & Time and the 3 line-wise wagon counts are all
+    // baked in identically on both copies straight from d (see copyHtml), so only
+    // Wagon Type (still manually typed) needs syncing.
     function syncCopies(copy1, copy2){
-        ['wagonType', 'commDate', 'commTime', 'compDate', 'compTime'].forEach(function(role){
-            var src = copy1.querySelector('[data-role="' + role + '"]');
-            var dst = copy2.querySelector('[data-role="' + role + '"]');
-            if (src && dst) dst.textContent = src.textContent;
-        });
-        var srcCells = copy1.querySelectorAll('[data-role="wagonCount"]');
-        var dstCells = copy2.querySelectorAll('[data-role="wagonCount"]');
-        srcCells.forEach(function(c, i){ if (dstCells[i]) dstCells[i].textContent = c.textContent; });
-        recalcShuntTime(copy2);
-        recalcWagonTotal(copy2);
+        var src = copy1.querySelector('[data-role="wagonType"]');
+        var dst = copy2.querySelector('[data-role="wagonType"]');
+        if (src && dst) dst.textContent = src.textContent;
         fitMemoToPage(copy1);
         fitMemoToPage(copy2);
     }
 
-    // Copy 1 is the master copy the user fills in; Copy 2 mirrors it automatically and stays read-only
+    // Copy 1 is the master copy the user fills in; Copy 2 mirrors it automatically and stays read-only.
+    // Only Wagon Type remains a manual field now.
     function wireMasterCopy(copy1, copy2){
-        ['commDate', 'compDate'].forEach(function(role){
-            var el = copy1.querySelector('[data-role="' + role + '"]');
-            if (el) el.addEventListener('input', function(){
-                formatDateField(el);
-                recalcShuntTime(copy1);
-                syncCopies(copy1, copy2);
-            });
-        });
-        ['commTime', 'compTime'].forEach(function(role){
-            var el = copy1.querySelector('[data-role="' + role + '"]');
-            if (el) el.addEventListener('input', function(){
-                formatTimeField(el);
-                recalcShuntTime(copy1);
-                syncCopies(copy1, copy2);
-            });
-        });
         var wagonTypeEl = copy1.querySelector('[data-role="wagonType"]');
         if (wagonTypeEl) wagonTypeEl.addEventListener('input', function(){ syncCopies(copy1, copy2); });
-        copy1.querySelectorAll('[data-role="wagonCount"]').forEach(function(el){
-            el.addEventListener('input', function(){
-                recalcWagonTotal(copy1);
-                syncCopies(copy1, copy2);
-            });
-        });
     }
 
     // Shrinks a copy's content just enough to always fit inside its fixed A4 half-page — never spills onto another page
@@ -882,6 +924,10 @@
         copy2.innerHTML = copyHtml(d, "CYM-HAPA COPY");
         lockMirrorCopy(copy2);
         wireMasterCopy(copy1, copy2);
+        // commDate/commTime/compDate/compTime are already baked into both copies (same d),
+        // so just compute Total Time Taken / round-off for each copy from those values.
+        recalcShuntTime(copy1);
+        recalcShuntTime(copy2);
         syncCopies(copy1, copy2);
         statementWrap.style.display = "block";
         statementWrap.scrollIntoView({ behavior: "smooth" });
@@ -907,6 +953,41 @@
         var to = d.stationTo || TO_STATION;
         var rrDate = formatDateForFileName(d.rrDate);
         return 'INV ' + inv + ' ' + from + ' ' + to + ' ' + rrDate + ' (SHUNTING CHARGE MEMO)';
+    }
+
+    // Lets the user pick WHERE to save a file (folder + name), instead of it silently
+    // landing in the default Downloads folder. Uses the File System Access API where the
+    // browser supports it (Chrome/Edge desktop); falls back to a normal auto-download
+    // anywhere it doesn't (Firefox/Safari, or if the picker can't be shown for any reason).
+    async function saveBlobWithPicker(blob, suggestedName, mimeType, extension, description){
+        if (window.showSaveFilePicker){
+            try {
+                var typesOpt = {};
+                typesOpt[mimeType] = ['.' + extension];
+                var handle = await window.showSaveFilePicker({
+                    suggestedName: suggestedName,
+                    types: [{ description: description, accept: typesOpt }]
+                });
+                var writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                return { saved: true, picked: true, name: handle.name || suggestedName };
+            } catch (err){
+                if (err && err.name === 'AbortError'){
+                    return { saved: false, cancelled: true };
+                }
+                // Picker unusable for some other reason (e.g. lost user-activation) -- fall through to auto-download
+            }
+        }
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = suggestedName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+        return { saved: true, picked: false, name: suggestedName };
     }
 
     // Screenshots the CURRENT on-screen memo (with whatever the user has manually filled in
@@ -942,15 +1023,13 @@
     function downloadShuntingPdf(rec){
         if (!rec) return;
         captureShuntingPdfBlob(rec).then(function(result){
-            var url = URL.createObjectURL(result.blob);
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = result.fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-            setStatus('"' + result.fileName + '" has been saved to the default Downloads folder.');
+            return saveBlobWithPicker(result.blob, result.fileName, 'application/pdf', 'pdf', 'PDF File').then(function(saveResult){
+                if (saveResult.cancelled){
+                    setStatus('PDF save was cancelled.');
+                    return;
+                }
+                setStatus('"' + saveResult.name + '" has been saved' + (saveResult.picked ? '.' : ' to the default Downloads folder.'));
+            });
         }).catch(function(err){
             console.error('downloadShuntingPdf error:', err);
             setStatus('An error occurred while generating the PDF: ' + (err && err.message ? err.message : err), true);
@@ -958,7 +1037,7 @@
     }
 
     // Excel icon -- exports the memo's current on-screen values (including anything the user has
-    // manually filled in for Shunting Details / Placement Particulars so far).
+    // manually filled in for Type of Wagons so far, plus the auto-filled Placement-based counts).
     function exportShuntingExcel(rec){
         if (!rec) return;
         if (typeof XLSX === 'undefined'){
@@ -1004,15 +1083,16 @@
         var blob = new Blob([wbArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         var fileName = buildFileNameForRec(rec) + '.xlsx';
 
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
-        setStatus('"' + fileName + '" has been saved to the default Downloads folder.');
+        saveBlobWithPicker(blob, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xlsx', 'Excel Workbook').then(function(saveResult){
+            if (saveResult.cancelled){
+                setStatus('Excel save was cancelled.');
+                return;
+            }
+            setStatus('"' + saveResult.name + '" has been saved' + (saveResult.picked ? '.' : ' to the default Downloads folder.'));
+        }).catch(function(err){
+            console.error('exportShuntingExcel error:', err);
+            setStatus('An error occurred while generating the Excel file: ' + (err && err.message ? err.message : err), true);
+        });
     }
 
     // ---------------- Email popup (recipient input -> PDF -> Apps Script -> Gmail) ----------------
@@ -1036,6 +1116,156 @@
     document.getElementById('emailOverlay').addEventListener('click', function(e){
         if (e.target === this) closeEmailModal();
     });
+
+    // ---------------- Shunting Timing popup ----------------
+    // Opens BEFORE every PDF / Excel / Print / Email action. If the rake already has
+    // commDate/commTime/compDate/compTime saved (from a previous visit), the popup
+    // comes up pre-filled with that data so the user can review/edit and Save again.
+    var shuntTimeOverlay = document.getElementById('shuntTimeOverlay');
+    var pendingShuntRec = null;
+    var pendingShuntAction = null;
+    var pendingShuntIsEdit = false;
+
+    function openShuntTimeModal(rec, action){
+        if (!rec) return;
+        pendingShuntRec = rec;
+        pendingShuntAction = action;
+        var d = rec.data || {};
+        var hasExisting = !!(d.commDate && d.commTime && d.compDate && d.compTime);
+        pendingShuntIsEdit = hasExisting;
+        document.getElementById('shuntCommDateInput').value = d.commDate || '';
+        document.getElementById('shuntCommTimeInput').value = d.commTime || '';
+        document.getElementById('shuntCompDateInput').value = d.compDate || '';
+        document.getElementById('shuntCompTimeInput').value = d.compTime || '';
+        document.getElementById('shuntTimeModalMsg').textContent = '';
+        var saveBtn = document.getElementById('shuntTimeSaveBtn');
+        saveBtn.disabled = false;
+        saveBtn.textContent = hasExisting ? 'Edit & Continue' : 'Save & Continue';
+        shuntTimeOverlay.style.display = 'flex';
+        document.getElementById('shuntCommDateInput').focus();
+    }
+    function closeShuntTimeModal(){
+        shuntTimeOverlay.style.display = 'none';
+        pendingShuntRec = null;
+        pendingShuntAction = null;
+    }
+    document.getElementById('shuntTimeCancelBtn').addEventListener('click', closeShuntTimeModal);
+    shuntTimeOverlay.addEventListener('click', function(e){
+        if (e.target === this) closeShuntTimeModal();
+    });
+
+    wireDatePicker('shuntCommDateInput', 'shuntCommDatePicker', 'shuntCommDateIconBtn');
+    wireDatePicker('shuntCompDateInput', 'shuntCompDatePicker', 'shuntCompDateIconBtn');
+
+    ['shuntCommDateInput', 'shuntCompDateInput'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', function(){ formatDateInputEl(el); });
+    });
+    // Auto-insert ":" while typing a 24-hour time into the popup's HH:MM fields
+    function formatTimeInputEl(inputEl){
+        var digits = inputEl.value.replace(/[^\d]/g, '').slice(0, 4);
+        var out = digits;
+        if (digits.length > 2) out = digits.slice(0, 2) + ':' + digits.slice(2);
+        inputEl.value = out;
+    }
+    ['shuntCommTimeInput', 'shuntCompTimeInput'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', function(){ formatTimeInputEl(el); });
+    });
+
+    function isValidHM(v){
+        if (!/^\d{2}:\d{2}$/.test(v || '')) return false;
+        var p = v.split(':');
+        var h = parseInt(p[0], 10), m = parseInt(p[1], 10);
+        return h >= 0 && h <= 23 && m >= 0 && m <= 59;
+    }
+
+    // Runs the action (pdf/excel/print/email) the user originally clicked, now that
+    // Shunting Timing has been saved and the memo can be generated with fresh data.
+    function runPendingRowAction(rec, action){
+        generateMemo(rec);
+        if (action === 'pdf'){
+            downloadShuntingPdf(rec);
+        } else if (action === 'excel'){
+            exportShuntingExcel(rec);
+        } else if (action === 'print'){
+            setTimeout(function(){ window.print(); }, 60);
+        } else if (action === 'email'){
+            openEmailModal(rec);
+        }
+    }
+
+    async function saveShuntingTiming(){
+        var commDateEl = document.getElementById('shuntCommDateInput');
+        var commTimeEl = document.getElementById('shuntCommTimeInput');
+        var compDateEl = document.getElementById('shuntCompDateInput');
+        var compTimeEl = document.getElementById('shuntCompTimeInput');
+        var msgEl = document.getElementById('shuntTimeModalMsg');
+        var saveBtn = document.getElementById('shuntTimeSaveBtn');
+
+        var commDate = commDateEl.value.trim();
+        var commTime = commTimeEl.value.trim();
+        var compDate = compDateEl.value.trim();
+        var compTime = compTimeEl.value.trim();
+
+        if (!pendingShuntRec){ msgEl.textContent = 'Please select a rake first.'; return; }
+        if (!parseInputDMY(commDate) || !isValidHM(commTime)){
+            msgEl.textContent = 'Please enter a valid Commencement Date & Time.';
+            return;
+        }
+        if (!parseInputDMY(compDate) || !isValidHM(compTime)){
+            msgEl.textContent = 'Please enter a valid Completion Date & Time.';
+            return;
+        }
+        var start = parseDMYHM(commDate, commTime);
+        var end = parseDMYHM(compDate, compTime);
+        if (!start || !end || end <= start){
+            msgEl.textContent = 'Completion Date & Time must be after Commencement Date & Time.';
+            return;
+        }
+
+        msgEl.textContent = '';
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+            var resp = await fetch(EMAIL_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({
+                    action: 'saveShuntingTiming',
+                    sheetId: SHEET_ID,
+                    sheetName: SHEET_NAME,
+                    rakeId: pendingShuntRec.id,
+                    commDate: commDate,
+                    commTime: commTime,
+                    compDate: compDate,
+                    compTime: compTime
+                })
+            });
+            var res = await resp.json();
+            if (res.status !== 'success'){
+                throw new Error(res.message || 'Unknown error from server.');
+            }
+
+            // Update local copy so the memo & the pending action use the freshly saved values
+            pendingShuntRec.data.commDate = commDate;
+            pendingShuntRec.data.commTime = commTime;
+            pendingShuntRec.data.compDate = compDate;
+            pendingShuntRec.data.compTime = compTime;
+
+            var rec = pendingShuntRec;
+            var action = pendingShuntAction;
+            closeShuntTimeModal();
+            runPendingRowAction(rec, action);
+        } catch (err){
+            console.error('saveShuntingTiming error:', err);
+            msgEl.textContent = 'An error occurred while saving: ' + (err && err.message ? err.message : err);
+            saveBtn.disabled = false;
+            saveBtn.textContent = pendingShuntIsEdit ? 'Edit & Continue' : 'Save & Continue';
+        }
+    }
+    document.getElementById('shuntTimeSaveBtn').addEventListener('click', saveShuntingTiming);
 
     // Blob -> base64 (without the data-URL prefix), so the Apps Script backend's
     // Utilities.base64Decode() can directly build the PDF bytes.
