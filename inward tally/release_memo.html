@@ -506,9 +506,9 @@
         });
     }
 
-    // Single call fetches every rake; a release memo only makes sense once a rake
-    // already has placement AND release data filled in AND its STATUS is RELEASED,
-    // so we filter to that subset right here (same rule as Demmurage Bill).
+    // Single call fetches every rake; a release memo only needs placement AND
+    // release data filled in -- STATUS is no longer checked, so records show up
+    // regardless of what STATUS value they have.
     function fetchAllRecords(){
         return fetch(APPS_SCRIPT_URL).then(function(r){ return r.json(); }).then(function(json){
             if (json && json.status === "error") throw new Error(json.message || "Backend error");
@@ -516,8 +516,7 @@
             return arr.map(function(d, i){ return { id: (d.rakeId || d.rrNumber || ("rake_" + i)), data: d }; })
                 .filter(function(rec){
                     var d = rec.data;
-                    var isReleased = d.status && String(d.status).trim().toUpperCase() === "RELEASED";
-                    return isReleased && !!(d.placementDate && d.releaseDate);
+                    return !!(d.placementDate && d.releaseDate);
                 });
         });
     }
