@@ -107,6 +107,101 @@ h1 {
 }
 .station-row input[type="date"] { color-scheme: dark; }
 
+/* ---------- Search / Filter card (rake search, styled like Print Wagon Summary) ---------- */
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.filter-field label {
+  color: var(--cyan-soft);
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 1px;
+}
+.filter-field input {
+  padding: 8px 9px;
+  border: 1px solid var(--glass-border);
+  background: rgba(10,22,48,0.95);
+  color: var(--text);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  min-width: 0;
+  width: 100%;
+}
+.filter-field input:focus {
+  outline: none;
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0,229,255,0.35);
+}
+.filter-field input[type="date"] { color-scheme: dark; }
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(70%) sepia(85%) saturate(4000%) hue-rotate(163deg) brightness(103%) contrast(101%);
+    cursor: pointer;
+}
+#rakeSearchBtn {
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  color: #001824;
+  letter-spacing: 0.5px;
+  background: linear-gradient(135deg, var(--cyan), #0090c8);
+  box-shadow: 0 0 16px rgba(0,229,255,0.35);
+  width: 100%;
+}
+#rakeSearchBtn:hover { box-shadow: 0 0 24px rgba(0,229,255,0.55); }
+#rakeSearchBtn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+.search-status-msg { text-align: center; font-size: 12px; color: var(--text-dim); margin: 0 0 12px; }
+.search-status-msg.error { color: #ff8f8f; }
+
+/* ---------- Rake results table (search results, one row per rake) ---------- */
+#rakeResultsCard { overflow: hidden; }
+#rakeResultsCard .table-wrap { width: 100%; overflow-x: auto; }
+.rake-results-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+.rake-results-table thead th {
+  background: rgba(0,229,255,0.1);
+  color: var(--cyan-soft);
+  text-align: center;
+  padding: 6px 6px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--glass-border);
+}
+.rake-results-table tbody td {
+  padding: 5px 6px;
+  text-align: center;
+  border-bottom: 1px solid rgba(0,229,255,0.1);
+  color: var(--text);
+  white-space: nowrap;
+}
+.rake-results-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+.rake-select-btn {
+  padding: 5px 12px;
+  border: 1px solid rgba(0,229,255,0.35);
+  background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(0,120,255,0.12));
+  color: var(--cyan-soft);
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+}
+.rake-select-btn:hover { background: linear-gradient(135deg, rgba(0,229,255,0.35), rgba(0,120,255,0.22)); }
+.rake-results-table tbody tr.rake-row-selected { background: rgba(0,229,255,0.22) !important; }
+
 /* The native <input type="date"> display format (MM/DD/YYYY vs DD/MM/YYYY) depends
    on the mobile device's locale and cannot be controlled directly via HTML/CSS.
    So we make the actual input's text transparent and overlay our own formatted
@@ -440,11 +535,55 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
 <div id="app">
     <h1>PLACEMENT MEMO</h1>
 
-    <div class="station-row">
-        <label for="rakeSelect">SELECT RAKE ID :</label>
-        <select id="rakeSelect">
-            <option value="">-- Loading... --</option>
-        </select>
+    <!-- ===== Rake Search / Filter (same idea as Print Wagon Summary's search bar) ===== -->
+    <div class="card" id="rakeFilterCard">
+        <div class="filter-grid">
+            <div class="filter-field">
+                <label for="rakeStationFrom">STATION FROM</label>
+                <input list="rakeStationList" id="rakeStationFrom" placeholder="Type or select station">
+                <datalist id="rakeStationList"></datalist>
+            </div>
+            <div class="filter-field">
+                <label for="rakeConsignee">CONSIGNEE</label>
+                <input list="rakeConsigneeList" id="rakeConsignee" placeholder="Type or select consignee">
+                <datalist id="rakeConsigneeList"></datalist>
+            </div>
+            <div class="filter-field">
+                <label for="rakeFromDate">RR DATE (FROM)</label>
+                <input type="date" id="rakeFromDate" lang="en-GB">
+            </div>
+            <div class="filter-field">
+                <label for="rakeToDate">RR DATE (TO)</label>
+                <input type="date" id="rakeToDate" lang="en-GB">
+            </div>
+            <div class="filter-field">
+                <label>&nbsp;</label>
+                <button id="rakeSearchBtn" type="button" disabled>SEARCH</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="search-status-msg" id="rakeSearchStatus">Data is Loading... Please Wait</div>
+
+    <!-- ===== Rake search results (pick one to load into the memo below) ===== -->
+    <div class="card" id="rakeResultsCard" style="display:none;">
+        <div class="table-wrap">
+            <table class="rake-results-table">
+                <thead>
+                    <tr>
+                        <th>FROM</th>
+                        <th>TO</th>
+                        <th>WGN.</th>
+                        <th>RR NUMBER</th>
+                        <th>RR DATE</th>
+                        <th>INV.</th>
+                        <th>CONSIGNEE</th>
+                        <th>SELECT</th>
+                    </tr>
+                </thead>
+                <tbody id="rakeResultsBody"></tbody>
+            </table>
+        </div>
     </div>
 
     <div class="route-line" id="routeLine" style="display:none;"></div>
@@ -469,6 +608,7 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     </div>
 
     <div class="submit-bar" id="submitBar" style="display:none;">
+        <button class="action-btn" id="saveBtn" type="button"><span class="btn-icon">&#128190;</span> SAVE</button>
         <button class="action-btn" id="pdfBtn" type="button"><span class="btn-icon">&#128196;</span> PDF</button>
         <button class="action-btn" id="printBtn" type="button"><span class="btn-icon">&#128424;</span> PRINT</button>
         <button class="action-btn" id="excelBtn" type="button"><span class="btn-icon">&#128202;</span> EXCEL</button>
@@ -532,6 +672,14 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     var LINE_OPTIONS = ["I/W", "O/W", "LOOSE-3"];
     var currentRakeData = null;
     var currentWagons = [];
+    // Date/Time/Line values previously saved to the sheet for the currently
+    // selected rake's wagons (see selectRakeRecord / renderTable / doSavePlacementData).
+    var currentSavedPlacement = [];
+
+    // All rake records fetched once on page load (any status — no status filter
+    // applied here), plus the subset currently shown after a search.
+    var allRakeRecords = [];
+    var filteredRakeRecords = [];
 
     // Converts a row's date (yyyy-mm-dd, from the native <input type="date">) to
     // DD/MM/YY — shown in this format in both the screen table and the PDF
@@ -543,11 +691,46 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         return p[2] + '/' + p[1] + '/' + p[0].slice(2);
     }
 
+    function pad2(n){ return n < 10 ? "0" + n : "" + n; }
+
+    // Backend RR DATE values come through already-formatted as text (e.g.
+    // "25/07/2026" or "22-07-2026", DD-then-MM-then-YYYY, separator varies).
+    // Used for the search-results table and the RR Date range filter.
+    function parseSheetDate(raw){
+        if (!raw) return null;
+        var parts = String(raw).trim().split(/[\/\-\.]/);
+        if (parts.length !== 3) return null;
+        var d = parseInt(parts[0], 10), m = parseInt(parts[1], 10), y = parseInt(parts[2], 10);
+        if (!d || !m || !y) return null;
+        return new Date(y, m - 1, d);
+    }
+    function formatSheetDate(raw){
+        var d = parseSheetDate(raw);
+        return d ? (pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1) + "/" + d.getFullYear()) : "-";
+    }
+    // The RR DATE (FROM/TO) filter fields are native <input type="date"> pickers,
+    // which always hand back ISO "YYYY-MM-DD" — parsed separately since the
+    // backend's DD/MM/YYYY text doesn't share the same separator order.
+    function parseDatePickerValue(val){
+        if (!val) return null;
+        var parts = val.split("-");
+        if (parts.length !== 3) return null;
+        var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), d = parseInt(parts[2], 10);
+        if (!y || !m || !d) return null;
+        return new Date(y, m - 1, d);
+    }
+
     function showMsg(text, type) {
         var box = document.getElementById('msgBox');
         box.innerHTML = '<div class="msg ' + (type || 'info') + '">' + text + '</div>';
     }
     function clearMsg() { document.getElementById('msgBox').innerHTML = ''; }
+
+    function setSearchStatus(msg, isError){
+        var el = document.getElementById('rakeSearchStatus');
+        el.textContent = msg || "";
+        el.className = "search-status-msg" + (isError ? " error" : "");
+    }
 
     // ---------------- Themed (cyan/navy) warning popup ----------------
     function showWarningPopup(msg) {
@@ -620,45 +803,152 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         }
     }
 
-    // ---------------- Load Rake ID dropdown (new source, status = ARRIVING or blank) ----------------
-    // Backend's "listArriving" action returns both ARRIVING and ARRIVED rakes, so we use
-    // "listAll" instead (full records with a status field) and filter to ARRIVING (or blank/nil
-    // status, treated as ARRIVING) here.
-    function loadPendingRakes() {
-        var sel = document.getElementById('rakeSelect');
-        var url = RAKE_LIST_API_URL + "?action=listAll&sheetId=" + encodeURIComponent(RAKE_LIST_SHEET_ID) + "&sheetName=" + encodeURIComponent(RAKE_LIST_SHEET_NAME);
-        fetch(url)
-            .then(function (r) { return r.json(); })
-            .then(function (res) {
-                if (res.status !== "success") {
-                    sel.innerHTML = '<option value="">-- Error loading --</option>';
-                    showMsg('Error loading rake list: ' + (res.message || ''), 'error');
-                    return;
-                }
-
-                var records = res.records || [];
-                var arriving = records.filter(function (rec) {
-                    var st = (rec.status || '').toString().trim().toUpperCase();
-                    return st === 'ARRIVING' || st === '';
-                });
-
-                if (arriving.length === 0) {
-                    sel.innerHTML = '<option value="">-- No Arriving rake --</option>';
-                    return;
-                }
-                var html = '<option value="">-- Select Rake ID --</option>';
-                arriving.forEach(function (rec) {
-                    html += '<option value="' + rec.rakeId + '">' + rec.rakeId + '</option>';
-                });
-                sel.innerHTML = html;
-            })
-            .catch(function (err) {
-                sel.innerHTML = '<option value="">-- Error loading --</option>';
-                showMsg('Network error: ' + err.message, 'error');
-            });
+    // ---------------- Load all rake records once (no status filter -- every
+    // record from the sheet is kept, regardless of status), then populate the
+    // search datalists and show the initial (latest) results. ----------------
+    function extractArray(json){
+        if (Array.isArray(json)) return json;
+        if (json && Array.isArray(json.records)) return json.records;
+        if (json && Array.isArray(json.data)) return json.data;
+        if (json && Array.isArray(json.rows)) return json.rows;
+        if (json && Array.isArray(json.result)) return json.result;
+        return [];
     }
 
-    // ---------------- Load rake details on selection ----------------
+    function fetchAllRakeRecords(){
+        var url = RAKE_LIST_API_URL + "?action=listAll&sheetId=" + encodeURIComponent(RAKE_LIST_SHEET_ID) + "&sheetName=" + encodeURIComponent(RAKE_LIST_SHEET_NAME);
+        return fetch(url).then(function (r) { return r.json(); }).then(function (res) {
+            if (res && res.status === "error") throw new Error(res.message || "Backend error");
+            var arr = extractArray(res);
+            return arr;
+        });
+    }
+
+    function populateRakeDatalists(){
+        var stationSeen = {}, consigneeSeen = {};
+        var stationList = document.getElementById('rakeStationList');
+        var consigneeList = document.getElementById('rakeConsigneeList');
+        stationList.innerHTML = "";
+        consigneeList.innerHTML = "";
+        allRakeRecords.forEach(function(rec){
+            var s = pickField(rec, ['from', 'stationFrom', 'fromStation', 'FROM']);
+            var c = pickField(rec, ['consignee', 'party', 'Consignee', 'CONSIGNEE']);
+            if (s && !stationSeen[s]){ stationSeen[s] = true; var o1 = document.createElement('option'); o1.value = s; stationList.appendChild(o1); }
+            if (c && !consigneeSeen[c]){ consigneeSeen[c] = true; var o2 = document.createElement('option'); o2.value = c; consigneeList.appendChild(o2); }
+        });
+    }
+
+    function initRakeSearch(){
+        setSearchStatus("Data is Loading... Please Wait");
+        var btn = document.getElementById('rakeSearchBtn');
+        btn.disabled = true;
+        fetchAllRakeRecords().then(function (records) {
+            allRakeRecords = records;
+            populateRakeDatalists();
+            if (records.length === 0) {
+                setSearchStatus("No rakes found.", true);
+            } else {
+                setSearchStatus("Data loaded -- showing all rakes.");
+                submitRakeSearch();
+            }
+            btn.disabled = false;
+        }).catch(function (err) {
+            setSearchStatus("Error loading data: " + err.message, true);
+            btn.disabled = false;
+        });
+    }
+
+    function renderRakeResults(records){
+        var body = document.getElementById('rakeResultsBody');
+        var card = document.getElementById('rakeResultsCard');
+        body.innerHTML = "";
+        if (records.length === 0) {
+            card.style.display = "block";
+            body.innerHTML = '<tr><td colspan="8">No matching rakes found.</td></tr>';
+            return;
+        }
+        records.forEach(function (rec, idx) {
+            var from = pickField(rec, ['from', 'stationFrom', 'fromStation', 'FROM']) || '-';
+            var to = pickField(rec, ['to', 'stationTo', 'toStation', 'TO']) || '-';
+            var wgnCount = pickField(rec, ['wagonCount']) || '-';
+            var rrNumber = pickField(rec, ['rrNumber']) || '-';
+            var rrDate = formatSheetDate(pickField(rec, ['rrDate']));
+            var invNo = pickField(rec, ['invoiceNo', 'invoiceNumber', 'INVOICE_NO', 'invoice_no']) || '-';
+            var consignee = pickField(rec, ['consignee', 'party', 'Consignee', 'CONSIGNEE']) || '-';
+
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td>' + from + '</td>' +
+                '<td>' + to + '</td>' +
+                '<td>' + wgnCount + '</td>' +
+                '<td>' + rrNumber + '</td>' +
+                '<td>' + rrDate + '</td>' +
+                '<td>' + invNo + '</td>' +
+                '<td>' + consignee + '</td>' +
+                '<td><button type="button" class="rake-select-btn" data-idx="' + idx + '">SELECT</button></td>';
+            body.appendChild(tr);
+        });
+        card.style.display = "block";
+
+        body.querySelectorAll('.rake-select-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var idx = parseInt(btn.getAttribute('data-idx'), 10);
+                body.querySelectorAll('tr').forEach(function (r) { r.classList.remove('rake-row-selected'); });
+                btn.closest('tr').classList.add('rake-row-selected');
+                selectRakeRecord(filteredRakeRecords[idx]);
+            });
+        });
+    }
+
+    function submitRakeSearch(){
+        var station = document.getElementById('rakeStationFrom').value.trim().toLowerCase();
+        var consignee = document.getElementById('rakeConsignee').value.trim().toLowerCase();
+        var fromD = parseDatePickerValue(document.getElementById('rakeFromDate').value);
+        var toD = parseDatePickerValue(document.getElementById('rakeToDate').value);
+        var noFiltersApplied = !station && !consignee && !fromD && !toD;
+
+        filteredRakeRecords = allRakeRecords.filter(function (rec) {
+            var recFrom = pickField(rec, ['from', 'stationFrom', 'fromStation', 'FROM']);
+            var recConsignee = pickField(rec, ['consignee', 'party', 'Consignee', 'CONSIGNEE']);
+            var recRrDate = pickField(rec, ['rrDate']);
+            if (station && (!recFrom || String(recFrom).toLowerCase().indexOf(station) === -1)) return false;
+            if (consignee && (!recConsignee || String(recConsignee).toLowerCase().indexOf(consignee) === -1)) return false;
+            if ((fromD || toD) && recRrDate) {
+                var rDate = parseSheetDate(recRrDate);
+                if (rDate) {
+                    if (fromD && rDate < fromD) return false;
+                    if (toD && rDate > toD) return false;
+                }
+            }
+            return true;
+        });
+
+        // Latest RR DATE first, oldest last.
+        filteredRakeRecords.sort(function (a, b) {
+            var da = parseSheetDate(pickField(a, ['rrDate']));
+            var db = parseSheetDate(pickField(b, ['rrDate']));
+            if (!da && !db) return 0;
+            if (!da) return 1;
+            if (!db) return -1;
+            return db - da;
+        });
+
+        // With no filter applied (plain page load), only the latest 10 rakes are
+        // shown so the table doesn't dump the entire sheet at once. Searching by
+        // station, consignee, or an RR Date range shows the full matching set.
+        var recordsToShow = noFiltersApplied ? filteredRakeRecords.slice(0, 10) : filteredRakeRecords;
+        if (noFiltersApplied) filteredRakeRecords = recordsToShow;
+
+        var count = recordsToShow.length;
+        if (noFiltersApplied && allRakeRecords.length > recordsToShow.length) {
+            setSearchStatus("Showing latest 10 of " + allRakeRecords.length + " rakes -- use the filters above to see older records.");
+        } else {
+            setSearchStatus("Record Found : " + (count < 10 ? "0" + count : count) + " Rake" + (count === 1 ? "" : "s"));
+        }
+        renderRakeResults(recordsToShow);
+    }
+
+    // ---------------- Select a rake from the search results (replaces the old dropdown selection) ----------------
     // Field names inside the data can vary (e.g. "from" or "stationFrom") — this
     // helper finds and returns the first non-empty value among the given candidate keys.
     function pickField(data, candidates) {
@@ -669,95 +959,104 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         return '';
     }
 
-    function loadRakeDetails(rakeId) {
+    function selectRakeRecord(raw) {
         document.getElementById('routeLine').style.display = 'none';
         document.getElementById('tableWrap').style.display = 'none';
         document.getElementById('submitBar').style.display = 'none';
         clearMsg();
-        if (!rakeId) return;
+        if (!raw) return;
 
-        var url = RAKE_LIST_API_URL + "?action=getRake&sheetId=" + encodeURIComponent(RAKE_LIST_SHEET_ID) + "&sheetName=" + encodeURIComponent(RAKE_LIST_SHEET_NAME) + "&rakeId=" + encodeURIComponent(rakeId);
-        fetch(url)
-            .then(function (r) { return r.json(); })
-            .then(function (res) {
-                if (res.status !== "success" || !res.found) {
-                    showMsg('No data found for this Rake ID.', 'error');
-                    return;
-                }
+        // The wagonSummary value coming from the Google Sheet column is sometimes a
+        // JSON *string* (rather than an already-parsed array/object). In that case,
+        // calling .length directly on the string returns a character count (e.g. 2671)
+        // instead of an array length — which was causing an incorrect "exceeds
+        // MAX_WAGONS" error. So we parse it first, and if the parsed value itself
+        // contains a "wagonSummary" key (meaning the whole JSON object ended up in
+        // the column), we extract just that field.
+        var wagonSummaryRaw = raw.wagonSummary || raw.WagonSummary || raw.wagon_summary || [];
+        if (typeof wagonSummaryRaw === 'string') {
+            try {
+                var parsedWS = JSON.parse(wagonSummaryRaw);
+                wagonSummaryRaw = (parsedWS && !Array.isArray(parsedWS) && parsedWS.wagonSummary)
+                    ? parsedWS.wagonSummary
+                    : parsedWS;
+            } catch (e) {
+                showMsg('Failed to parse wagonSummary field JSON: ' + e.message, 'error');
+                wagonSummaryRaw = [];
+            }
+        } else if (wagonSummaryRaw && !Array.isArray(wagonSummaryRaw) && wagonSummaryRaw.wagonSummary) {
+            // Already-parsed object but the full raw JSON object — extract the inner array from it
+            wagonSummaryRaw = wagonSummaryRaw.wagonSummary;
+        }
 
-                var raw = res.data;
-                var st = (raw.status || '').toString().trim().toUpperCase();
-                if (st !== 'ARRIVING' && st !== '') {
-                    showMsg('This Rake ID\'s status is not ARRIVING (current status: ' + (raw.status || 'unknown') + ').', 'error');
-                    return;
-                }
+        currentRakeData = {
+            rakeId: pickField(raw, ['rakeId', 'RakeId', 'RAKE_ID']),
+            from: pickField(raw, ['from', 'stationFrom', 'fromStation', 'FROM']),
+            to: pickField(raw, ['to', 'stationTo', 'toStation', 'TO']),
+            wagonSummary: Array.isArray(wagonSummaryRaw) ? wagonSummaryRaw : [],
+            // The actual field name in the sheet's JSON is "commodityCode", so it's
+            // given first priority (the remaining candidates are kept as fallbacks).
+            commodity: pickField(raw, ['commodityCode', 'CommodityCode', 'COMMODITY_CODE', 'commodity', 'Commodity', 'COMMODITY']),
+            consignee: pickField(raw, ['consignee', 'party', 'Consignee', 'CONSIGNEE']),
+            invoiceNo: pickField(raw, ['invoiceNo', 'invoiceNumber', 'INVOICE_NO', 'invoice_no'])
+        };
 
-                // The wagonSummary value coming from the Google Sheet column is sometimes a
-                // JSON *string* (rather than an already-parsed array/object). In that case,
-                // calling .length directly on the string returns a character count (e.g. 2671)
-                // instead of an array length — which was causing an incorrect "exceeds
-                // MAX_WAGONS" error. So we parse it first, and if the parsed value itself
-                // contains a "wagonSummary" key (meaning the whole JSON object ended up in
-                // the column), we extract just that field.
-                var wagonSummaryRaw = raw.wagonSummary || raw.WagonSummary || raw.wagon_summary || [];
-                if (typeof wagonSummaryRaw === 'string') {
-                    try {
-                        var parsedWS = JSON.parse(wagonSummaryRaw);
-                        wagonSummaryRaw = (parsedWS && !Array.isArray(parsedWS) && parsedWS.wagonSummary)
-                            ? parsedWS.wagonSummary
-                            : parsedWS;
-                    } catch (e) {
-                        showMsg('Failed to parse wagonSummary field JSON: ' + e.message, 'error');
-                        wagonSummaryRaw = [];
-                    }
-                } else if (wagonSummaryRaw && !Array.isArray(wagonSummaryRaw) && wagonSummaryRaw.wagonSummary) {
-                    // Already-parsed object but the full raw JSON object — extract the inner array from it
-                    wagonSummaryRaw = wagonSummaryRaw.wagonSummary;
-                }
+        // Previously saved Date/Time/Line values for this rake's wagons (fed in
+        // by the user earlier and stored back in the sheet) — if present, these
+        // are used to pre-fill the table instead of leaving it blank. Stored as a
+        // JSON string/array under "placementData", keyed by wagon NO where possible.
+        currentSavedPlacement = [];
+        var savedRaw = raw.placementData || raw.PlacementData || raw.placement_data || [];
+        if (typeof savedRaw === 'string') {
+            try { savedRaw = savedRaw ? JSON.parse(savedRaw) : []; } catch (e) { savedRaw = []; }
+        }
+        if (Array.isArray(savedRaw)) currentSavedPlacement = savedRaw;
 
-                currentRakeData = {
-                    from: pickField(raw, ['from', 'stationFrom', 'fromStation', 'FROM']),
-                    to: pickField(raw, ['to', 'stationTo', 'toStation', 'TO']),
-                    wagonSummary: Array.isArray(wagonSummaryRaw) ? wagonSummaryRaw : [],
-                    // The actual field name in the sheet's JSON is "commodityCode", so it's
-                    // given first priority (the remaining candidates are kept as fallbacks).
-                    commodity: pickField(raw, ['commodityCode', 'CommodityCode', 'COMMODITY_CODE', 'commodity', 'Commodity', 'COMMODITY']),
-                    consignee: pickField(raw, ['consignee', 'party', 'Consignee', 'CONSIGNEE']),
-                    invoiceNo: pickField(raw, ['invoiceNo', 'invoiceNumber', 'INVOICE_NO', 'invoice_no'])
-                };
+        // FROM and TO both come from the sheet's data — TO station is never
+        // hardcoded, whatever is in the sheet is shown as-is.
+        var routeEl = document.getElementById('routeLine');
+        routeEl.textContent = (currentRakeData.from || '-') + '  TO  ' + (currentRakeData.to || '-');
+        routeEl.style.display = 'block';
 
-                // FROM and TO both come from the sheet's data — TO station is never
-                // hardcoded, whatever is in the sheet is shown as-is.
-                var routeEl = document.getElementById('routeLine');
-                routeEl.textContent = (currentRakeData.from || '-') + '  TO  ' + (currentRakeData.to || '-');
-                routeEl.style.display = 'block';
-
-                var wagons = currentRakeData.wagonSummary;
-                if (!wagons || wagons.length === 0) {
-                    showMsg('Wagon summary data not found for this rake. Please check whether the "wagonSummary" field exists in the sheet\'s data.', 'error');
-                    return;
-                }
-                if (wagons.length > MAX_WAGONS) {
-                    showMsg('Wagon count (' + wagons.length + ') exceeds MAX_WAGONS (' + MAX_WAGONS + ').', 'error');
-                }
-                currentWagons = wagons;
-                renderTable(wagons);
-                document.getElementById('tableWrap').style.display = 'block';
-                document.getElementById('submitBar').style.display = 'flex';
-            })
-            .catch(function (err) {
-                showMsg('Network error: ' + err.message, 'error');
-            });
+        var wagons = currentRakeData.wagonSummary;
+        if (!wagons || wagons.length === 0) {
+            showMsg('Wagon summary data not found for this rake. Please check whether the "wagonSummary" field exists in the sheet\'s data.', 'error');
+            return;
+        }
+        if (wagons.length > MAX_WAGONS) {
+            showMsg('Wagon count (' + wagons.length + ') exceeds MAX_WAGONS (' + MAX_WAGONS + ').', 'error');
+        }
+        currentWagons = wagons;
+        renderTable(wagons);
+        document.getElementById('tableWrap').style.display = 'block';
+        document.getElementById('submitBar').style.display = 'flex';
+        document.getElementById('tableWrap').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function buildLineSelectHTML(rowIndex) {
+    function buildLineSelectHTML(rowIndex, savedLine) {
         var html = '<select class="line-select" data-row="' + rowIndex + '">';
         for (var i = 0; i < LINE_OPTIONS.length; i++) {
             var val = LINE_OPTIONS[i];
-            html += '<option value="' + val + '">' + (val === "" ? "--" : val) + '</option>';
+            var sel = (savedLine && savedLine === val) ? ' selected' : '';
+            html += '<option value="' + val + '"' + sel + '>' + (val === "" ? "--" : val) + '</option>';
         }
         html += '</select>';
         return html;
+    }
+
+    // Looks up previously-saved placement data for wagon index i / wagon w --
+    // matched first by wagon NO (most reliable, survives re-ordering), falling
+    // back to matching by row index if no NO match is found.
+    function findSavedPlacementFor(w, i) {
+        if (!currentSavedPlacement || currentSavedPlacement.length === 0) return null;
+        var no = (w && w.NO) ? String(w.NO).trim() : '';
+        if (no) {
+            for (var j = 0; j < currentSavedPlacement.length; j++) {
+                var sp = currentSavedPlacement[j];
+                if (sp && String(sp.no || sp.NO || '').trim() === no) return sp;
+            }
+        }
+        return currentSavedPlacement[i] || null;
     }
 
     function renderTable(data) {
@@ -765,6 +1064,10 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         var rowsHtml = '';
         for (var i = 0; i < data.length; i++) {
             var w = data[i];
+            var saved = findSavedPlacementFor(w, i);
+            var savedDate = saved ? (saved.date || saved.DATE || '') : '';
+            var savedTime = saved ? (saved.time || saved.TIME || '') : '';
+            var savedLine = saved ? (saved.line || saved.LINE || '') : '';
             rowsHtml += '<tr data-row="' + i + '">' +
                 '<td class="col-sr">' + (i + 1) + '</td>' +
                 '<td class="col-rly">' + (w.RLY || '') + '</td>' +
@@ -772,17 +1075,17 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
                 '<td class="col-no">' + (w.NO || '') + '</td>' +
                 '<td class="col-date">' +
                     '<div class="row-date-wrap">' +
-                        '<input type="date" class="row-date-input" data-row="' + i + '">' +
-                        '<span class="row-date-display">DD/MM/YY</span>' +
+                        '<input type="date" class="row-date-input" data-row="' + i + '" value="' + savedDate + '">' +
+                        '<span class="row-date-display">' + (ddmmyyFromIso(savedDate) || 'DD/MM/YY') + '</span>' +
                     '</div>' +
                 '</td>' +
                 '<td class="col-pltime">' +
                     '<div class="pltime-cell">' +
-                        '<input type="text" class="pl-time-input" data-row="' + i + '" placeholder="HH:MM" maxlength="5" value="">' +
+                        '<input type="text" class="pl-time-input" data-row="' + i + '" placeholder="HH:MM" maxlength="5" value="' + savedTime + '">' +
                         '<button type="button" class="filldown-btn" data-row="' + i + '" title="Fill this value into all rows below">&#8681;</button>' +
                     '</div>' +
                 '</td>' +
-                '<td class="col-line">' + buildLineSelectHTML(i) + '</td>' +
+                '<td class="col-line">' + buildLineSelectHTML(i, savedLine) + '</td>' +
                 '</tr>';
         }
         tbody.innerHTML = rowsHtml;
@@ -1221,6 +1524,71 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
         await saveBlobToFile(blob, fileName, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Excel Workbook', '.xlsx');
     }
 
+    // ---------------- Save the entered Date/Time/Line back to the Google Sheet ----------------
+    // Collects one entry per wagon row (NO, RLY, TYPE, date in ISO, time, line) and
+    // POSTs it to the backend so it's stored against this rake -- so that reopening
+    // the same Rake ID later re-shows exactly what was fed in, instead of blank fields.
+    // NOTE: this calls a new backend action "savePlacementData" which must be added
+    // to the Apps Script project (see the note given alongside this file).
+    function buildPlacementDataForSave() {
+        var tbody = document.getElementById('wagonTableBody');
+        var rows = tbody.querySelectorAll('tr');
+        var out = [];
+        rows.forEach(function (rowEl) {
+            out.push({
+                no: rowEl.querySelector('.col-no').textContent,
+                rly: rowEl.querySelector('.col-rly').textContent,
+                type: rowEl.querySelector('.col-type').textContent,
+                date: rowEl.querySelector('.row-date-input').value, // ISO yyyy-mm-dd
+                time: rowEl.querySelector('.pl-time-input').value,
+                line: rowEl.querySelector('.line-select').value
+            });
+        });
+        return out;
+    }
+
+    async function doSavePlacementData() {
+        clearMsg();
+        if (!currentRakeData) { showMsg('Please select a Rake ID first.', 'error'); return; }
+        if (!currentRakeData.rakeId) {
+            showMsg('This rake record has no Rake ID, so the saved data cannot be matched back to a sheet row.', 'error');
+            return;
+        }
+
+        var saveBtn = document.getElementById('saveBtn');
+        saveBtn.disabled = true;
+        var originalHtml = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<span class="btn-icon">&#128190;</span> Saving...';
+
+        var placementData = buildPlacementDataForSave();
+        try {
+            var resp = await fetch(RAKE_LIST_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+                body: JSON.stringify({
+                    action: 'savePlacementData',
+                    sheetId: RAKE_LIST_SHEET_ID,
+                    sheetName: RAKE_LIST_SHEET_NAME,
+                    rakeId: currentRakeData.rakeId,
+                    placementData: placementData
+                })
+            });
+            var res = await resp.json();
+            if (res.status !== 'success') {
+                throw new Error(res.message || 'Unknown error from server.');
+            }
+            currentSavedPlacement = placementData;
+            showMsg('Data Saved Successfully !!!', 'info');
+        } catch (err) {
+            console.error('doSavePlacementData error:', err);
+            showMsg('An error occurred while saving: ' + (err && err.message ? err.message : err), 'error');
+        } finally {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalHtml;
+        }
+    }
+    document.getElementById('saveBtn').addEventListener('click', doSavePlacementData);
+
     // ---------------- Email popup (recipient input -> PDF -> Apps Script -> Gmail) ----------------
     function openEmailModal() {
         if (!currentRakeData) { showMsg('Please select a Rake ID first.', 'error'); return; }
@@ -1316,15 +1684,25 @@ tbody tr.just-filled { background: rgba(0,229,255,0.22) !important; transition: 
     }
     document.getElementById('emailSendBtn').addEventListener('click', sendEmailWithPdf);
 
-    document.getElementById('rakeSelect').addEventListener('change', function (e) {
-        loadRakeDetails(e.target.value);
-    });
+    document.getElementById('rakeSearchBtn').addEventListener('click', submitRakeSearch);
     document.getElementById('pdfBtn').addEventListener('click', doGeneratePDF);
     document.getElementById('printBtn').addEventListener('click', doPrint);
     document.getElementById('excelBtn').addEventListener('click', doExportExcel);
     document.getElementById('emailBtn').addEventListener('click', openEmailModal);
 
-    loadPendingRakes();
+    // Datalist inputs (Station From / Consignee) natively filter their option list
+    // to only what's already typed — clearing the field on focus keeps the full
+    // option list available every time, and also lets the user blank the field
+    // out entirely to remove that part of the filter.
+    function enableFullDatalist(inputEl){
+        inputEl.addEventListener('focus', function(){
+            inputEl.value = "";
+        });
+    }
+    enableFullDatalist(document.getElementById('rakeStationFrom'));
+    enableFullDatalist(document.getElementById('rakeConsignee'));
+
+    initRakeSearch();
 </script>
 
 </body>
