@@ -263,6 +263,40 @@
         
         .bifurcation-box { display: none; margin-top: 25px; background: #fff; padding: 20px; border: 2px solid var(--primary); border-radius: 8px; }
 
+        /* PARTY ADD/EDIT FORM MODAL */
+        .party-modal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.55);
+            z-index: 1000;
+            align-items: center; justify-content: center;
+            padding: 15px;
+        }
+        .party-modal-box {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .party-modal-box h3 {
+            color: var(--primary);
+            margin-top: 0;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 8px;
+        }
+        .party-modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .party-modal-actions button { flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; }
+        .btn-save-party { background: var(--success); color: #fff; }
+        .btn-cancel-party { background: #94a3b8; color: #fff; }
+
         @media (max-width: 768px) {
             body { padding: 8px; }
             .container { padding: 12px; border-radius: 8px; }
@@ -286,7 +320,7 @@
                     <label>TYPE OF CHARGES</label>
                     <select id="typeOfCharges" required></select>
                     <div class="action-links">
-                        <button type="button" class="action-btn btn-add" onclick="manageDropdown('charges', 'add')">➕ Add New</button>
+                        <button type="button" class="action-btn btn-add" onclick="manageDropdown('charges', 'add')">🔄 Add Charge</button>
                         <button type="button" class="action-btn btn-del" onclick="manageDropdown('charges', 'delete')">❌ Delete Selected</button>
                     </div>
                 </div>
@@ -295,7 +329,7 @@
                     <label>CUST. CODE</label>
                     <select id="custCode" required></select>
                     <div class="action-links">
-                        <button type="button" class="action-btn btn-add" onclick="manageDropdown('cust', 'add')">➕ Add New</button>
+                        <button type="button" class="action-btn btn-add" onclick="manageDropdown('cust', 'add')">➕ Add / Update Party</button>
                         <button type="button" class="action-btn btn-del" onclick="manageDropdown('cust', 'delete')">❌ Delete Selected</button>
                     </div>
                 </div>
@@ -358,7 +392,7 @@
                 <thead id="tableHeader"></thead>
                 <tbody id="dashboardBody">
                     <tr>
-                        <td colspan="13" style='text-align:center; color:#666;'>No Entry Selected... Buttons par click karein.</td>
+                        <td colspan="13" style='text-align:center; color:#666;'>No Entry Selected... Please click a button above.</td>
                     </tr>
                 </tbody>
             </table>
@@ -383,11 +417,71 @@
 
     </div>
 
+    <!-- PARTY ADD/EDIT FORM MODAL -->
+    <div id="partyFormOverlay" class="party-modal-overlay">
+        <div class="party-modal-box">
+            <h3 id="partyFormTitle">➕ Add / Update Party</h3>
+
+            <div class="form-group">
+                <label>Select Existing Party to Edit (or leave as New Party)</label>
+                <select id="partyFormExistingSelect" onchange="onPartyFormSelectChange()"></select>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>PARTY CODE *</label>
+                    <input type="text" id="partyFormCode" style="text-transform: uppercase;">
+                </div>
+                <div class="form-group">
+                    <label>PARTY NAME *</label>
+                    <input type="text" id="partyFormName">
+                </div>
+                <div class="form-group">
+                    <label>HANDLING AGENT</label>
+                    <input type="text" id="partyFormHandlingAgent">
+                </div>
+                <div class="form-group">
+                    <label>AUTHORIZED PERSON NAME</label>
+                    <input type="text" id="partyFormAuthPerson">
+                </div>
+                <div class="form-group">
+                    <label>MOBILE-1</label>
+                    <input type="text" id="partyFormMobile1">
+                </div>
+                <div class="form-group">
+                    <label>MOBILE-2</label>
+                    <input type="text" id="partyFormMobile2">
+                </div>
+                <div class="form-group">
+                    <label>E-MAIL</label>
+                    <input type="email" id="partyFormEmail">
+                </div>
+            </div>
+
+            <div class="party-modal-actions">
+                <button type="button" class="btn-save-party" onclick="savePartyForm()">💾 Save Party</button>
+                <button type="button" class="btn-cancel-party" onclick="closePartyForm()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWK07qRGdTuurjOBGfWtbA1HCR2bEz_qPZee8WOyV6OH8kfOu1VIiIqCwy6Vo3Xw8K/exec";
         const SECRET_PASS = "94976";
 
-        let defaultCharges = ["DEBIT OUTSTANDING (ADMITTED)", "DEBIT OUTSTANDING (DISPUTTED)", "FREIGHT OUTSTANDING / MPA", "WHARFAGE CHARGES", "DEMMURAGE CHARGES", "SHUNTING CHARGES", "STABLING CHARGES", "PUNNATIVE CHARGES", "DETENTION CHARGES", "OTHER CHARGES", "UNDER CHARGES"];
+        // ===== PARTY (CUSTOMER) MASTER - via Apps Script (?type=parties) =====
+        // Google Sheet ID: 11JN_TP1_VeA_Q5COaNmJ5yBnz03EubeEI7soQmUrGyM, Tab: "party_data"
+        // Column A = PARTY CODE, Column B = PARTY NAME.
+        // Fetched through an Apps Script Web App (not a direct sheet URL) to avoid CORS errors
+        // when this file is opened locally (file:// origin is blocked by Google's sheet export URLs).
+        const PARTY_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB0jGwWdIcLOIaJIRav8yik-SHP1_qLi7Z9wYJn2WklJEYx5TtxqOQp8Sb0TWjF6Ts/exec";
+        const PARTY_LIST_URL = PARTY_SCRIPT_URL + "?type=parties";
+
+        // ===== TYPE OF CHARGES MASTER - via Apps Script (?type=charges) =====
+        // Same Google Sheet, Tab: "type_of_charges", Column A = charge name.
+        const CHARGES_LIST_URL = PARTY_SCRIPT_URL + "?type=charges";
+
+        let defaultCharges = ["DEBIT OUTSTANDING (ADMITTED)", "DEBIT OUTSTANDING (DISPUTTED)", "FREIGHT OUTSTANDING / MPA", "WHARFAGE CHARGES", "DEMMURAGE CHARGES", "SHUNTING CHARGES", "STABLING CHARGES", "PUNNATIVE CHARGES", "DETENTION CHARGES", "OTHER CHARGS", "UNDER CHARGES"];
         let defaultCustomers = [{code: "IFFC", name: "INDIAN FARMERS FERTILISER COOPERATIVE LTD."}, {code: "FCI", name: "FOOD CORPORATION OF INDIA LTD."}, {code: "GSFC", name: "GUJARAT STATE FERTILIZER CO."}, {code: "DLI", name: "DISTRIBUTION LOGISTICS INFRASTRUCTURE PVT. LTD"}, {code: "KRIB", name: "KRISHAK BHARATI COOPERATIVE LIMITED"}, {code: "MCDS", name: "MALCHAND DINDAYAL SALTS PVT. LTD."}, {code: "JK", name: "J K CEMENT LTD."}];
 
         let chargeList = JSON.parse(localStorage.getItem('chargeList')) || defaultCharges;
@@ -401,7 +495,68 @@
 
             const custSelect = document.getElementById('custCode');
             custSelect.innerHTML = '<option value="">-- Select Customer Code --</option>';
-            customerList.forEach(cust => { custSelect.innerHTML += `<option value="${cust.code}">${cust.code} (${cust.name})</option>`; });
+            // Column A (PARTY CODE) and Column B (PARTY NAME) merged with a hyphen, e.g. "FCI - FOOD CORPORATION OF INDIA LTD."
+            customerList.forEach(cust => { custSelect.innerHTML += `<option value="${cust.code}">${cust.code} - ${cust.name}</option>`; });
+        }
+
+        // Fetch full party details (all 7 columns) from the Apps Script endpoint and refresh the dropdown.
+        async function fetchPartyListFromSheet(showAlert = false) {
+            try {
+                const res = await fetch(PARTY_LIST_URL);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const parties = await res.json();
+                if (!Array.isArray(parties) || parties.length === 0) {
+                    throw new Error('No parties returned');
+                }
+                const newList = parties
+                    .map(p => ({
+                        code: String(p.code || '').trim(),
+                        name: String(p.name || '').trim(),
+                        handlingAgent: String(p.handlingAgent || '').trim(),
+                        authorizedPerson: String(p.authorizedPerson || '').trim(),
+                        mobile1: String(p.mobile1 || '').trim(),
+                        mobile2: String(p.mobile2 || '').trim(),
+                        email: String(p.email || '').trim()
+                    }))
+                    .filter(p => p.code && p.name);
+
+                if (newList.length > 0) {
+                    customerList = newList;
+                    localStorage.setItem('customerList', JSON.stringify(customerList));
+                    renderDropdowns();
+                    if (showAlert) alert(`Party list updated from Google Sheet (${newList.length} parties loaded).`);
+                } else {
+                    throw new Error('No valid party rows found');
+                }
+            } catch (err) {
+                console.error("Party list fetch failed:", err);
+                if (showAlert) alert("Could not load the party list. Please check that the Apps Script deployment is active and try again.");
+            }
+        }
+
+        // Fetch TYPE OF CHARGES (Column A of "type_of_charges" tab) from the Apps Script endpoint and refresh the dropdown.
+        async function fetchChargesListFromSheet(showAlert = false) {
+            try {
+                const res = await fetch(CHARGES_LIST_URL);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const charges = await res.json();
+                if (!Array.isArray(charges) || charges.length === 0) {
+                    throw new Error('No charges returned');
+                }
+                const newList = charges.map(c => String(c || '').trim()).filter(c => c);
+
+                if (newList.length > 0) {
+                    chargeList = newList;
+                    localStorage.setItem('chargeList', JSON.stringify(chargeList));
+                    renderDropdowns();
+                    if (showAlert) alert(`Charges list updated from Google Sheet (${newList.length} charges loaded).`);
+                } else {
+                    throw new Error('No valid charge rows found');
+                }
+            } catch (err) {
+                console.error("Charges list fetch failed:", err);
+                if (showAlert) alert("Could not load the charges list. Please check that the Apps Script deployment is active and try again.");
+            }
         }
 
         function setDefaultDate() {
@@ -420,24 +575,162 @@
             document.getElementById('dynamicTableTitleHeader').innerText = text;
         }
 
+        // Add a new charge to the Google Sheet (type_of_charges tab) via Apps Script
+        async function addChargeToSheet(chargeName) {
+            try {
+                await fetch(PARTY_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'addCharge', charge: chargeName })
+                });
+                // 'no-cors' hides the response, so wait briefly then refresh from the sheet to confirm
+                setTimeout(() => fetchChargesListFromSheet(true), 1200);
+            } catch (err) {
+                console.error("Add charge failed:", err);
+                alert("Could not add the charge. Please check your connection and try again.");
+            }
+        }
+
+        // Delete a charge from the Google Sheet (type_of_charges tab) via Apps Script
+        async function deleteChargeFromSheet(chargeName) {
+            try {
+                await fetch(PARTY_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteCharge', charge: chargeName })
+                });
+                setTimeout(() => fetchChargesListFromSheet(false), 1200);
+            } catch (err) {
+                console.error("Delete charge failed:", err);
+                alert("Could not delete the charge. Please check your connection and try again.");
+            }
+        }
+
+        // Add or update a party in the Google Sheet (party_data tab) via Apps Script
+        async function savePartyToSheet(partyData) {
+            try {
+                await fetch(PARTY_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(Object.assign({ action: 'addOrUpdateParty' }, partyData))
+                });
+                setTimeout(() => fetchPartyListFromSheet(true), 1200);
+            } catch (err) {
+                console.error("Save party failed:", err);
+                alert("Could not save the party. Please check your connection and try again.");
+            }
+        }
+
+        // Delete a party from the Google Sheet (party_data tab) via Apps Script
+        async function deletePartyFromSheet(partyCode) {
+            try {
+                await fetch(PARTY_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'deleteParty', partyCode: partyCode })
+                });
+                setTimeout(() => fetchPartyListFromSheet(false), 1200);
+            } catch (err) {
+                console.error("Delete party failed:", err);
+                alert("Could not delete the party. Please check your connection and try again.");
+            }
+        }
+
+        // Opens the Add/Update Party form, pre-loading the existing party list into the selector
+        function openPartyForm() {
+            if (prompt("Enter Admin Password:") !== SECRET_PASS) { alert("❌ Wrong Password!"); return; }
+
+            const sel = document.getElementById('partyFormExistingSelect');
+            sel.innerHTML = '<option value="">-- New Party (enter details below) --</option>';
+            customerList.forEach(c => { sel.innerHTML += `<option value="${c.code}">${c.code} - ${c.name}</option>`; });
+            sel.value = "";
+
+            clearPartyFormFields();
+            document.getElementById('partyFormOverlay').style.display = "flex";
+        }
+
+        function clearPartyFormFields() {
+            document.getElementById('partyFormCode').value = "";
+            document.getElementById('partyFormName').value = "";
+            document.getElementById('partyFormHandlingAgent').value = "";
+            document.getElementById('partyFormAuthPerson').value = "";
+            document.getElementById('partyFormMobile1').value = "";
+            document.getElementById('partyFormMobile2').value = "";
+            document.getElementById('partyFormEmail').value = "";
+        }
+
+        // When an existing party is picked from the selector, pre-fill the form fields for editing
+        function onPartyFormSelectChange() {
+            const code = document.getElementById('partyFormExistingSelect').value;
+            if (!code) { clearPartyFormFields(); return; }
+
+            const cust = customerList.find(c => c.code === code);
+            if (!cust) { clearPartyFormFields(); return; }
+
+            document.getElementById('partyFormCode').value = cust.code || "";
+            document.getElementById('partyFormName').value = cust.name || "";
+            document.getElementById('partyFormHandlingAgent').value = cust.handlingAgent || "";
+            document.getElementById('partyFormAuthPerson').value = cust.authorizedPerson || "";
+            document.getElementById('partyFormMobile1').value = cust.mobile1 || "";
+            document.getElementById('partyFormMobile2').value = cust.mobile2 || "";
+            document.getElementById('partyFormEmail').value = cust.email || "";
+        }
+
+        function closePartyForm() {
+            document.getElementById('partyFormOverlay').style.display = "none";
+        }
+
+        function savePartyForm() {
+            const code = document.getElementById('partyFormCode').value.toUpperCase().trim();
+            const name = document.getElementById('partyFormName').value.trim();
+
+            if (!code || !name) { alert("PARTY CODE and PARTY NAME are required."); return; }
+
+            const partyData = {
+                partyCode: code,
+                partyName: name,
+                handlingAgent: document.getElementById('partyFormHandlingAgent').value.trim(),
+                authorizedPerson: document.getElementById('partyFormAuthPerson').value.trim(),
+                mobile1: document.getElementById('partyFormMobile1').value.trim(),
+                mobile2: document.getElementById('partyFormMobile2').value.trim(),
+                email: document.getElementById('partyFormEmail').value.trim()
+            };
+
+            savePartyToSheet(partyData);
+            closePartyForm();
+        }
+
         function manageDropdown(type, action) {
+            // "Add Party" opens the full add/update form
+            if (type === 'cust' && action === 'add') {
+                openPartyForm();
+                return;
+            }
+            // "Add Charge" opens a text box, writes the new charge to the Google Sheet, then refreshes the dropdown
+            if (type === 'charges' && action === 'add') {
+                if (prompt("Enter Admin Password:") !== SECRET_PASS) { alert("❌ Wrong Password!"); return; }
+                let val = prompt("Enter New Charge:");
+                if (val === null) return; // user cancelled
+                val = val.toUpperCase().trim();
+                if (!val) { alert("Charge name cannot be empty."); return; }
+                addChargeToSheet(val);
+                return;
+            }
+
             if (prompt("Enter Admin Password:") !== SECRET_PASS) { alert("❌ Wrong Password!"); return; }
             if (type === 'charges') {
-                if (action === 'add') {
-                    let val = prompt("Enter New Charge:").toUpperCase().trim();
-                    if (val && !chargeList.includes(val)) { chargeList.push(val); localStorage.setItem('chargeList', JSON.stringify(chargeList)); }
-                } else if (action === 'delete') {
+                if (action === 'delete') {
                     let sel = document.getElementById('typeOfCharges').value;
-                    if (sel && confirm(`Delete ${sel}?`)) { chargeList = chargeList.filter(i => i !== sel); localStorage.setItem('chargeList', JSON.stringify(chargeList)); }
+                    if (sel && confirm(`Delete ${sel}?`)) { deleteChargeFromSheet(sel); }
                 }
             } else if (type === 'cust') {
-                if (action === 'add') {
-                    let code = prompt("Enter Code:").toUpperCase().trim();
-                    let name = prompt("Enter Full Name:").toUpperCase().trim();
-                    if (code && name) { customerList.push({code: code, name: name}); localStorage.setItem('customerList', JSON.stringify(customerList)); }
-                } else if (action === 'delete') {
+                if (action === 'delete') {
                     let sel = document.getElementById('custCode').value;
-                    if (sel && confirm(`Delete ${sel}?`)) { customerList = customerList.filter(i => i.code !== sel); localStorage.setItem('customerList', JSON.stringify(customerList)); }
+                    if (sel && confirm(`Delete ${sel}?`)) { deletePartyFromSheet(sel); }
                 }
             }
             chargeList = JSON.parse(localStorage.getItem('chargeList')) || defaultCharges;
@@ -463,20 +756,6 @@
         document.getElementById('billingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const editRowIndex = document.getElementById('editRowIndex').value;
-        // ===== PASSWORD START =====
-            const ENTRY_PASSWORD = "94976";
-        
-            const enteredPassword = prompt("🔒 Please Enter Password To Submit Data to Google Sheet ...");
-        
-            if (enteredPassword === null) {
-                return;
-            }
-        
-            if (enteredPassword !== ENTRY_PASSWORD) {
-                alert("❌ Wrong Password! Data Save nahi hua.");
-                return;
-            }
-        // ===== PASSWORD END =====
             
             // केवल आवश्यक फ़ील्ड ही भेजें, आख़री 3 कॉलम्स को पूरी तरह छोड़ दें
             const formData = {
@@ -645,7 +924,7 @@
                 let chargeSummary = {}; chargeList.forEach(c => { chargeSummary[c] = 0; });
 
                 data.forEach(row => {
-                    let charge = row.typeOfCharges || "OTHER CHARGES";
+                    let charge = row.typeOfCharges || "OTHER CHARGS";
                     let osVal = row.osAmount ? parseFloat(row.osAmount) : 0;
                     if (isNaN(osVal) || osVal <= 0) return;
                     chargeSummary[charge] = (chargeSummary[charge] || 0) + osVal;
@@ -695,7 +974,7 @@
             let fromDateVal = document.getElementById('summaryFromDate').value;
             let toDateVal = document.getElementById('summaryToDate').value;
 
-            if(!fromDateVal || !toDateVal) { alert("⚠️ Kripya From Date aur To Date enter karein!"); return; }
+            if(!fromDateVal || !toDateVal) { alert("⚠️ Please enter both From Date and To Date!"); return; }
             let dFrom = new Date(fromDateVal + "T00:00:00");
             let dTo = new Date(toDateVal + "T23:59:59");
             if(dFrom > dTo) { alert("⚠️ From Date Galat Hai!"); return; }
@@ -884,7 +1163,7 @@
             window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
-        window.onload = function() { setNormalHeaders(); renderDropdowns(); setDefaultDate(); };
+        window.onload = function() { setNormalHeaders(); renderDropdowns(); setDefaultDate(); fetchPartyListFromSheet(false); fetchChargesListFromSheet(false); };
     </script>
 </body>
 </html>
