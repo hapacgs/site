@@ -536,6 +536,15 @@
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyWK07qRGdTuurjOBGfWtbA1HCR2bEz_qPZee8WOyV6OH8kfOu1VIiIqCwy6Vo3Xw8K/exec";
 
+        // ===== PARTY (CUSTOMER) MASTER - via Apps Script (?type=parties) =====
+        // Same Google Sheet as the entry form, Tab: "party_data".
+        // Fetched here too so this dashboard always shows every party (e.g. PMLP), not just a hardcoded list.
+        const PARTY_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyB0jGwWdIcLOIaJIRav8yik-SHP1_qLi7Z9wYJn2WklJEYx5TtxqOQp8Sb0TWjF6Ts/exec";
+        const PARTY_LIST_URL = PARTY_SCRIPT_URL + "?type=parties";
+
+        // ===== TYPE OF CHARGES MASTER - via Apps Script (?type=charges) =====
+        const CHARGES_LIST_URL = PARTY_SCRIPT_URL + "?type=charges";
+
         let chargeList = ["DEBIT OUTSTANDING (ADMITTED)", "DEBIT OUTSTANDING (DISPUTTED)", "FREIGHT OUTSTANDING / MPA", "WHARFAGE CHARGES", "DEMMURAGE CHARGES", "SHUNTING CHARGES", "STABLING CHARGES", "PUNNATIVE CHARGES", "DETENTION CHARGES", "OTHER CHARGS", "UNDER CHARGES"];
         let customerList = [{code: "IFFC", name: "INDIAN FARMERS FERTILISER COOPERATIVE LTD."}, {code: "FCI", name: "FOOD CORPORATION OF INDIA LTD."}, {code: "GSFC", name: "GUJARAT STATE FERTILIZER CO."}, {code: "DLI", name: "DISTRIBUTION LOGISTICS INFRASTRUCTURE PVT. LTD"}, {code: "KRIB", name: "KRISHAK BHARATI COOPERATIVE LIMITED"}, {code: "MCDS", name: "MALCHAND DINDAYAL SALTS PVT. LTD."}, {code: "JK", name: "J K CEMENT LTD."}];
 
@@ -552,11 +561,55 @@
         let autoToDate = null;
         let isCustomPeriod = false;
 
-        window.onload = function() { 
+        window.onload = async function() { 
+            await fetchPartyListFromSheet();
+            await fetchChargesListFromSheet();
             setupFilterDropdowns();
             calculateLatestPeriod();
             fetchData();
         };
+
+        // Fetch the full party list (all parties, including ones with zero outstanding) from the Google Sheet.
+        // Falls back to the hardcoded customerList above if the fetch fails for any reason.
+        async function fetchPartyListFromSheet() {
+            try {
+                const res = await fetch(PARTY_LIST_URL);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const parties = await res.json();
+                if (!Array.isArray(parties) || parties.length === 0) {
+                    throw new Error('No parties returned');
+                }
+                const newList = parties
+                    .map(p => ({ code: String(p.code || '').trim(), name: String(p.name || '').trim() }))
+                    .filter(p => p.code && p.name);
+
+                if (newList.length > 0) {
+                    customerList = newList;
+                }
+            } catch (err) {
+                console.error("Party list fetch failed, using fallback list:", err);
+            }
+        }
+
+        // Fetch the type-of-charges list from the Google Sheet (type_of_charges tab, Column A).
+        // Falls back to the hardcoded chargeList above if the fetch fails for any reason.
+        async function fetchChargesListFromSheet() {
+            try {
+                const res = await fetch(CHARGES_LIST_URL);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const charges = await res.json();
+                if (!Array.isArray(charges) || charges.length === 0) {
+                    throw new Error('No charges returned');
+                }
+                const newList = charges.map(c => String(c || '').trim()).filter(c => c);
+
+                if (newList.length > 0) {
+                    chargeList = newList;
+                }
+            } catch (err) {
+                console.error("Charges list fetch failed, using fallback list:", err);
+            }
+        }
 
         function setupFilterDropdowns() {
             let ddlCust = document.getElementById('ddlFilterCustomer');
@@ -859,7 +912,7 @@
 
             let customerSummary = {}; 
             let nameMap = {};
-            customerList.forEach(c => { nameMap[c.code] = c.name; });
+            customerList.forEach(c => { customerSummary[c.code] = 0; nameMap[c.code] = c.name; });
 
             data.forEach(row => {
                 let code = row.custCode || "UNKNOWN";
@@ -874,7 +927,7 @@
                 let totalOS = customerSummary[code]; 
                 grandTotal += totalOS;
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td class="clickable-row align-left" onclick="showCustomerBifurcation('${code}', '${fullName}')">🏢 ${code} - ${fullName}</td><td class="align-right" style="font-weight:bold; color:red;">₹ ${totalOS.toFixed(2)}</td>`;
+                tr.innerHTML = `<td class="clickable-row align-left" onclick="showCustomerBifurcation('${code}', '${fullName}', ${totalOS})">🏢 ${code} - ${fullName}</td><td class="align-right" style="${totalOS > 0 ? 'color:red; font-weight:bold;' : 'color:green;'}">₹ ${totalOS.toFixed(2)}</td>`;
                 tbody.appendChild(tr);
             });
 
@@ -884,11 +937,18 @@
             tbody.appendChild(totalTr);
         }
 
-        function showCustomerBifurcation(custCode, fullName) {
+        function showCustomerBifurcation(custCode, fullName, totalOS) {
             document.getElementById('bifurcationTitle').innerText = `📊 Breakup For Customer: ${custCode}`;
             document.getElementById('bifurcationHeader').innerHTML = `<th>Type of Charge</th><th class="align-right">Outstanding Amount</th>`;
             const bBody = document.getElementById('bifurcationBody'); 
             bBody.innerHTML = "";
+
+            if(totalOS === 0) {
+                bBody.innerHTML = "<tr><td colspan='2' style='text-align:center; color:green; font-weight:bold;'>🎉 Everything Clear!</td></tr>";
+                document.getElementById('bifurcationBox').style.display = "block";
+                return;
+            }
+
             let chargeSummary = {};
 
             rawSheetData.forEach(row => {
