@@ -591,10 +591,15 @@
                 return;
             }
 
+            // IMPORTANT: no pretty-print ("null, 2") for the payload that
+            // actually gets uploaded — indentation/whitespace can nearly
+            // double the character count and push it past Google Sheets'
+            // 50,000-character-per-cell limit. Keep the payload compact;
+            // pretty-print is used ONLY for the on-screen preview below.
             globalPayload = {
                 fromDate: fromDate,
                 toDate: toDate,
-                jsonData: JSON.stringify(jsonDataArray, null, 2)
+                jsonData: JSON.stringify(jsonDataArray)
             };
             globalRecords = jsonDataArray;
 
@@ -605,7 +610,9 @@
                 "Total Records: " + jsonDataArray.length;
             infoBox.style.display = "block";
 
-            previewDiv.innerText = globalPayload.jsonData;
+            // Pretty-printed version, for human reading only — not what
+            // gets sent to the server.
+            previewDiv.innerText = JSON.stringify(jsonDataArray, null, 2);
             previewDiv.style.display = "block";
 
             setStatus("Data Preview is ready. Click Save to Google Sheet (Periodical) to upload the data.", "success");
@@ -670,7 +677,23 @@
             },
             body: JSON.stringify(globalPayload)
         })
-        .then(response => response.json())
+        .then(async response => {
+            // Read the raw response text first. If the Apps Script side
+            // threw an uncaught error (e.g. a value too large for a cell),
+            // Google returns an HTML error page instead of JSON, and
+            // response.json() would throw a confusing generic error. By
+            // reading as text first we can show a real, useful message.
+            const rawText = await response.text();
+            try {
+                return JSON.parse(rawText);
+            } catch (parseErr) {
+                console.error("Non-JSON response from Apps Script:", rawText);
+                throw new Error(
+                    "Server did not return valid JSON (likely an Apps Script " +
+                    "error — check Extensions > Apps Script > Executions for details)."
+                );
+            }
+        })
         .then(result => {
             const errorBox = document.getElementById("errorBox");
             if (result.status === "duplicate") {
@@ -698,7 +721,7 @@
         })
         .catch(error => {
             console.error("Error:", error);
-            setStatus("Error. Please check your connection and try again.", "error");
+            setStatus("Error: " + error.message, "error");
             updateSaveButtons();
         });
     }
