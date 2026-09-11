@@ -661,12 +661,16 @@
         setStatus("Uploading data to Google Sheet (Monthly)...", "progress");
         saveBtnPeriodical.disabled = true;
 
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxPK1PWep_HXLm-Cx2Tq1L-ti6PfTRyDKDrwsDxs3NbCQV6Z6TtQHcO5NGs3bJE2-BA/exec";
+        // Unified with the periodical uploader — same Apps Script project,
+        // same deployment URL. sheetTarget:"OW" tells the merged doPost to
+        // save into the OW_Database spreadsheet (not the IW one).
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyCyOeZ8TD7ooNrdMJ9SHIFAtXZmq-YYD-k0M5s93X7MvuGsme_siH9tqRVBA3HkMf/exec";
 
         const sheetPayload = {
             fromDate: globalPayload.fromDate,
             toDate: globalPayload.toDate,
-            data: globalRecords
+            data: globalRecords,
+            sheetTarget: "OW"
         };
 
         fetch(WEB_APP_URL, {

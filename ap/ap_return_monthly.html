@@ -1535,7 +1535,9 @@
      leading "<number>- " is stripped automatically before display.
      ===================================================================== */
 
-  const OUTWARD_API_URL = "https://script.google.com/macros/s/AKfycbw6xdeYuinKqsBYT3XX_5MHPHw0tmvJpkGrE7NtnNHKSwwZmMbbXQbAznzgUc72aLR-/exec";
+  // Unified with the other AP Return Apps Script endpoints — same
+  // deployment URL, distinguished by &type=outward_figures.
+  const OUTWARD_API_URL = "https://script.google.com/macros/s/AKfycbwyCyOeZ8TD7ooNrdMJ9SHIFAtXZmq-YYD-k0M5s93X7MvuGsme_siH9tqRVBA3HkMf/exec";
 
   const OUTWARD_FIELD_CANDIDATES = {
     stationFrom: ['STATION FROM'],
@@ -1594,7 +1596,8 @@
       throw new Error('Outward Figures Apps Script URL not configured yet');
     }
     const url = OUTWARD_API_URL +
-      '?from=' + encodeURIComponent(formatDMY(periodFrom)) +
+      '?type=outward_figures' +
+      '&from=' + encodeURIComponent(formatDMY(periodFrom)) +
       '&to=' + encodeURIComponent(formatDMY(periodTo));
     const res = await fetch(url, { cache: 'no-store' });
     if(!res.ok){ throw new Error('HTTP ' + res.status); }

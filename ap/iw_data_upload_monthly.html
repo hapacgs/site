@@ -671,16 +671,12 @@
     function actuallySaveToSheet() {
         if (!globalPayload) return;
 
-        // Deploy the IW_Monthly Apps Script (Code.gs) as a Web App, then paste
-        // its /exec URL here. That script writes to:
-        //   Google Sheet ID : 1f4e3cyh8hYR8iKAQW6MYKh4jk4MHwBz9iCeEwMH0fyE
-        //   Sheet Name      : IW_Monthly
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxQ7lAzCyHrSwn9bTiVNvUPc2sqSf1ptOrrAYmjnHXSacgMmWWsDY2CGCYySRfBOjXQ/exec";
-
-        if (WEB_APP_URL.indexOf("PASTE_YOUR_") === 0) {
-            setStatus("Apps Script URL not configured yet. Deploy the IW_Monthly Code.gs as a Web App and paste its /exec URL into WEB_APP_URL near the bottom of this file.", "error");
-            return;
-        }
+        // Unified with the periodical/OW-monthly uploaders — same Apps
+        // Script project, same deployment URL. sheetTarget:"IW" tells the
+        // merged doPost to write into the SEPARATE IW spreadsheet
+        // (1f4e3cyh8hYR8iKAQW6MYKh4jk4MHwBz9iCeEwMH0fyE, tab "IW_Monthly")
+        // instead of the OW_Database one.
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwyCyOeZ8TD7ooNrdMJ9SHIFAtXZmq-YYD-k0M5s93X7MvuGsme_siH9tqRVBA3HkMf/exec";
 
         setStatus("Uploading data to Google Sheet (Monthly)...", "progress");
         saveBtnPeriodical.disabled = true;
@@ -688,7 +684,8 @@
         const sheetPayload = {
             fromDate: globalPayload.fromDate,
             toDate: globalPayload.toDate,
-            data: globalRecords
+            data: globalRecords,
+            sheetTarget: "IW"
         };
 
         fetch(WEB_APP_URL, {

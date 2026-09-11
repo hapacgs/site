@@ -981,7 +981,7 @@
      CATEGORY WISE — live data from Google Sheet
      ===================================================================== */
 
-  const CATEGORY_WISE_API_URL = "https://script.google.com/macros/s/AKfycbyB0jGwWdIcLOIaJIRav8yik-SHP1_qLi7Z9wYJn2WklJEYx5TtxqOQp8Sb0TWjF6Ts/exec";
+  const CATEGORY_WISE_API_URL = "https://script.google.com/macros/s/AKfycbwyCyOeZ8TD7ooNrdMJ9SHIFAtXZmq-YYD-k0M5s93X7MvuGsme_siH9tqRVBA3HkMf/exec";
 
   // Sheet columns (fixed order): 0 TYPE OF CHARGES, 1 CUST. CODE, 2 ACCRUAL DATE,
   // 3 ACCRUAL AMT., 4 HRS./DAY, 5 PAYMENT DATE, 6 PAID AMOUNT, 7 WAIVER/CREDIT,
@@ -1262,14 +1262,17 @@
          deployment > Web app > Execute as: Me > Who has access: Anyone). <<<
      ===================================================================== */
 
-  const SN105_LAST_YEAR_API_URL = "https://script.google.com/macros/s/AKfycbw0iS5C8-U0PG7F78fZhaiBD_9UjGqfNnnsh7b4E1-DVhZneupH3ktmJOHJJtuiZ3_a/exec";
+  // Unified with the other AP Return Apps Script endpoints — same
+  // deployment URL, distinguished by &type=sn105_lastyear.
+  const SN105_LAST_YEAR_API_URL = "https://script.google.com/macros/s/AKfycbxhIH2gXOLQBrAflKO32sURbmuvyRlKkn_ZVmReJ2SYri6vywQ2YoiRi9t8HcH569k/exec";
 
   async function fetchLastYearSn105Groups(prevFrom, prevTo){
     if(!SN105_LAST_YEAR_API_URL || SN105_LAST_YEAR_API_URL.indexOf('PASTE_') === 0){
       throw new Error('LAST YEAR Apps Script URL not configured yet');
     }
     const url = SN105_LAST_YEAR_API_URL +
-      '?from=' + encodeURIComponent(formatDMY(prevFrom)) +
+      '?type=sn105_lastyear' +
+      '&from=' + encodeURIComponent(formatDMY(prevFrom)) +
       '&to=' + encodeURIComponent(formatDMY(prevTo));
     const res = await fetch(url, { cache: 'no-store' });
     if(!res.ok){ throw new Error('HTTP ' + res.status); }
@@ -1466,13 +1469,15 @@
        Remarks        <- typed by user
      ===================================================================== */
 
-  const SN105_API_URL = "https://script.google.com/macros/s/AKfycbz5j2G3EjJsoXBTkMvlSEE3rL6cpQtl2hnCDo78eW7Q_bFLA5bVD0918vzsP2KA923H/exec";
+  // Unified with the other AP Return Apps Script endpoints — same
+  // deployment URL, distinguished by &type=sn105.
+  const SN105_API_URL = "https://script.google.com/macros/s/AKfycbxhIH2gXOLQBrAflKO32sURbmuvyRlKkn_ZVmReJ2SYri6vywQ2YoiRi9t8HcH569k/exec";
 
   // Remarks the user types persist here (per commodity+wagon type) across re-fetches
   const sn105Remarks = {};
 
   async function fetchSn105Groups(periodFrom, periodTo){
-    const url = SN105_API_URL + '?from=' + encodeURIComponent(formatDMY(periodFrom)) + '&to=' + encodeURIComponent(formatDMY(periodTo));
+    const url = SN105_API_URL + '?type=sn105&from=' + encodeURIComponent(formatDMY(periodFrom)) + '&to=' + encodeURIComponent(formatDMY(periodTo));
     const res = await fetch(url, { cache: 'no-store' });
     if(!res.ok){ throw new Error('HTTP ' + res.status); }
     const data = await res.json();
